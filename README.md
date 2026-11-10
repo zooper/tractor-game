@@ -12,6 +12,7 @@ A low-poly 3D earthmoving and snow-plowing sandbox that runs in the browser. Ope
 | Keys | Action |
 |---|---|
 | W / S | drive |
+| 1 / 2 / 3 / 4 | gear (each machine keeps its own) |
 | A / D | steer / turn on tracks |
 | I / K | raise / lower boom |
 | J / L | curl / dump bucket, angle the plow, salt fan width |
