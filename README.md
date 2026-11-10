@@ -20,6 +20,7 @@ A low-poly 3D earthmoving and snow-plowing sandbox that runs in the browser. Ope
 | Q / E, R / F | excavator swing, stick out / in |
 | C | cab view (mirrors; Z / V to look left / right) |
 | T | day / dusk / night |
+| P | full map (a minimap is always in the corner) |
 | G | grade / unplowed view |
 | M | sound |
 | N N | new site |

@@ -43,6 +43,12 @@
   .tag { position: absolute; left: 0; top: 0; transform: translate(-50%, -100%); background: rgba(20,18,14,.82); color: #fff; text-shadow: none; font-size: 12px; font-weight: 700; letter-spacing: .06em; padding: 3px 7px; border-radius: 2px; white-space: nowrap; }
   .machine { position: absolute; top: 12px; left: 14px; font-size: 15px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
   .tag.place { background: rgba(255,255,255,.85); color: #1e2a36; }
+  .minimap { position: absolute; right: 14px; bottom: 44px; width: 150px; height: 150px; border-radius: 8px; border: 2px solid rgba(255,255,255,.7); box-shadow: 0 2px 10px rgba(0,0,0,.5); }
+  @media (max-width: 640px) { .minimap { width: 110px; height: 110px; } }
+  .bigmap { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: rgba(15,17,20,.78); pointer-events: auto; padding: 12px; }
+  .bigmap canvas { width: min(82%, 78vh, 640px); height: auto; aspect-ratio: 1; max-width: 100%; border-radius: 8px; border: 2px solid rgba(255,255,255,.75); box-shadow: 0 4px 24px rgba(0,0,0,.6); }
+  .maplegend { display: flex; flex-wrap: wrap; gap: 6px 16px; justify-content: center; font-size: 13px; letter-spacing: .05em; text-transform: uppercase; font-weight: 600; }
+  .maplegend i { display: inline-block; width: 11px; height: 11px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; border: 1px solid rgba(0,0,0,.5); }
   .job { position: absolute; right: 14px; bottom: 10px; pointer-events: auto; font-family: "Barlow Condensed", sans-serif; font-weight: 700; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: #fff; background: rgba(20,18,14,.6); border: 1px solid rgba(255,255,255,.5); border-radius: 3px; padding: 4px 9px; cursor: pointer; }
   .job:focus-visible, .card:focus-visible { outline: 3px solid var(--good); outline-offset: 2px; }
   .menu { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 16px; background: radial-gradient(ellipse at center, rgba(27,25,20,.55), rgba(27,25,20,.88)); }
@@ -101,6 +107,11 @@
       <div class="tag" id="hopperTag">Hopper · 0.0 / 5.0 m³</div>
       <div class="tag place" id="placeTag" hidden>Liberty Towers</div>
       <button class="job" id="changeJob" type="button">Change job</button>
+      <canvas class="minimap" id="minimap" width="300" height="300" aria-label="Minimap"></canvas>
+      <div class="bigmap" id="bigmap" hidden>
+        <canvas id="bigmapC" width="900" height="900" aria-label="Map of the work area"></canvas>
+        <div class="maplegend"><span><i style="background:#d9e2ea"></i>to plow</span><span><i style="background:#4d5560"></i>cleared</span><span><i style="background:#ff8a2a"></i>you</span><span><i style="background:#dedbd2"></i>truck</span><span><i style="background:#e4e7ea"></i>light rail</span><span>P to close</span></div>
+      </div>
       <div class="machine" id="machineTxt">Wheel loader</div>
       <div class="mirror" id="mirrorL" hidden></div><div class="mirror" id="mirrorR" hidden></div>
       <div class="hint" id="hint">X switch machine · C cab view · T time · G grade view</div>
@@ -123,6 +134,7 @@
     </div>
     <div class="pad">
       <button data-k="KeyT">TIME</button><button data-k="KeyZ">LOOK ◀</button><button data-k="KeyV">LOOK ▶</button>
+      <button data-k="KeyP">MAP</button>
     </div>
   </div>
 
@@ -140,6 +152,7 @@
     <div><kbd>C</kbd> cab view (with mirrors)</div>
     <div><kbd>Z</kbd><kbd>V</kbd> look left / right (cab)</div>
     <div><kbd>T</kbd> day / dusk / night</div>
+    <div><kbd>P</kbd> map</div>
     <div><kbd>G</kbd> cut / fill view</div>
     <div><kbd>M</kbd> sound</div>
     <div><kbd>N</kbd><kbd>N</kbd> new site</div>
@@ -277,7 +290,7 @@ function boot(SCN, bootData) {
           if (cars.some(c => Math.hypot(c.x - cx, c.z - cz) < 5.2)) continue;
           // keep clear of every traffic lane (lanes run 1.5 m either side of each street's centerline)
           let laneHit = false;
-          for (const st of OSM.streets) { for (let q = 0; q + 3 < st.p.length && !laneHit; q += 2) if (distSeg(cx, cz, st.p[q], st.p[q + 1], st.p[q + 2], st.p[q + 3]) < 3.2) laneHit = true; if (laneHit) break; }
+          for (const st of OSM.streets) { for (let q = 0; q + 3 < st.p.length && !laneHit; q += 2) if (distSeg(cx, cz, st.p[q], st.p[q + 1], st.p[q + 2], st.p[q + 3]) < 3.4) laneHit = true; if (laneHit) break; }
           if (laneHit) continue;
           const yaw = Math.atan2(dx, dz) + (sd < 0 ? Math.PI : 0), c = Math.cos(yaw), sn = Math.sin(yaw);
           if (![[-0.9, -2.2], [0.9, -2.2], [-0.9, 2.2], [0.9, 2.2]].every(([lx, lz]) => kindAt(cx + c * lx + sn * lz, cz - sn * lx + c * lz) === 1)) continue;
@@ -1460,7 +1473,7 @@ function boot(SCN, bootData) {
   }
 
   // ---------------- salt spreader (snow job) ----------------
-  const SALT_HOME = { x: 8.4, z: 114, yaw: -Math.PI / 2 }; // on Essex Street, facing west toward Hudson
+  const SALT_HOME = { x: 8.4, z: 110.3, yaw: -Math.PI / 2 }; // against the north curb of Essex Street, facing west toward Hudson
   let saltTruck = null, saltPile = null, saltMap = null;
   const salted = new Set();
   const SALT_N = 360;
@@ -1876,7 +1889,7 @@ function boot(SCN, bootData) {
         // only a car sitting in *my* lane on the far side counts (not the oncoming car waiting opposite)
         const roomOut = !traffic.some(o => { if (o === c || o.wait > 0) return false; const dx = o.x - ex, dz = o.z - ez, al = dx * ehx + dz * ehz, lat = -dx * ehz + dz * ehx; return Math.abs(al) < 4.5 && Math.abs(lat) < 1.3; });
         if (!next.node.occ && roomOut && !(c.yield > 0)) { next.node.occ = c; next.node.occT = 0; c.hold = next.node; }
-        if (next.node.occ !== c) vt = Math.min(vt, Math.max(0, (dn - 6.5) * 1.2)); // wait at the line for the car crossing
+        if (next.node.occ !== c) vt = Math.min(vt, Math.max(0, (dn - 8.5) * 1.2)); // wait at the line, well clear of the crossing car's path
       }
       // brake for anything in the lane, further ahead the faster we go
       let blocked = false, byPlayer = false, byParked = false, byCar = null;
@@ -1884,8 +1897,8 @@ function boot(SCN, bootData) {
       for (let a = 2.6; a <= look + 2.6; a += 1.6) {
         const ax = x + hx * a, az = z + hz * a;
         if (machineNear(ax, az, 1.0)) { blocked = true; if (!trainHit(ax, az, 1.0)) byPlayer = true; break; }
-        if (parkedNear(ax, az, 0.75)) { blocked = true; byParked = true; break; }
-        for (const o of traffic) if (o !== c && o.wait <= 0 && boxHit(o, ax, az, 1.0)) {
+        if (parkedNear(ax, az, 0.4)) { blocked = true; byParked = true; break; }
+        if (!(c.squeeze > 0)) for (const o of traffic) if (o !== c && o.wait <= 0 && boxHit(o, ax, az, 1.0)) {
           // two cars nose to nose (both blocked by each other): the lower id goes first
           const heads = Math.sin(o.yaw) * (c.x - o.x) + Math.cos(o.yaw) * (c.z - o.z) > 0;
           if (heads && o.blockedBy === c && c.id < o.id) continue;
@@ -1893,19 +1906,27 @@ function boot(SCN, bootData) {
         }
         if (blocked) break;
       }
+      // a real deadlock (we block each other, or I'm held by a car that is itself waiting at a junction):
+      // after 9 s the lower id squeezes past rather than everyone waiting forever
+      if (byCar && c.stuck > 9 && byCar.stuck > 6 && (byCar.blockedBy === c || byCar.why === '') && (byCar.blockedBy !== c || c.id < byCar.id)) { c.squeeze = 2.5; c.stuck = 0; }
+      if (c.squeeze > 0) c.squeeze -= dt;
       c.blockedBy = byCar; c.why = byPlayer ? 'machine' : byParked ? 'parked' : byCar ? 'car' : blocked ? 'train' : '';
       if (blocked) vt = 0;
       c.v += clamp(vt - c.v, -8 * dt, 2.6 * dt);
       // never move into a machine or another car
       const ns = c.s + c.v * dt * c.dir, [nx, nz] = carPose(c, ns);
-      if (c.v > 0 && (machineNear(nx + hx * 1.2, nz + hz * 1.2, 0.9) || parkedNear(nx + hx * 1.2, nz + hz * 1.2, 0.6) || trafficHit(nx + hx * 1.2, nz + hz * 1.2, 0.6, c))) c.v = 0;
+      if (c.v > 0 && (machineNear(nx + hx * 1.2, nz + hz * 1.2, 0.9) || parkedNear(nx + hx * 1.2, nz + hz * 1.2, 0.6) || (!(c.squeeze > 0) && trafficHit(nx + hx * 1.2, nz + hz * 1.2, 0.6, c)))) c.v = 0;
       else c.s = ns;
       if (c.v < 0.2 && (blocked || vt === 0)) { c.stuck += dt; } else c.stuck = 0;
       // go around a parked machine when the other side is clear, then tuck back in once past it
-      let wantAdj = 0;
+      let wantAdj = c.adj || 0;
       if ((byPlayer || byParked) && c.stuck > 1.2) { for (const sw of [-3.0, -4.6, 1.2]) if (laneClear(c, sw, 0, 12)) { wantAdj = sw; break; } }
-      else if (c.adj && !laneClear(c, 0, -5, 9)) wantAdj = c.adj;
-      c.adj = (c.adj || 0) + clamp(wantAdj - (c.adj || 0), -1.6 * dt, 1.6 * dt);
+      else if (c.adj && laneClear(c, 0, -6, 9)) wantAdj = 0; // only tuck back in once my own lane is clear
+      const nextAdj = (c.adj || 0) + clamp(wantAdj - (c.adj || 0), -1.6 * dt, 1.6 * dt);
+      if (nextAdj !== c.adj) { // never slide sideways into anything
+        const keep = c.adj; c.adj = nextAdj; const [sx, sz] = carPose(c, c.s);
+        if (trafficHit(sx, sz, 0.15, c) || machineNear(sx, sz, 0.3) || parkedNear(sx, sz, 0.1)) c.adj = keep;
+      }
       if (byPlayer && c.stuck > 2.5) { c.honkT -= dt; if (c.honkT <= 0) { carHonk(x, z); c.honkT = 5 + Math.random() * 4; } }
       // through the intersection: maybe turn onto the crossing street
       if (next && (next.s - c.s) * c.dir <= 0) {
@@ -2551,6 +2572,105 @@ function boot(SCN, bootData) {
     }
   }
 
+  // ---------------- maps: a minimap in the corner and a full map on P ----------------
+  // Both draw from one low-res picture of the ground that is refreshed from the live grid, so plowed
+  // streets turn dark as you clear them; machines, trucks, the train and traffic are drawn on top.
+  const MAPRES = Math.min(N + 1, 280);
+  const mapBase = document.createElement('canvas'); mapBase.width = mapBase.height = MAPRES;
+  const mapBaseCtx = mapBase.getContext('2d');
+  let mapImg = null, bigMapOpen = false;
+  const $mini = document.getElementById('minimap'), $big = document.getElementById('bigmap'), $bigC = document.getElementById('bigmapC');
+  const toMap = (x, z, size) => [(x + HALF) / SIZE * size, (z + HALF) / SIZE * size];
+  function mapColor(k) {
+    if (SNOW) {
+      const kd = kind[k], d = h[k] - gnd[k];
+      if (kd === 8) return [53, 80, 106];
+      if (kd === 7) return [58, 62, 70];
+      if (kd === 9) return [107, 111, 117];
+      if (kd === 1) return d > 0.06 ? [217, 226, 234] : mark[k] === 2 ? [124, 132, 140] : saltMap && saltMap[k] > 0.05 ? [52, 60, 70] : [77, 85, 96];
+      if (kd === 5) return d > 0.06 ? [238, 242, 246] : [154, 160, 166];
+      return d > 0.06 ? [230, 235, 240] : [155, 159, 152];
+    }
+    const d = h[k] - orig[k], kd = kind[k];
+    if (kd === 1) return [157, 141, 116];
+    if (kd === 2) return Math.abs(h[k] - PAD.y) <= 0.1 ? [120, 170, 90] : [140, 96, 60];
+    if (kd === 3) return [235, 110, 40];
+    if (dist[k] > 0.4) return d < -0.05 ? [98, 60, 34] : d > 0.05 ? [150, 100, 60] : [125, 80, 46];
+    return [205, 172, 102];
+  }
+  function refreshMapBase() {
+    if (!mapImg) mapImg = mapBaseCtx.createImageData(MAPRES, MAPRES);
+    const D = mapImg.data;
+    if (!D) return;
+    for (let py = 0; py < MAPRES; py++) for (let px = 0; px < MAPRES; px++) {
+      const i = Math.round(px / (MAPRES - 1) * N), j = Math.round(py / (MAPRES - 1) * N), c = mapColor(idx(i, j)), o = (py * MAPRES + px) * 4;
+      D[o] = c[0]; D[o + 1] = c[1]; D[o + 2] = c[2]; D[o + 3] = 255;
+    }
+    mapBaseCtx.putImageData(mapImg, 0, 0);
+  }
+  function drawMarker(ctx, x, z, yaw, size, col, scale, shape) {
+    const [px, py] = toMap(x, z, size);
+    ctx.save(); ctx.translate(px, py); ctx.rotate(-yaw + Math.PI); ctx.fillStyle = col; ctx.strokeStyle = '#111'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    if (shape === 'arrow') { ctx.moveTo(0, -7 * scale); ctx.lineTo(5 * scale, 6 * scale); ctx.lineTo(0, 3 * scale); ctx.lineTo(-5 * scale, 6 * scale); }
+    else { const w = (shape === 'long' ? 2.2 : 3) * scale, l = (shape === 'long' ? 6 : 4) * scale; ctx.rect(-w, -l, w * 2, l * 2); }
+    ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
+  }
+  // draw the whole map into a square of `size` pixels (the minimap then crops/zooms it)
+  function drawMapScene(ctx, size, big) {
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(mapBase, 0, 0, size, size);
+    const s = size / 340 * (SNOW ? 1 : 3.2); // icon scale
+    if (SNOW) {
+      if (big) {
+        ctx.font = `600 ${Math.max(10, size / 70)}px "Barlow Condensed", sans-serif`; ctx.fillStyle = '#20262d'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        for (const st of OSM.streets) {
+          const P = st.p, n = P.length / 2;
+          // label at the in-map midpoint of the street
+          let best = null; for (let q = 0; q < n - 1; q++) { const mx = (P[q * 2] + P[q * 2 + 2]) / 2, mz = (P[q * 2 + 1] + P[q * 2 + 3]) / 2; if (Math.abs(mx) < HALF - 20 && Math.abs(mz) < HALF - 20 && (!best || Math.hypot(P[q * 2 + 2] - P[q * 2], P[q * 2 + 3] - P[q * 2 + 1]) > best.len)) best = { mx, mz, len: Math.hypot(P[q * 2 + 2] - P[q * 2], P[q * 2 + 3] - P[q * 2 + 1]), ang: Math.atan2(P[q * 2 + 3] - P[q * 2 + 1], P[q * 2 + 2] - P[q * 2]) }; }
+          if (!best) continue;
+          const [lx, ly] = toMap(best.mx, best.mz, size); let a = best.ang; if (a > Math.PI / 2) a -= Math.PI; if (a < -Math.PI / 2) a += Math.PI;
+          ctx.save(); ctx.translate(lx, ly); ctx.rotate(a); ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.strokeText(st.n, 0, 0); ctx.fillText(st.n, 0, 0); ctx.restore();
+        }
+        const [tx, ty] = toMap(-87, 60, size); ctx.fillStyle = '#e0b55a'; ctx.strokeStyle = '#1b1914'; ctx.lineWidth = 3; ctx.font = `700 ${Math.max(11, size / 60)}px "Barlow Condensed", sans-serif`; ctx.strokeText('LIBERTY TOWERS', tx, ty); ctx.fillText('LIBERTY TOWERS', tx, ty);
+        const [sx, sy] = toMap(OSM.rail.station[0], OSM.rail.station[1] + 6, size); ctx.fillStyle = '#1f4e9c'; ctx.strokeText('Essex St station', sx, sy); ctx.fillText('Essex St station', sx, sy);
+        const [rx, ry] = toMap(OSM.river_x + 8, 0, size); ctx.save(); ctx.translate(rx, ry); ctx.rotate(-Math.PI / 2); ctx.fillStyle = '#cfe0ee'; ctx.fillText('HUDSON RIVER', 0, 0); ctx.restore();
+      }
+      if (saltPile) { const [px, py] = toMap(saltPile.x, saltPile.z, size); ctx.fillStyle = '#e8eef5'; ctx.strokeStyle = '#333'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(px, py, 4 * s, 0, 6.3); ctx.fill(); ctx.stroke(); }
+      for (const c of traffic) if (c.wait <= 0) { const [px, py] = toMap(c.x, c.z, size); ctx.fillStyle = '#' + c.g.children[0].material.color.getHexString?.() || '#888'; ctx.beginPath(); ctx.arc(px, py, 2.2 * s, 0, 6.3); ctx.fill(); }
+      if (train) for (const p of train.pos) drawMarker(ctx, p.x, p.z, p.yaw, size, '#e4e7ea', s * 0.9, 'long');
+      if (saltTruck) drawMarker(ctx, saltTruck.x, saltTruck.z, saltTruck.yaw, size, active === 'salt' ? '#ff8a2a' : '#e8692c', s, active === 'salt' ? 'arrow' : 'box');
+    } else {
+      if (hopper) { const [px, py] = toMap(HOPPER.x, HOPPER.z, size); ctx.fillStyle = '#5d6a58'; ctx.fillRect(px - 5 * s, py - 5 * s, 10 * s, 10 * s); }
+      drawMarker(ctx, exc.x, exc.z, exc.yaw, size, active === 'exc' ? '#ff8a2a' : '#d8b55c', s, active === 'exc' ? 'arrow' : 'box');
+    }
+    if (truck && truck.state !== 'away') drawMarker(ctx, truck.x, truck.z, truck.yaw, size, '#dedbd2', s, 'long');
+    drawMarker(ctx, loader.x, loader.z, loader.tF, size, active === 'loader' ? '#ff8a2a' : '#d8b55c', s * (active === 'loader' ? 1.1 : 1), active === 'loader' ? 'arrow' : 'box');
+  }
+  const sceneCanvas = document.createElement('canvas'), sceneCtx = sceneCanvas.getContext('2d');
+  let mapFrame = 0;
+  function updateMaps() {
+    if (++mapFrame % 45 === 1) refreshMapBase();
+    // minimap: about 110 m around the active machine, north up
+    if ($mini && !bigMapOpen) {
+      const ctx = $mini.getContext('2d'), W = $mini.width, P = M();
+      const full = W * SIZE / (SNOW ? 110 : 40);
+      if (sceneCanvas.width !== Math.round(full)) sceneCanvas.width = sceneCanvas.height = Math.round(full);
+      if (mapFrame % 3 === 1) {
+        drawMapScene(sceneCtx, sceneCanvas.width, false);
+        const [cx, cy] = toMap(P.x, P.z, sceneCanvas.width);
+        ctx.fillStyle = SNOW ? '#2a313b' : '#3a3324'; ctx.fillRect(0, 0, W, W);
+        ctx.drawImage(sceneCanvas, cx - W / 2, cy - W / 2, W, W, 0, 0, W, W);
+      }
+    }
+    if (bigMapOpen && mapFrame % 6 === 1) { const ctx = $bigC.getContext('2d'); drawMapScene(ctx, $bigC.width, true); }
+  }
+  function toggleBigMap(force) {
+    bigMapOpen = force !== undefined ? force : !bigMapOpen;
+    $big.hidden = !bigMapOpen; if ($mini) $mini.hidden = bigMapOpen;
+    if (bigMapOpen) { refreshMapBase(); drawMapScene($bigC.getContext('2d'), $bigC.width, true); }
+  }
+
   // ---------------- audio ----------------
   // All synthesized. The loader is a six-cylinder diesel: a pulse-shaped core wave at the firing
   // rate, exhaust rasp gated by the firings, a sub rumble and a turbo that spools under load.
@@ -2828,10 +2948,12 @@ function boot(SCN, bootData) {
 
   // ---------------- input ----------------
   const keys = new Set();
-  const GAME = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyI', 'KeyJ', 'KeyK', 'KeyL', 'KeyC', 'KeyG', 'KeyM', 'KeyN', 'KeyQ', 'KeyE', 'KeyR', 'KeyF', 'KeyX', 'KeyB', 'KeyT', 'KeyZ', 'KeyV']);
+  const GAME = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyI', 'KeyJ', 'KeyK', 'KeyL', 'KeyC', 'KeyG', 'KeyM', 'KeyN', 'KeyQ', 'KeyE', 'KeyR', 'KeyF', 'KeyX', 'KeyB', 'KeyT', 'KeyZ', 'KeyV', 'KeyP', 'Escape']);
   let lastN = 0;
   function press(code) {
     initAudio();
+    if (code === 'KeyP') toggleBigMap();
+    if (code === 'Escape' && bigMapOpen) toggleBigMap(false);
     if (code === 'KeyT') { timeIdx = (timeIdx + 1) % TIMES.length; applyTime(timeIdx); toast(TIMES[timeIdx].name, 1100); }
     if (code === 'KeyC') { camMode = camMode === 'chase' ? 'cab' : 'chase'; lookYaw = lookPitch = 0; camYaw = null; $hint.textContent = SNOW ? `X switch machine · B blade / bucket · C ${camMode === 'cab' ? 'chase' : 'cab'} view · T time · G show unplowed` : `X switch machine · C ${camMode === 'cab' ? 'chase' : 'cab'} view · T time · G grade view`; }
     if (code === 'KeyB' && active === 'salt') { saltTruck.on = !saltTruck.on; toast(saltTruck.on ? 'Spreader on' : 'Spreader off', 1100); }
@@ -2863,7 +2985,7 @@ function boot(SCN, bootData) {
   addEventListener('keyup', e => keys.delete(e.code));
   addEventListener('blur', () => keys.clear());
   for (const b of document.querySelectorAll('#touch button')) {
-    const k = b.dataset.k, tap = k === 'KeyC' || k === 'KeyG' || k === 'KeyX' || k === 'KeyB' || k === 'KeyT';
+    const k = b.dataset.k, tap = k === 'KeyC' || k === 'KeyG' || k === 'KeyX' || k === 'KeyB' || k === 'KeyT' || k === 'KeyP';
     b.addEventListener('pointerdown', e => { e.preventDefault(); b.classList.add('on'); press(k); if (!tap) keys.add(k); try { b.setPointerCapture(e.pointerId); } catch (_) {} });
     const up = () => { b.classList.remove('on'); keys.delete(k); };
     b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up); b.addEventListener('lostpointercapture', up);
@@ -2964,6 +3086,7 @@ function boot(SCN, bootData) {
     renderer.render(scene, camera);
     renderMirrors();
     placeTag();
+    updateMaps();
     if (++frame % 8 === 0) hud();
     if (frame % 20 === 0) refreshTracks();
     requestAnimationFrame(loop);
