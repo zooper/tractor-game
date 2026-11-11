@@ -5,7 +5,7 @@ A low-poly 3D earthmoving and snow-plowing sandbox that runs in the browser. Ope
 ## Jobs
 
 - **Dirt lot**: an articulated wheel loader and a tracked excavator. Load the dump truck, feed the hopper and conveyor, cut the staked pad to grade, and dig a trench so the pipe can be laid and backfilled.
-- **Snow day · Paulus Hook, Jersey City**: plow the real streets around Liberty Towers. Streets, buildings and the Hudson-Bergen Light Rail come from OpenStreetMap. Loader with plow blade or bucket, a salt spreader truck, a snow dump truck, parked cars, moving traffic, streetlights and day/dusk/night.
+- **Snow day · Paulus Hook, Jersey City**: plow the real streets around Liberty Towers. Streets, buildings, the Hudson-Bergen Light Rail and the neighbourhood's shops, cafés and restaurants come from OpenStreetMap; each shop gets a signed, lit storefront with a snowy awning on its real building. Loader with plow blade or bucket, a salt spreader truck, a snow dump truck, parked cars, moving traffic, streetlights and day/dusk/night.
 
 ## Controls
 
