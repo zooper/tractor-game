@@ -1,6 +1,6 @@
 # Backlot Loader
 
-A low-poly 3D earthmoving and snow-plowing sandbox that runs in the browser. Open `index.html` in a modern browser; three.js loads from cdnjs.
+A low-poly 3D earthmoving and snow-plowing sandbox that runs in the browser. Open `index.html` in a modern browser; three.js (r160) loads from jsDelivr.
 
 ## Jobs
 
@@ -24,6 +24,11 @@ A low-poly 3D earthmoving and snow-plowing sandbox that runs in the browser. Ope
 | P | full map (a minimap is always in the corner) |
 | G | grade / unplowed view |
 | M | sound |
+| O | graphics quality (high: ambient occlusion, bloom, sharper shadows · low: faster) |
 | N N | new site |
+
+## Your own vehicle models
+
+Drop `.glb` models into `assets/models/` to replace the code-built vehicles, one at a time. Models only load when the folder is served (`python3 -m http.server`, then open http://localhost:8000); opened straight from the file, the game uses the code-built vehicles. See [docs/MODELS.md](docs/MODELS.md) for the format, the part names and pivots, the reference files in `assets/reference/`, and prompts for AI model generators.
 
 Map data © OpenStreetMap contributors (ODbL).

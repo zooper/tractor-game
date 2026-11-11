@@ -1,3 +1,6 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Backlot Loader</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -161,11 +164,12 @@
     <div><kbd>P</kbd> map</div>
     <div><kbd>G</kbd> cut / fill view</div>
     <div><kbd>M</kbd> sound</div>
+    <div><kbd>O</kbd> graphics quality</div>
     <div><kbd>N</kbd><kbd>N</kbd> new site</div>
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
 <script>
 // Streets and building footprints: OpenStreetMap contributors (ODbL), converted to meters around Paulus Hook, Jersey City.
 const OSM_PAULUS_HOOK = {"roads":[{"n":"Hudson Street","w":11.0,"p":[34.4,-294.4,33.2,-286.8,22.3,-218.5,21.2,-212.0,20.0,-204.5,17.0,-185.1],"walk":false,"ow":1},{"n":"Sussex Street","w":9.0,"p":[93.4,-36.5,46.7,-43.1,42.7,-43.7,38.6,-44.3,14.0,-47.9,10.9,-48.3,7.0,-48.9,-4.2,-50.4],"walk":false},{"n":"Grand Street","w":9.0,"p":[102.4,-117.0,100.8,-117.3,26.6,-128.7,22.9,-129.3,19.3,-129.8,8.8,-131.4],"walk":false},{"n":"Hudson River Waterfront Walkway","w":5.0,"p":[160.6,-301.1,158.8,-288.4,156.0,-275.5,153.2,-255.7,145.2,-205.6,145.5,-204.7,144.6,-198.1,142.7,-196.0,140.1,-193.7,135.7,-193.3,131.9,-193.9,131.2,-190.3,120.2,-113.8],"walk":true},{"n":"York Street","w":9.0,"p":[21.2,-212.0,25.7,-211.3,34.7,-210.0,38.2,-209.5,106.6,-200.0,124.4,-197.4],"walk":false},{"n":"Hudson Street","w":11.0,"p":[44.3,-368.6,44.1,-358.2,44.1,-354.6,37.1,-311.9,35.9,-303.9],"walk":false,"ow":1},{"n":"Montgomery Street","w":11.0,"p":[-98.4,-311.8,-89.3,-310.5,-2.6,-298.0],"walk":false,"ow":1},{"n":"Sussex Street","w":9.0,"p":[-136.1,-70.7,-142.1,-71.6,-249.1,-87.0,-268.2,-89.8],"walk":false,"ow":1},{"n":"Grand Street","w":11.0,"p":[-265.0,-172.4,-255.0,-171.0,-129.8,-151.7,-119.2,-150.3],"walk":false},{"n":"Greene Street","w":11.0,"p":[-119.2,-150.3,-117.7,-160.0,-108.7,-225.1,-108.1,-230.9,-107.1,-238.7,-99.3,-304.1,-98.4,-311.8],"walk":false},{"n":"Christopher Columbus Drive","w":8.0,"p":[58.3,-366.4,62.5,-365.7,130.2,-355.4,144.5,-353.2],"walk":false},{"n":"York Street","w":9.0,"p":[-108.1,-230.9,-99.5,-229.6,13.1,-213.0,21.2,-212.0],"walk":false},{"n":"Sussex Street","w":9.0,"p":[-127.1,-69.2,-121.7,-68.3,-14.9,-52.1,-4.2,-50.4],"walk":false},{"n":"Hudson Street","w":9.0,"p":[-4.2,-50.4,-6.6,-40.9,-15.4,20.6,-17.1,30.5],"walk":false,"ow":1},{"n":"Grand Street","w":11.0,"p":[-119.2,-150.3,-108.6,-149.0,-2.1,-133.0,8.8,-131.4],"walk":false},{"n":"Washington Street","w":9.0,"p":[-240.3,-333.7,-241.8,-326.0,-251.4,-262.1,-253.1,-252.9,-253.8,-248.1,-255.1,-238.9,-263.3,-182.9,-265.0,-172.4],"walk":false},{"n":"York Street","w":9.0,"p":[-253.1,-252.9,-243.7,-251.5,-167.6,-240.0,-117.1,-232.3,-108.1,-230.9],"walk":false,"ow":1},{"n":"Montgomery Street","w":11.0,"p":[-240.3,-333.7,-230.5,-332.3,-155.8,-321.9,-108.6,-313.6,-98.4,-311.8],"walk":false,"ow":1},{"n":"Hudson Street","w":11.0,"p":[43.8,-293.3,46.9,-302.5,49.2,-308.0,49.7,-309.9,50.9,-314.8,56.9,-356.5,58.3,-366.4],"walk":false,"ow":1},{"n":"Exchange Place","w":5.0,"p":[142.4,-277.8,149.3,-276.6,156.0,-275.5],"walk":true},{"n":"Hudson River Waterfront Walkway","w":5.0,"p":[108.4,-34.0,103.9,-34.8,93.4,-36.5],"walk":true},{"n":"Hudson River Waterfront Walkway","w":5.0,"p":[120.2,-113.8,108.4,-34.0,127.8,-30.7,125.7,-15.5,123.9,-2.3],"walk":true},{"n":"Montgomery Street","w":11.0,"p":[-28.5,-312.8,-88.3,-321.3,-97.4,-322.6],"walk":false,"ow":1},{"n":"Greene Street","w":11.0,"p":[-97.4,-322.6,-96.5,-333.0,-95.8,-340.1,-91.6,-385.7,-90.1,-397.0],"walk":false},{"n":"Montgomery Street","w":11.0,"p":[-97.4,-322.6,-107.3,-324.1,-135.5,-328.4,-228.3,-342.8,-238.1,-344.3],"walk":false,"ow":1},{"n":"Greene Street","w":9.0,"p":[-127.1,-69.2,-125.9,-76.4,-116.7,-135.8,-117.4,-140.4,-119.2,-150.3],"walk":false,"ow":1},{"n":"Greene Street","w":9.0,"p":[-136.1,-70.7,-137.3,-63.2,-138.4,-57.5,-147.8,-2.2,-148.6,3.1,-149.9,9.9],"walk":false,"ow":1},{"n":"Sussex Street","w":9.0,"p":[-136.1,-70.7,-127.1,-69.2],"walk":false},{"n":"Greene Street","w":9.0,"p":[-140.8,11.4,-139.3,2.9,-138.9,0.8,-129.3,-55.1,-128.7,-59.2,-127.1,-69.2],"walk":false,"ow":1},{"n":"Hudson Street","w":9.0,"p":[43.6,-691.2,8.5,-468.7,-3.9,-390.8,-5.9,-377.8],"walk":false},{"n":"Christopher Columbus Drive","w":11.0,"p":[-5.9,-377.8,17.8,-373.2,44.3,-368.6],"walk":false},{"n":"Montgomery Street","w":11.0,"p":[46.9,-302.5,40.1,-303.4,35.9,-303.9],"walk":false,"ow":1},{"n":"Hudson Street","w":11.0,"p":[35.9,-303.9,27.5,-294.8,34.4,-294.4],"walk":false,"ow":1},{"n":"Montgomery Street","w":11.0,"p":[35.9,-303.9,28.7,-304.8,24.2,-305.5,-28.5,-312.8],"walk":false,"ow":1},{"n":"Hudson Street","w":11.0,"p":[17.0,-185.1,10.2,-141.3,8.8,-131.4],"walk":false,"ow":1},{"n":"Hudson Street","w":9.0,"p":[8.8,-131.4,7.3,-122.9,0.8,-81.8,-2.9,-58.4,-4.2,-50.4],"walk":false,"ow":1},{"n":"Greene Street","w":9.0,"p":[-157.8,85.1,-153.8,76.7,-153.2,75.3,-152.9,73.9,-145.0,23.5,-144.2,20.7,-140.8,11.4],"walk":false,"ow":1},{"n":"Essex Street","w":9.0,"p":[69.4,122.7,67.9,121.9,36.6,116.8,6.6,112.0,-4.0,110.5,-10.0,112.1,-21.7,110.4],"walk":false,"ow":1},{"n":"Hudson Street","w":8.0,"p":[-21.7,110.4,-22.5,119.7,-22.9,122.1,-26.4,145.3],"walk":false},{"n":"Hudson Street","w":9.0,"p":[-22.5,75.6,-22.5,98.3,-22.4,103.7,-21.7,110.4],"walk":false,"ow":1},{"n":"Morris Street","w":9.0,"p":[-149.9,9.9,-140.8,11.4],"walk":false},{"n":"Essex Street","w":9.0,"p":[-175.0,84.6,-223.6,77.4,-228.7,76.6,-292.3,66.8],"walk":false,"ow":1},{"n":"Hudson Street","w":8.0,"p":[-22.5,75.6,-25.6,85.9,-30.0,92.3,-34.0,95.9,-38.8,98.0,-41.6,98.6],"walk":false,"ow":1},{"n":"Essex Street","w":9.0,"p":[-21.7,110.4,-28.7,107.2,-34.3,104.4,-37.1,103.0,-39.3,100.6,-41.6,98.6,-91.8,91.1,-137.5,84.0,-141.1,83.6,-143.7,83.4,-147.8,83.2,-157.8,85.1],"walk":false,"ow":1},{"n":"Greene Street","w":9.0,"p":[-170.5,157.3,-170.7,157.6,-175.6,161.1],"walk":false},{"n":"Morris Street","w":9.0,"p":[-298.5,-13.9,-289.5,-12.5,-279.7,-11.1,-273.3,-10.3,-153.9,8.6,-149.9,9.9],"walk":false,"ow":1},{"n":"Greene Street","w":9.0,"p":[-157.8,85.1,-160.9,88.8,-161.4,92.4,-161.9,96.2,-170.5,157.3],"walk":false},{"n":"Essex Street","w":9.0,"p":[-157.8,85.1,-164.5,86.0,-166.8,85.9,-175.0,84.6],"walk":false,"ow":1},{"n":"Morris Street","w":9.0,"p":[-140.8,11.4,-134.4,12.4,-105.3,16.9],"walk":false},{"n":"Morris Street","w":9.0,"p":[-105.3,16.9,-62.5,23.5,-27.4,28.9,-17.1,30.5],"walk":false},{"n":"Greene Street","w":9.0,"p":[-149.9,9.9,-150.9,16.1,-151.6,21.7,-160.1,73.7,-159.3,77.8,-157.8,85.1],"walk":false,"ow":1},{"n":"Hudson Street","w":9.0,"p":[-17.1,30.5,-18.0,37.5,-21.1,58.9,-22.5,75.6],"walk":false,"ow":1},{"n":"unnamed","w":9.0,"p":[-10.0,112.1,10.1,127.4,34.5,130.9,65.4,135.2,67.4,134.6,68.3,133.2,69.9,124.3,69.4,122.7],"walk":false,"ow":1},{"n":"unnamed","w":9.0,"p":[34.5,130.9,36.6,116.8],"walk":false,"ow":1}],"buildings":[{"n":"90 Hudson St","h":29.7,"p":[39.2,-200.2,30.3,-140.0,100.8,-129.7,102.7,-142.3,106.9,-141.7,112.0,-176.7,107.8,-177.3,109.6,-189.9]},{"n":"70 Hudson Street","h":39.6,"p":[26.8,-117.7,17.9,-58.3,88.3,-47.8,90.1,-59.4,94.0,-58.8,99.3,-93.8,95.3,-94.4,97.2,-107.1]},{"n":"55 Hudson Street","h":191.4,"p":[-129.5,0.7,-120.7,-55.2,-18.9,-39.2,-27.8,16.7]},{"n":"","h":26.4,"p":[13.6,-39.3,4.0,27.6,103.2,42.2,103.8,38.6,112.4,-25.2]},{"n":"77 Hudson Street","h":23.1,"p":[-19.3,-63.4,-10.0,-122.0,-85.4,-133.9,-86.2,-127.6,-109.4,-131.2,-112.2,-119.8,-113.0,-111.1,-113.0,-104.0,-112.8,-97.0,-114.7,-89.9,-117.4,-78.1]},{"n":"Exchange Place Center","h":99.0,"p":[55.9,-313.5,62.4,-354.8,145.3,-341.7,151.9,-322.4,140.3,-310.3,138.9,-300.4,107.7,-304.9,97.0,-294.1,86.4,-308.4]},{"n":"30 Montgomery Street","h":49.5,"p":[-78.9,-379.2,-85.4,-338.3,-77.2,-337.0,-78.2,-330.5,-54.1,-326.8,-53.1,-333.3,-44.9,-332.1,-38.4,-372.9]},{"n":"2 Montgomery Street","h":16.5,"p":[33.5,-315.7,-39.9,-326.6,-33.7,-368.4,39.7,-357.5]},{"n":"Jersey City Post Office","h":9.9,"p":[-169.7,-308.8,-223.8,-317.1,-232.0,-263.8,-177.8,-255.6,-176.0,-267.5,-172.4,-266.9,-167.8,-296.6]},{"n":"Montgomery Greene","h":62.7,"p":[-109.9,-304.5,-138.5,-308.3,-139.8,-299.8,-143.4,-278.9,-130.1,-276.9,-114.4,-276.8,-109.3,-299.5]},{"n":"","h":26.4,"p":[-195.9,-205.7,-200.3,-176.0,-132.1,-165.9,-123.0,-226.7,-166.9,-233.3,-171.6,-202.1]},{"n":"","h":13.2,"p":[-151.4,-22.9,-166.6,-27.6,-168.1,-34.2,-173.1,-34.1,-182.0,-27.0,-186.7,-27.7,-197.1,-29.0,-200.1,-9.4,-154.4,-3.7]},{"n":"","h":13.2,"p":[-149.0,-40.9,-146.2,-59.8,-191.5,-66.9,-193.5,-52.2,-184.4,-41.4,-173.7,-44.2]},{"n":"","h":13.2,"p":[-149.0,-84.0,-146.8,-99.7,-140.2,-100.8,-138.9,-110.4,-145.3,-111.4,-184.0,-107.4,-190.6,-108.1,-193.3,-90.8]},{"n":"The Grand View","h":19.8,"p":[-146.2,-143.3,-194.1,-150.5,-197.8,-126.6,-155.5,-120.2,-156.5,-113.8,-139.0,-111.1,-136.1,-129.8]},{"n":"","h":16.5,"p":[-194.9,-206.0,-246.7,-213.7,-242.1,-244.3,-188.8,-236.4]},{"n":"","h":13.2,"p":[-118.1,-243.8,-113.6,-276.0,-149.9,-277.5,-154.2,-249.3]},{"n":"15 Exchange Place","h":36.3,"p":[95.3,-262.4,117.4,-259.3,110.5,-212.8,101.4,-209.9,77.7,-213.5,84.2,-240.2]},{"n":"","h":13.2,"p":[-151.0,-279.8,-139.7,-309.5,-155.0,-311.7,-159.5,-281.0]},{"n":"Hyatt House","h":46.2,"p":[39.6,-218.0,47.3,-270.5,73.5,-266.6,68.5,-236.4,80.8,-234.6,77.5,-212.4]},{"n":"101 Hudson Street","h":138.6,"p":[-77.9,-299.0,5.3,-286.2,-0.1,-251.4,17.4,-248.7,13.6,-224.0,-87.2,-239.4]},{"n":"99 Hudson","h":23.1,"p":[-102.9,-178.9,-96.8,-220.3,-23.1,-209.2,-1.7,-185.3,-3.8,-162.2,-23.8,-149.0,-91.4,-159.1]},{"n":"","h":13.2,"p":[-160.2,-274.9,-151.2,-273.6,-154.5,-249.5,-163.5,-250.7]},{"n":"30 Hudson Street","h":237.6,"p":[-4.6,101.1,4.4,42.1,73.0,52.1,96.1,58.7,97.2,75.1,92.3,103.8,88.9,111.2,65.0,112.5,41.3,108.2,32.0,106.4]},{"n":"Liberty Terrace","h":29.7,"p":[-126.1,128.1,-122.4,106.3,-46.0,124.3,-47.6,145.6,-110.3,134.8]},{"n":"Liberty Towers","h":13.2,"p":[-51.4,89.8,-132.4,77.6,-136.5,71.2,-130.1,27.9,-124.0,23.5,-114.0,24.7,-102.3,40.8,-68.9,46.1,-52.6,33.9,-42.8,35.4,-38.3,41.8,-40.1,52.6,-36.3,58.0,-40.3,85.7]},{"n":"","h":9.9,"p":[-126.2,88.7,-126.7,92.4,-105.5,95.6,-105.0,92.0]},{"n":"Clermont Cove","h":29.7,"p":[-207.6,90.2,-172.1,95.5,-178.9,155.3,-204.3,151.5,-210.3,108.5]},{"n":"Essex Commons","h":16.5,"p":[-188.1,50.9,-182.4,12.9,-162.9,15.8,-172.3,73.0,-203.8,68.2,-201.9,56.0]},{"n":"","h":13.2,"p":[-184.0,23.2,-182.4,12.9,-225.6,6.2,-228.5,23.0]},{"n":"","h":13.2,"p":[-219.7,65.8,-203.8,68.2,-201.8,50.9,-216.6,48.6,-224.9,51.0,-227.0,64.7]},{"n":"Morris Terrace","h":13.2,"p":[-197.5,-26.4,-227.7,-31.0,-230.3,-13.7,-200.1,-9.4]},{"n":"Paulus Hook Ferry Terminal","h":6.6,"p":[137.86,1.87,135.53,16.58,160.83,20.57,163.16,5.86]}],"towers":[{"n":"Liberty Towers West","c":[-112.2,57.8],"s":22,"h":116},{"n":"Liberty Towers East","c":[-61.6,63.3],"s":22,"h":116}],"river_x":156.1,"rail":{"t1":[-293.13,72.12,-229.39,82.04,-224.42,82.83,-167.75,91.36,-161.41,92.43,-145.13,94.82,-97.8,102.06,-60.3,107.91,-56.89,108.35,-47.9,109.52,-43.08,109.79,-38.5,109.67,-35.03,109.09,-32.28,108.33,-28.66,107.18,-22.37,103.68,-18.75,100.36,-15.01,95.92,-11.47,89.75,-8.98,81.99,-2.57,39.71,-0.04,23.02,9.37,-38.6,10.85,-48.33,12.04,-56.36,21.52,-120.3,22.9,-129.26,24.33,-139.34,33.72,-202.84,34.75,-210.0,35.78,-216.69,40.93,-251.24],"t2":[32.17,-252.63,26.8,-217.9,25.73,-211.34,25.03,-203.87,25.27,-196.86,26.24,-180.07,26.05,-173.31,24.88,-165.02,20.94,-139.8,19.3,-129.78,18.03,-120.93,8.26,-56.87,7.04,-48.86,5.59,-39.15,-3.62,22.45,-6.12,39.2,-11.94,78.46,-14.36,85.92,-17.37,91.71,-20.33,95.6,-22.53,98.33,-28.38,102.22,-34.32,104.38,-36.25,105.08,-39.94,105.65,-46.84,105.72,-54.35,104.99,-59.63,104.13,-97.3,98.35,-144.43,91.12,-160.88,88.75,-167.15,87.75,-175.27,86.43,-223.91,79.29,-228.92,78.57,-292.6,68.7],"station":[-118.32,98.37]},"streets":[{"n":"Hudson Street","w":11.0,"p":[44.3,-368.6,44.1,-358.2,44.1,-354.6,37.1,-311.9,35.9,-303.9,27.5,-294.8,34.4,-294.4,33.2,-286.8,22.3,-218.5,21.2,-212.0,20.0,-204.5,17.0,-185.1,10.2,-141.3,8.8,-131.4,7.3,-122.9,0.8,-81.8,-2.9,-58.4,-4.2,-50.4,-6.6,-40.9,-15.4,20.6,-17.1,30.5,-18.0,37.5,-21.1,58.9,-22.5,75.6,-22.5,98.3,-22.4,103.7,-21.7,110.4,-22.5,119.7,-22.9,122.1,-26.4,145.3],"len":529},{"n":"Sussex Street","w":9.0,"p":[93.4,-36.5,46.7,-43.1,42.7,-43.7,38.6,-44.3,14.0,-47.9,10.9,-48.3,7.0,-48.9,-4.2,-50.4,-14.9,-52.1,-121.7,-68.3,-127.1,-69.2,-136.1,-70.7,-142.1,-71.6,-249.1,-87.0,-268.2,-89.8],"len":366},{"n":"Grand Street","w":11.0,"p":[102.4,-117.0,100.8,-117.3,26.6,-128.7,22.9,-129.3,19.3,-129.8,8.8,-131.4,-2.1,-133.0,-108.6,-149.0,-119.2,-150.3,-129.8,-151.7,-255.0,-171.0,-265.0,-172.4],"len":372},{"n":"York Street","w":9.0,"p":[-253.1,-252.9,-243.7,-251.5,-167.6,-240.0,-117.1,-232.3,-108.1,-230.9,-99.5,-229.6,13.1,-213.0,21.2,-212.0,25.7,-211.3,34.7,-210.0,38.2,-209.5,106.6,-200.0,124.4,-197.4],"len":382},{"n":"Montgomery Street","w":11.0,"p":[46.9,-302.5,40.1,-303.4,35.9,-303.9,28.7,-304.8,24.2,-305.5,-28.5,-312.8,-88.3,-321.3,-97.4,-322.6,-107.3,-324.1,-135.5,-328.4,-228.3,-342.8,-238.1,-344.3],"len":288},{"n":"Greene Street","w":11.0,"p":[-136.1,-70.7,-137.3,-63.2,-138.4,-57.5,-147.8,-2.2,-148.6,3.1,-149.9,9.9,-150.9,16.1,-151.6,21.7,-160.1,73.7,-159.3,77.8,-157.8,85.1,-153.8,76.7,-153.2,75.3,-152.9,73.9,-145.0,23.5,-144.2,20.7,-140.8,11.4,-139.3,2.9,-138.9,0.8,-129.3,-55.1,-128.7,-59.2,-127.1,-69.2,-125.9,-76.4,-116.7,-135.8,-117.4,-140.4,-119.2,-150.3,-117.7,-160.0,-108.7,-225.1,-108.1,-230.9,-107.1,-238.7,-99.3,-304.1,-98.4,-311.8],"len":561},{"n":"Christopher Columbus Drive","w":8.0,"p":[58.3,-366.4,62.5,-365.7,130.2,-355.4,144.5,-353.2],"len":87},{"n":"Washington Street","w":9.0,"p":[-240.3,-333.7,-241.8,-326.0,-251.4,-262.1,-253.1,-252.9,-253.8,-248.1,-255.1,-238.9,-263.3,-182.9,-265.0,-172.4],"len":163},{"n":"Essex Street","w":9.0,"p":[69.4,122.7,67.9,121.9,36.6,116.8,6.6,112.0,-4.0,110.5,-10.0,112.1,-21.7,110.4,-28.7,107.2,-34.3,104.4,-37.1,103.0,-39.3,100.6,-41.6,98.6,-91.8,91.1,-137.5,84.0,-141.1,83.6,-143.7,83.4,-147.8,83.2,-157.8,85.1,-164.5,86.0,-166.8,85.9,-175.0,84.6,-223.6,77.4,-228.7,76.6,-292.3,66.8],"len":369},{"n":"Morris Street","w":9.0,"p":[-298.5,-13.9,-289.5,-12.5,-279.7,-11.1,-273.3,-10.3,-153.9,8.6,-149.9,9.9,-140.8,11.4,-134.4,12.4,-105.3,16.9,-62.5,23.5,-27.4,28.9,-17.1,30.5],"len":285}]};
@@ -201,6 +205,10 @@ function boot(SCN, bootData) {
   const trenchProj = (x, z) => { const px = x - TRENCH.x0, pz = z - TRENCH.z0; return [px * TDX + pz * TDZ, -px * TDZ + pz * TDX]; };
   const inPad = (x, z) => Math.abs(x - PAD.x) <= PAD.w / 2 && Math.abs(z - PAD.z) <= PAD.d / 2;
 
+  // Snow packing, 0..1 per cell: snow pushed slowly is compacted and stands steeper; snow thrown off the
+  // blade at speed lands loose and slumps flatter. Fresh snow is 0.5. (Snow job only; dirt uses TALUS as is.)
+  let pack = null;
+  const talusAt = (k, n) => pack ? TALUS * (0.7 + 1.1 * Math.min(pack[k], pack[n])) : TALUS;
   function relaxOnce(markDisturb, i0 = 2, i1 = N - 2, j0 = 2, j1 = N - 2) {
     let moved = false;
     for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
@@ -209,12 +217,12 @@ function boot(SCN, bootData) {
       for (let s = 0; s < 2; s++) {
         const n = s ? k + ROW : k + 1;
         if (SNOW && kind[n] >= 7) continue;
-        const d = h[k] - h[n];
-        if (d > TALUS) {
-          const m = Math.min((d - TALUS) * 0.25, h[k] - hMin[k]);
+        const d = h[k] - h[n], tal = talusAt(k, n);
+        if (d > tal) {
+          const m = Math.min((d - tal) * 0.25, h[k] - hMin[k]);
           if (m > 0) { h[k] -= m; h[n] += m; if (m > 0.003) { moved = true; if (markDisturb) { disturb(k); disturb(n); } } }
-        } else if (-d > TALUS) {
-          const m = Math.min((-d - TALUS) * 0.25, h[n] - hMin[n]);
+        } else if (-d > tal) {
+          const m = Math.min((-d - tal) * 0.25, h[n] - hMin[n]);
           if (m > 0) { h[n] -= m; h[k] += m; if (m > 0.003) { moved = true; if (markDisturb) { disturb(k); disturb(n); } } }
         }
       }
@@ -224,6 +232,7 @@ function boot(SCN, bootData) {
 
   // Snow job: kinds 1 road, 5 sidewalk/walkway, 6 plaza/yard, 7 building, 8 river. h = ground + snow.
   let gnd = null, mark = null, roadCells = null, city = null, riverVol = 0;
+  let railBed = null, trainT = null, trainSoil = null; // trackbed cells off the streets; when the train last ran over a cell, and how dirty it left it
   const distSeg = (x, z, x0, z0, x1, z1) => {
     const dx = x1 - x0, dz = z1 - z0, l2 = dx * dx + dz * dz || 1, t = clamp(((x - x0) * dx + (z - z0) * dz) / l2, 0, 1);
     return Math.hypot(x - x0 - dx * t, z - z0 - dz * t);
@@ -271,7 +280,8 @@ function boot(SCN, bootData) {
     placeCars();
     placeStreetlights();
     placeStreetTrees();
-    const rc = []; for (let k = 0; k < NV; k++) if (kind[k] === 1) rc.push(k);
+    // the trackbed is the train's to clear, so only the streets count (where the rails run in a street, it still counts)
+    const rc = []; for (let k = 0; k < NV; k++) if (kind[k] === 1 && !railBed[k]) rc.push(k);
     roadCells = Int32Array.from(rc);
   }
   // parked cars along the curbs: both sides of the wide streets, one side of the narrow ones
@@ -356,10 +366,10 @@ function boot(SCN, bootData) {
     const x = c.getContext('2d'), gr = x.createRadialGradient(32, 32, 0, 32, 32, 32);
     gr.addColorStop(0, 'rgba(255,236,200,1)'); gr.addColorStop(0.25, 'rgba(255,200,130,0.55)'); gr.addColorStop(1, 'rgba(255,180,100,0)');
     x.fillStyle = gr; x.fillRect(0, 0, 64, 64);
-    return new T.CanvasTexture(c);
+    return srgbTex(new T.CanvasTexture(c));
   }
   function buildStreetlights() {
-    const pole = new T.MeshLambertMaterial({ color: 0x2f3634 }), bulb = new T.MeshBasicMaterial({ color: 0xffdca6 });
+    const pole = std({ color: 0x2f3634 }), bulb = new T.MeshBasicMaterial({ color: new T.Color(0xffdca6).multiplyScalar(6) });
     const glow = lampGlowMat = new T.SpriteMaterial({ map: glowTexture(), color: 0xffd39a, transparent: true, depthWrite: false, blending: T.AdditiveBlending });
     const cone = lampConeMat = new T.MeshBasicMaterial({ color: 0xffc98a, transparent: true, opacity: 0.06, depthWrite: false, blending: T.AdditiveBlending, side: T.DoubleSide });
     const coneG = new T.ConeGeometry(2.6, 6.2, 16, 1, true);
@@ -382,23 +392,78 @@ function boot(SCN, bootData) {
     }
     return false;
   }
+  // Cars are built from a side profile (sedan or SUV), a glasshouse, bumpers, lights and proper wheels,
+  // merged into one geometry per material. Parked cars are instanced (one draw call per part for the lot);
+  // traffic cars reuse the same geometry. The body is always the first mesh (the map reads its colour).
+  const CARM = {
+    glass: std({ color: 0x1c252c, roughness: 0.05, metalness: 0.3, envMapIntensity: 1.6 }),
+    trim: std({ color: 0x18191a, roughness: 0.55 }), tyre: std({ color: 0x161616, roughness: 0.9 }),
+    rim: std({ color: 0xb9bdc2, roughness: 0.3, metalness: 0.9 }), chrome: std({ color: 0xd8dade, roughness: 0.18, metalness: 1 }),
+    lensF: std({ color: 0xe8eef2, roughness: 0.1, metalness: 0.2 }), lensR: std({ color: 0x7a1410, roughness: 0.15, emissive: 0x5a0c08, emissiveIntensity: 0.3 }),
+    snow: std({ color: 0xf3f6f9, roughness: 0.92 }),
+    litF: new T.MeshBasicMaterial({ color: new T.Color(0xfff1cf).multiplyScalar(4) }), litR: new T.MeshBasicMaterial({ color: new T.Color(0xc2271f).multiplyScalar(2.5) }),
+  };
+  function carParts(tall, snowy) {
+    return cached(`car${tall}${snowy}`, () => {
+      const P = { body: [], glass: [], trim: [], tyre: [], rim: [], chrome: [], lensF: [], lensR: [], snow: [] };
+      // body side profile in (z, y) with wheel arches cut into the sill
+      const arch = (zc, from, to) => { const o = []; for (let k = 0; k <= 8; k++) { const a = from + (to - from) * k / 8; o.push(zc + Math.cos(a) * 0.44, 0.33 + Math.sin(a) * 0.44); } return o; };
+      const belt = tall ? 1.1 : 0.98;
+      const prof = tall
+        ? [2.22, 0.42, 2.25, 0.8, 2.1, 1.02, 1.45, belt, -2.1, belt + 0.02, -2.24, 0.95, -2.26, 0.45, -2.18, 0.32, ...arch(-1.35, Math.PI, 0), 0.9, 0.3, ...arch(1.35, Math.PI, 0), 2.15, 0.32]
+        : [2.2, 0.4, 2.24, 0.72, 2.12, 0.86, 1.3, belt, -1.4, belt + 0.03, -2.1, 0.96, -2.22, 0.8, -2.22, 0.42, -2.15, 0.3, ...arch(-1.35, Math.PI, 0), 0.9, 0.3, ...arch(1.35, Math.PI, 0), 2.12, 0.3];
+      P.body.push(put(plateGeo(prof, 1.8, 0.07)));
+      // glasshouse and roof
+      const gh = tall ? [1.4, belt - 0.02, 0.8, 1.78, -2.02, 1.82, -2.12, belt] : [1.25, belt - 0.02, 0.42, 1.42, -0.72, 1.45, -1.38, belt];
+      P.glass.push(put(plateGeo(gh, 1.58, 0.04)));
+      const roof = tall ? [0.82, 1.76, 0.74, 1.86, -2.04, 1.9, -2.08, 1.8] : [0.46, 1.4, 0.36, 1.49, -0.74, 1.51, -0.78, 1.43];
+      P.body.push(put(plateGeo(roof, 1.62, 0.03)));
+      // pillars: thin body-colour strips over the glass on each side (B pillar) and along the windscreen edges (A)
+      for (const sx of [-0.795, 0.795]) {
+        P.body.push(put(new T.BoxGeometry(0.03, tall ? 0.72 : 0.42, 0.12), sx, tall ? belt + 0.38 : belt + 0.22, tall ? -0.2 : -0.12));
+        P.chrome.push(put(new T.BoxGeometry(0.02, 0.025, tall ? 3.4 : 2.5), sx * 1.01, belt + 0.01, tall ? -0.3 : -0.05));
+      }
+      // bumpers, grille, plates, lights, mirrors, door handles
+      P.trim.push(put(new T.BoxGeometry(1.84, 0.2, 0.16), 0, 0.42, 2.22), put(new T.BoxGeometry(1.84, 0.2, 0.16), 0, 0.42, -2.24));
+      P.trim.push(put(new T.BoxGeometry(0.9, 0.16, 0.03), 0, tall ? 0.82 : 0.66, 2.255));
+      P.chrome.push(put(new T.BoxGeometry(0.4, 0.12, 0.02), 0, 0.55, 2.32), put(new T.BoxGeometry(0.4, 0.12, 0.02), 0, 0.62, -2.33));
+      for (const sx of [-0.62, 0.62]) {
+        P.lensF.push(put(new T.BoxGeometry(0.4, 0.13, 0.04), sx, tall ? 0.86 : 0.7, 2.245));
+        P.lensR.push(put(new T.BoxGeometry(0.36, 0.14, 0.04), sx, tall ? 0.88 : 0.82, -2.25));
+      }
+      for (const sx of [-0.95, 0.95]) P.trim.push(put(new T.BoxGeometry(0.1, 0.1, 0.16), sx, belt + 0.06, tall ? 1.3 : 1.15));
+      for (const sx of [-0.91, 0.91]) for (const z of [0.25, -0.75]) P.chrome.push(put(new T.BoxGeometry(0.02, 0.03, 0.16), sx, belt - 0.12, z));
+      // wheels: tyre, alloy rim with five spokes, dark arch liners
+      const tyre = (() => { const pr = []; for (let k = 0; k <= 8; k++) { const a = -Math.PI / 2 + k / 8 * Math.PI; pr.push(new T.Vector2(0.27 + Math.cos(a) * 0.06, Math.sin(a) * 0.11)); } pr.unshift(new T.Vector2(0.2, -0.1)); pr.push(new T.Vector2(0.2, 0.1)); const gg = new T.LatheGeometry(pr, 22); gg.rotateZ(Math.PI / 2); return gg; })();
+      const rimG = (() => { const gg = new T.CylinderGeometry(0.21, 0.21, 0.2, 18); gg.rotateZ(Math.PI / 2); return gg; })();
+      for (const x of [-0.84, 0.84]) for (const z of [-1.35, 1.35]) {
+        P.tyre.push(put(tyre, x, 0.33, z));
+        P.rim.push(put(rimG, x, 0.33, z));
+        for (let k = 0; k < 5; k++) P.rim.push(put(new T.BoxGeometry(0.04, 0.34, 0.05), x + Math.sign(x) * 0.09, 0.33, z, k * Math.PI * 2 / 5, 0, 0));
+        P.trim.push(put(new T.CylinderGeometry(0.46, 0.46, 0.3, 18, 1, true, 0, Math.PI), x * 1.0, 0.33, z, 0, 0, Math.PI / 2));
+      }
+      if (snowy) {
+        P.snow.push(put(new T.BoxGeometry(tall ? 1.5 : 1.42, 0.14, tall ? 2.7 : 1.05), 0, tall ? 1.95 : 1.56, tall ? -0.62 : -0.2, 0, 0, 0, 1, 1, 1));
+        P.snow.push(put(new T.SphereGeometry(1, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), 0, belt + 0.02, 1.7, 0, 0, 0, 0.8, 0.1, 0.5));
+        P.snow.push(put(new T.SphereGeometry(1, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), 0, tall ? 1.9 : 1.5, tall ? -0.6 : -0.18, 0, 0, 0, tall ? 0.74 : 0.68, 0.12, tall ? 1.3 : 0.55));
+        if (!tall) P.snow.push(put(new T.SphereGeometry(1, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), 0, belt + 0.03, -1.85, 0, 0, 0, 0.8, 0.08, 0.32));
+      }
+      const out = {}; for (const k in P) if (P[k].length) { out[k] = mergeAll(P[k]); out[k].computeBoundingSphere(); }
+      return out;
+    });
+  }
+  const carBodyMat = col => std({ color: col, roughness: 0.32, metalness: 0.35, envMapIntensity: 1.3 });
   function buildCars() {
-    const glass = new T.MeshLambertMaterial({ color: 0x2c3a46 }), snowCap = new T.MeshLambertMaterial({ color: 0xf3f6f9 });
-    const tire = new T.MeshLambertMaterial({ color: 0x1b1b1b }), lightF = new T.MeshLambertMaterial({ color: 0xf2ecd2 }), lightR = new T.MeshLambertMaterial({ color: 0x8e1f1a });
-    const bodyMats = {};
-    for (const car of cars) {
-      const mat = bodyMats[car.col] || (bodyMats[car.col] = new T.MeshLambertMaterial({ color: car.col }));
-      const g = new T.Group(); g.position.set(car.x, sampleAt(gnd, car.x, car.z), car.z); g.rotation.y = car.yaw;
-      const hb = car.tall ? 0.95 : 0.7, hc = car.tall ? 0.75 : 0.55;
-      box(1.8, hb, 4.4, mat, 0, 0.3 + hb / 2, 0, g);
-      box(1.62, hc, car.tall ? 3.0 : 2.2, glass, 0, 0.3 + hb + hc / 2, car.tall ? -0.4 : -0.25, g);
-      box(1.66, 0.16, car.tall ? 2.9 : 2.1, snowCap, 0, 0.3 + hb + hc + 0.06, car.tall ? -0.4 : -0.25, g);
-      box(1.7, 0.1, 1.1, snowCap, 0, 0.3 + hb + 0.04, 1.6, g);
-      box(1.7, 0.08, 0.7, snowCap, 0, 0.3 + hb + 0.03, -2.0, g);
-      for (const x of [-0.6, 0.6]) { box(0.35, 0.14, 0.05, lightF, x, 0.3 + hb * 0.7, 2.21, g); box(0.35, 0.14, 0.05, lightR, x, 0.3 + hb * 0.7, -2.21, g); }
-      for (const x of [-0.9, 0.9]) for (const z of [-1.35, 1.35]) { const w = new T.Mesh(new T.CylinderGeometry(0.33, 0.33, 0.24, 10), tire); w.rotation.z = Math.PI / 2; w.position.set(x, 0.33, z); g.add(w); }
-      g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-      scene.add(g);
+    // instanced: one InstancedMesh per part per body style, bodies coloured per instance
+    for (const tall of [false, true]) {
+      const list = cars.filter(c => !!c.tall === tall); if (!list.length) continue;
+      const kit = carKit(tall, true), parts = kit.parts, m4 = new T.Matrix4(), q = new T.Quaternion(), up = new T.Vector3(0, 1, 0), one = new T.Vector3(1, 1, 1), col = new T.Color();
+      for (const key in parts) {
+        const mat = key === kit.body ? kit.mat(key, 0xffffff, false) : kit.mat(key, null, false);
+        const im = new T.InstancedMesh(parts[key], mat, list.length);
+        list.forEach((c, i) => { m4.compose(new T.Vector3(c.x, sampleAt(gnd, c.x, c.z), c.z), q.setFromAxisAngle(up, c.yaw), one); im.setMatrixAt(i, m4); if (key === kit.body) im.setColorAt(i, col.setHex(c.col)); });
+        im.castShadow = key !== kit.glass; im.receiveShadow = true; im.frustumCulled = false; scene.add(im);
+      }
     }
   }
   function genSnow() {
@@ -464,53 +529,126 @@ function boot(SCN, bootData) {
 
   // ---------------- three.js scene ----------------
   const screen = document.getElementById('screen');
-  const renderer = new T.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+  // Rendering: physically based materials in a linear colour pipeline, lit by the sun plus an environment
+  // map made from the sky dome, with filmic tone mapping. 'high' adds ambient occlusion and bloom (O toggles).
+  const QKEY = 'backlot.quality';
+  let quality = 'high'; try { quality = localStorage.getItem(QKEY) || 'high'; } catch (_) {}
+  const renderer = new T.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+  renderer.outputColorSpace = T.SRGBColorSpace;
+  renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = T.PCFSoftShadowMap;
   screen.prepend(renderer.domElement);
   const scene = new T.Scene();
   scene.fog = SNOW ? new T.Fog(0x9aa7b6, 30, 200) : new T.Fog(0xe4d8b6, 50, 160);
   const camera = new T.PerspectiveCamera(50, 16 / 9, 0.1, 600);
+  // Physical lights fall off as 1/d^decay, which explodes for surfaces right next to a lamp (a raised plow
+  // blade passing the cab's work light). That overflowed the half-float render target to infinity, and bloom
+  // smeared it across the screen as black. Cap the falloff so nothing within ~1.5 m of a lamp gets brighter.
+  {
+    const chunk = T.ShaderChunk.lights_pars_begin, from = 'max( pow( lightDistance, decayExponent ), 0.01 )';
+    if (chunk && chunk.includes(from)) T.ShaderChunk.lights_pars_begin = chunk.replace(from, 'max( pow( lightDistance, decayExponent ), 2.0 )');
+    else console.warn('light falloff cap not applied (three.js shader chunk changed)');
+  }
+  // every lit surface is a standard (PBR) material; matte unless told otherwise
+  function std(o = {}) { return new T.MeshStandardMaterial(Object.assign({ roughness: 0.85, metalness: 0 }, o)); }
+  // colours written as raw 0..1 numbers were picked by eye in sRGB; the renderer works in linear light
+  const lin = v => v <= 0 ? 0 : v * (v * (v * 0.305306011 + 0.682171111) + 0.012522878);
+  const srgbTex = t => { t.colorSpace = T.SRGBColorSpace; return t; };
+  let composer = null, aoPass = null, bloomPass = null;
+  function buildComposer() {
+    if (composer) { composer.renderTarget1.dispose(); composer.renderTarget2.dispose(); composer = null; aoPass = bloomPass = null; }
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, quality === 'high' ? 1.5 : 1));
+    sun.shadow.mapSize.set(quality === 'high' ? 4096 : 2048, quality === 'high' ? 4096 : 2048);
+    const ext = quality === 'high' ? 36 : 24;
+    Object.assign(sun.shadow.camera, { left: -ext, right: ext, top: ext, bottom: -ext }); sun.shadow.camera.updateProjectionMatrix();
+    if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
+    if (quality === 'high' && T.EffectComposer && T.RenderPass && T.OutputPass) {
+      composer = new T.EffectComposer(renderer, new T.WebGLRenderTarget(2, 2, { type: T.HalfFloatType, samples: 4 }));
+      composer.addPass(new T.RenderPass(scene, camera));
+      if (T.GTAOPass) {
+        aoPass = new T.GTAOPass(scene, camera, 2, 2);
+        aoPass.updateGtaoMaterial({ radius: 1.2, distanceExponent: 1.5, thickness: 2, scale: 1.1, samples: 12 });
+        aoPass.blendIntensity = 0.9; composer.addPass(aoPass);
+        // see-through light effects (lamp glow sprites, light cones, tyre-track decals, snowflakes) aren't solid:
+        // hide them while the AO pass builds its depth/normal view, or it darkens a rectangle around each one
+        const fx = []; scene.traverse(o => { const m = o.material; if (m && !Array.isArray(m) && m.transparent && m.depthWrite === false) fx.push(o); if (o.isSprite || o.isPoints) fx.push(o); });
+        const aoRender = aoPass.render.bind(aoPass);
+        aoPass.render = (...args) => { const vis = fx.map(o => o.visible); fx.forEach(o => { o.visible = false; }); aoRender(...args); fx.forEach((o, i) => { o.visible = vis[i]; }); };
+      }
+      // safety net: clamp extreme values and drop any NaN/Inf pixel before bloom can spread it
+      if (T.ShaderPass) composer.addPass(new T.ShaderPass({ uniforms: { tDiffuse: { value: null } },
+        vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+        fragmentShader: 'uniform sampler2D tDiffuse; varying vec2 vUv; void main() { vec4 c = texture2D(tDiffuse, vUv); bool bad = any(isnan(c)) || any(isinf(c)); gl_FragColor = bad ? vec4(0.0, 0.0, 0.0, 1.0) : vec4(clamp(c.rgb, 0.0, 48.0), c.a); }' }));
+      if (T.UnrealBloomPass) { bloomPass = new T.UnrealBloomPass(new T.Vector2(2, 2), 0.32, 0.45, 1.6 / (TIMES[timeIdx].exp || 1)); composer.addPass(bloomPass); }
+      composer.addPass(new T.OutputPass());
+    }
+    resize();
+  }
 
   const hemi = new T.HemisphereLight(0xffffff, 0x808080, 0.5); scene.add(hemi);
   const sun = new T.DirectionalLight(0xffffff, 1.0);
   // time-of-day presets: sky light, ground bounce, sun, fog, sky dome, skyline, how bright the streetlight pools read
   const TIMES = SNOW ? [
-    { name: 'Day', hs: 0xe9eff6, hg: 0x8e959f, hi: 0.78, sc: 0xf4f7ff, si: 0.5, fog: 0xd6dde5, fn: 35, ff: 210, top: 0xaebccb, hor: 0xe2e7ec, skyline: 0xa9b4c0, lamp: 0.12, glow: 0.25, head: 0.6, win: 0 },
-    { name: 'Dusk', hs: 0xc9d4e4, hg: 0x5e6673, hi: 0.52, sc: 0xdfe6f5, si: 0.26, fog: 0x9aa7b6, fn: 30, ff: 200, top: 0x4f5f75, hor: 0xa9b3bf, skyline: 0x7d8796, lamp: 1, glow: 1, head: 1, win: 0.7 },
-    { name: 'Night', hs: 0x5a6680, hg: 0x262b34, hi: 0.3, sc: 0x9aaad0, si: 0.08, fog: 0x2a313d, fn: 25, ff: 170, top: 0x0c1220, hor: 0x343d4b, skyline: 0x2a313c, lamp: 1.3, glow: 1.25, head: 1.25, win: 1 },
+    { name: 'Day', hs: 0xe9eff6, hg: 0x8e959f, hi: 0.78, sc: 0xf4f7ff, si: 0.5, fog: 0xc9d2dc, fn: 70, ff: 380, exp: 0.55, top: 0xaebccb, hor: 0xe2e7ec, skyline: 0xa9b4c0, lamp: 0.12, glow: 0.25, head: 0.12, bea: 0.1, win: 0 },
+    { name: 'Dusk', hs: 0xc9d4e4, hg: 0x5e6673, hi: 0.52, sc: 0xdfe6f5, si: 0.26, fog: 0x8a97a8, fn: 50, ff: 320, exp: 0.82, top: 0x4f5f75, hor: 0xa9b3bf, skyline: 0x7d8796, lamp: 1, glow: 1, head: 0.6, bea: 0.55, win: 0.7 },
+    { name: 'Night', hs: 0x5a6680, hg: 0x262b34, hi: 0.3, sc: 0x9aaad0, si: 0.08, fog: 0x222935, fn: 35, ff: 260, exp: 1.1, top: 0x0c1220, hor: 0x343d4b, skyline: 0x2a313c, lamp: 1.3, glow: 1.25, head: 0.85, bea: 1, win: 1 },
   ] : [
-    { name: 'Day', hs: 0xfff1d2, hg: 0x7a5d3c, hi: 0.5, sc: 0xfff0d2, si: 1.0, fog: 0xe4d8b6, fn: 50, ff: 160, top: 0x9ec4cf, hor: 0xefe2bd, lamp: 0, glow: 0, head: 0.35 },
-    { name: 'Dusk', hs: 0xffc9a0, hg: 0x5b4330, hi: 0.42, sc: 0xffa060, si: 0.7, fog: 0xc6977a, fn: 45, ff: 150, top: 0x5f6f98, hor: 0xf0a56f, lamp: 0, glow: 0, head: 1 },
-    { name: 'Night', hs: 0x5e6c94, hg: 0x2a241c, hi: 0.26, sc: 0xa4b4ff, si: 0.14, fog: 0x1f2533, fn: 30, ff: 130, top: 0x0a0f1d, hor: 0x2a3348, lamp: 0, glow: 0, head: 1.3 },
+    { name: 'Day', hs: 0xfff1d2, hg: 0x7a5d3c, hi: 0.5, sc: 0xfff0d2, si: 1.0, fog: 0xe4d8b6, fn: 60, ff: 220, exp: 0.78, top: 0x9ec4cf, hor: 0xefe2bd, lamp: 0, glow: 0, head: 0.06, bea: 0.08 },
+    { name: 'Dusk', hs: 0xffc9a0, hg: 0x5b4330, hi: 0.42, sc: 0xffa060, si: 0.7, fog: 0xc6977a, fn: 55, ff: 210, exp: 0.88, top: 0x5f6f98, hor: 0xf0a56f, lamp: 0, glow: 0, head: 0.45, bea: 0.45 },
+    { name: 'Night', hs: 0x5e6c94, hg: 0x2a241c, hi: 0.26, sc: 0xa4b4ff, si: 0.14, fog: 0x1f2533, fn: 40, ff: 180, exp: 1.1, top: 0x0a0f1d, hor: 0x2a3348, lamp: 0, glow: 0, head: 0.85, bea: 1 },
   ];
   let timeIdx = SNOW ? 1 : 0, lampScale = 1, skylineMat = null, skyGeo = null, lampGlowMat = null, lampConeMat = null;
-  const headlights = [];
-  function paintSky(topHex, horHex) {
-    if (!skyGeo) return;
-    const p = skyGeo.attributes.position, col = skyGeo.attributes.color, top = new T.Color(topHex), hor = new T.Color(horHex), c = new T.Color();
-    for (let i = 0; i < p.count; i++) { const t = clamp(p.getY(i) / 450, 0, 1); c.copy(hor).lerp(top, Math.pow(t, 0.6)); col.setXYZ(i, c.r, c.g, c.b); }
+  const headlights = []; let beaconScale = 1;
+  function paintSky(topHex, horHex, geo = skyGeo, radius = 450) {
+    if (!geo) return;
+    const p = geo.attributes.position, col = geo.attributes.color, top = new T.Color(topHex), hor = new T.Color(horHex), c = new T.Color();
+    for (let i = 0; i < p.count; i++) { const t = clamp(p.getY(i) / radius, 0, 1); c.copy(hor).lerp(top, Math.pow(t, 0.6)); col.setXYZ(i, c.r, c.g, c.b); }
     col.needsUpdate = true;
   }
   function applyTime(i) {
     const P = TIMES[i];
-    hemi.color.setHex(P.hs); hemi.groundColor.setHex(P.hg); hemi.intensity = P.hi;
-    sun.color.setHex(P.sc); sun.intensity = P.si;
+    // the environment map (made from this sky) does most of the soft fill now, so the hemisphere light is kept low
+    hemi.color.setHex(P.hs); hemi.groundColor.setHex(P.hg); hemi.intensity = P.hi * Math.PI * 0.45;
+    sun.color.setHex(P.sc); sun.intensity = P.si * Math.PI * 1.15;
     scene.fog = new T.Fog(P.fog, P.fn, P.ff);
+    renderer.toneMappingExposure = P.exp || 1;
+    // bloom works on scene light before exposure: keep it to real lights (lamps, headlights), never daylit snow
+    if (bloomPass) bloomPass.threshold = 1.6 / (P.exp || 1);
     paintSky(P.top, P.hor);
     if (skylineMat) skylineMat.color.setHex(P.skyline);
     lampScale = P.lamp;
     if (lampGlowMat) lampGlowMat.opacity = Math.min(1, P.glow);
     if (lampConeMat) lampConeMat.opacity = 0.06 * P.glow;
-    for (const hl of headlights) hl.intensity = 2.4 * P.head;
+    for (const hl of headlights) hl.intensity = hl.userData.base * P.head;
+    beaconScale = P.bea ?? 1;
     for (const m of winMats) m.emissiveIntensity = P.win || 0; // lit windows glow after dark
     dj0 = 0; dj1 = N; // re-tint the streetlight pools on the snow
+    refreshEnv(P);
+  }
+  // image-based lighting: a small copy of the sky dome over a ground disc in the sky's ground colour,
+  // prefiltered so rough surfaces pick up soft sky light and glossy ones (glass, paint) show reflections
+  let pmrem = null, envRT = null, envSkyGeo = null, envGround = null;
+  const envScene = new T.Scene();
+  function refreshEnv(P) {
+    if (!envSkyGeo) {
+      envSkyGeo = new T.SphereGeometry(40, 24, 12);
+      envSkyGeo.setAttribute('color', new T.Float32BufferAttribute(new Float32Array(envSkyGeo.attributes.position.count * 3), 3));
+      envScene.add(new T.Mesh(envSkyGeo, new T.MeshBasicMaterial({ vertexColors: true, side: T.BackSide })));
+      const gg = new T.CircleGeometry(39, 32); gg.rotateX(-Math.PI / 2);
+      envGround = new T.Mesh(gg, new T.MeshBasicMaterial({ color: 0xffffff })); envGround.position.y = -2; envScene.add(envGround);
+    }
+    paintSky(P.top, P.hor, envSkyGeo, 40);
+    envGround.material.color.setHex(SNOW ? 0xc9d2dc : 0x9c8462).multiplyScalar(Math.min(1, P.hi * 1.4));
+    if (!pmrem) pmrem = new T.PMREMGenerator(renderer);
+    if (envRT) envRT.dispose();
+    envRT = pmrem.fromScene(envScene, 0.02, 0.1, 100);
+    scene.environment = envRT.texture;
   }
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
-  Object.assign(sun.shadow.camera, { left: -24, right: 24, top: 24, bottom: -24, near: 1, far: 90 });
-  sun.shadow.bias = -0.0008;
+  Object.assign(sun.shadow.camera, { left: -24, right: 24, top: 24, bottom: -24, near: 1, far: 120 });
+  sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.03;
   scene.add(sun, sun.target);
 
   // sky dome
@@ -518,16 +656,17 @@ function boot(SCN, bootData) {
     const g = new T.SphereGeometry(450, 24, 12);
     g.setAttribute('color', new T.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 3), 3));
     skyGeo = g;
-    scene.add(new T.Mesh(g, new T.MeshBasicMaterial({ vertexColors: true, side: T.BackSide, fog: false })));
+    // the sky is drawn as authored: filmic tone mapping would grey out the blue
+    scene.add(new T.Mesh(g, new T.MeshBasicMaterial({ vertexColors: true, side: T.BackSide, fog: false, toneMapped: false })));
   }
   if (SNOW) {
     // snowy ground beyond the mapped blocks, the Hudson to the east, and Lower Manhattan across it
     // three strips around the mapped square (west, north, south); the square itself is the live terrain
-    const outer = new T.MeshLambertMaterial({ color: 0xeef2f6 });
+    const outer = std({ color: 0xeef2f6 });
     const strip = (x0, x1, z0, z1) => { const g = new T.PlaneGeometry(x1 - x0, z1 - z0); g.rotateX(-Math.PI / 2); const m = new T.Mesh(g, outer); m.position.set((x0 + x1) / 2, 0.44, (z0 + z1) / 2); m.receiveShadow = true; scene.add(m); };
     strip(-560, -HALF, -460, 460); strip(-HALF, OSM.river_x, -460, -HALF); strip(-HALF, OSM.river_x, HALF, 460);
     const rg = new T.PlaneGeometry(700, 900); rg.rotateX(-Math.PI / 2);
-    const river = new T.Mesh(rg, new T.MeshLambertMaterial({ color: 0x5d6b76 })); river.position.set(OSM.river_x + 350, -0.9, 0); scene.add(river);
+    const river = new T.Mesh(rg, std({ color: 0x5d6b76 })); river.position.set(OSM.river_x + 350, -0.9, 0); scene.add(river);
     const skyMat = skylineMat = new T.MeshBasicMaterial({ color: 0x7d8796, fog: false });
     for (let k = 0; k < 46; k++) {
       const z = -380 + k * 17 + Math.sin(k * 7.3) * 6, w = 10 + Math.abs(Math.sin(k * 3.1)) * 18, hh = 40 + Math.abs(Math.sin(k * 1.7)) * 150 + (Math.abs(k - 24) < 4 ? 220 : 0);
@@ -537,11 +676,11 @@ function boot(SCN, bootData) {
   // outer meadow + road continuation
   {
     const g = new T.PlaneGeometry(700, 700); g.rotateX(-Math.PI / 2);
-    const m = new T.Mesh(g, new T.MeshLambertMaterial({ color: 0xd0ab62 }));
+    const m = new T.Mesh(g, std({ color: 0xd0ab62 }));
     m.position.y = -0.03; m.receiveShadow = true; scene.add(m);
     for (const sx of [-1, 1]) {
       const rg = new T.PlaneGeometry(320, 3.6); rg.rotateX(-Math.PI / 2);
-      const r = new T.Mesh(rg, new T.MeshLambertMaterial({ color: 0x9d8d74 }));
+      const r = new T.Mesh(rg, std({ color: 0x9d8d74 }));
       r.position.set(sx * (HALF + 160 - 0.2), 0.0, ROAD_Z); r.receiveShadow = true; scene.add(r);
     }
   }
@@ -562,7 +701,7 @@ function boot(SCN, bootData) {
     posAttr = new T.BufferAttribute(pos, 3); colAttr = new T.BufferAttribute(col, 3); nrmAttr = new T.BufferAttribute(nrm, 3);
     for (const a of [posAttr, colAttr, nrmAttr]) a.setUsage(T.DynamicDrawUsage);
     terrainGeo.setAttribute('position', posAttr); terrainGeo.setAttribute('color', colAttr); terrainGeo.setAttribute('normal', nrmAttr);
-    const mesh = new T.Mesh(terrainGeo, new T.MeshLambertMaterial({ vertexColors: true }));
+    const mesh = new T.Mesh(terrainGeo, std({ vertexColors: true }));
     mesh.receiveShadow = true;
     scene.add(mesh);
     computeTrenchMask(); dj0 = 0; dj1 = N; updateTerrain(true);
@@ -604,6 +743,10 @@ function boot(SCN, bootData) {
         const sr = lerp(0.95, 0.83, worked) - 0.03 * n, sg = lerp(0.97, 0.85, worked) - 0.03 * n, sb = lerp(1.0, 0.9, worked) - 0.02 * n;
         r = lerp(r, sr, cover); g = lerp(g, sg, cover); b = lerp(b, sb, cover);
         if (depth > 0.01 && depth < 0.07 && kd === 1) { r *= 0.85; g *= 0.86; b *= 0.9; } // slush film
+        if (trainSoil && trainSoil[k] > 0 && depth > 0.008) { // packed under a train: grey-brown with soot and grit, patchy
+          const t = Math.min(1, trainSoil[k]) * (0.55 + 0.45 * n) * cover;
+          r = lerp(r, 0.4, 0.85 * t); g = lerp(g, 0.37, 0.85 * t); b = lerp(b, 0.34, 0.85 * t);
+        }
         if (saltMap && saltMap[k] > 0.02) {
           const sa = Math.min(1, saltMap[k] * 2);
           if (depth < 0.07 && kd < 7) { r *= 1 - 0.28 * sa; g *= 1 - 0.25 * sa; b *= 1 - 0.18 * sa; } // wet, salted pavement
@@ -642,17 +785,17 @@ function boot(SCN, bootData) {
         else if (e > 0) { const t = clamp(e / 0.8, 0.3, 0.75); r = lerp(r, 0.9, t); g = lerp(g, 0.25, t); b = lerp(b, 0.2, t); }
         else { const t = clamp(-e / 0.6, 0.35, 0.8); r = lerp(r, 0.25, t); g = lerp(g, 0.45, t); b = lerp(b, 0.9, t); }
       }
-      col[k3] = r; col[k3 + 1] = g; col[k3 + 2] = b;
+      col[k3] = lin(r); col[k3 + 1] = lin(g); col[k3 + 2] = lin(b);
     }
     const off = j0 * ROW * 3, cnt = (j1 - j0 + 1) * ROW * 3;
-    for (const a of [posAttr, colAttr, nrmAttr]) { a.updateRange.offset = off; a.updateRange.count = cnt; a.needsUpdate = true; }
+    for (const a of [posAttr, colAttr, nrmAttr]) { a.clearUpdateRanges(); a.addUpdateRange(off, cnt); a.needsUpdate = true; }
     dj0 = 1e9; dj1 = -1;
   }
 
   // grass tufts
   function tuftGeometry(blades, hgt) {
     const pos = [], col = [];
-    const base = [0.55, 0.42, 0.2], tip = [0.96, 0.84, 0.55];
+    const base = [0.55, 0.42, 0.2].map(lin), tip = [0.96, 0.84, 0.55].map(lin);
     for (let b = 0; b < blades; b++) {
       const a = (b / blades) * Math.PI * 2 + Math.random() * 0.6, lean = 0.12 + Math.random() * 0.18, hh = hgt * (0.65 + Math.random() * 0.5), w = 0.05;
       const cx = Math.cos(a) * 0.05, cz = Math.sin(a) * 0.05, px = Math.cos(a + Math.PI / 2) * w, pz = Math.sin(a + Math.PI / 2) * w;
@@ -669,7 +812,7 @@ function boot(SCN, bootData) {
   }
   const swayUniform = { value: 0 };
   function swayMaterial() {
-    const m = new T.MeshLambertMaterial({ vertexColors: true, side: T.DoubleSide });
+    const m = std({ vertexColors: true, side: T.DoubleSide });
     m.onBeforeCompile = sh => {
       sh.uniforms.uTime = swayUniform;
       sh.vertexShader = 'uniform float uTime;\n' + sh.vertexShader.replace('#include <begin_vertex>',
@@ -701,7 +844,7 @@ function boot(SCN, bootData) {
       const sc = 0.7 + Math.random() * 0.8;
       m.compose(p.set(x, heightAt(x, z) - 0.02, z), q.setFromAxisAngle(up, Math.random() * 6.28), s.set(sc, sc * (0.8 + Math.random() * 0.5), sc));
       tufts.setMatrixAt(n, m);
-      tufts.setColorAt(n, (v => c.setRGB(v, v * 0.97, v * 0.9))(0.85 + Math.random() * 0.25));
+      tufts.setColorAt(n, (v => c.setRGB(v, v * 0.97, v * 0.9, T.SRGBColorSpace))(0.85 + Math.random() * 0.25));
       tuftNext[n] = tuftHead[k]; tuftHead[k] = n; n++;
     }
     for (let r = n; r < COUNT; r++) tufts.setMatrixAt(r, ZERO);
@@ -719,7 +862,7 @@ function boot(SCN, bootData) {
       const sc = 0.8 + Math.random() * 0.9;
       m.compose(p.set(x, -0.03, z), q.setFromAxisAngle(up, Math.random() * 6.28), s.set(sc, sc, sc));
       out.setMatrixAt(r, m);
-      out.setColorAt(r, (v => c.setRGB(v, v * 0.97, v * 0.9))(0.85 + Math.random() * 0.25));
+      out.setColorAt(r, (v => c.setRGB(v, v * 0.97, v * 0.9, T.SRGBColorSpace))(0.85 + Math.random() * 0.25));
     }
     scene.add(out);
   }
@@ -757,7 +900,7 @@ function boot(SCN, bootData) {
       if (trim) { x.fillStyle = trim; x.fillRect(ox + 14, oy + 14, 36, 40); }
       x.fillStyle = glass; x.fillRect(ox + 17, oy + 17, 30, 34);
     }
-    const t = new T.CanvasTexture(c); t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(1 / 28, 1 / 26.4); t.anisotropy = 4;
+    const t = srgbTex(new T.CanvasTexture(c)); t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(1 / 28, 1 / 26.4); t.anisotropy = 8;
     return t;
   }
   // `frac` is roughly how many windows are lit; whole floors are busier or quieter than others, rooms vary
@@ -776,13 +919,13 @@ function boot(SCN, bootData) {
       y.globalAlpha = 1;
     };
     for (let j = 0; j < 8; j++) { gl.floor[j] = frac * (0.4 + Math.random() * 1.2); for (let i = 0; i < 8; i++) { gl.lit[j * 8 + i] = Math.random() < gl.floor[j]; gl.draw(j * 8 + i); } }
-    const t = new T.CanvasTexture(e); t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(1 / 28, 1 / 26.4); t.magFilter = T.LinearFilter;
+    const t = srgbTex(new T.CanvasTexture(e)); t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(1 / 28, 1 / 26.4); t.magFilter = T.LinearFilter;
     gl.tex = t; glows.push(gl);
     return gl;
   }
   // three.js r128 reads every map through the colour map's repeat, so the glow lines up with the windows
   function windowMaterial(map, glow) {
-    const m = new T.MeshLambertMaterial({ map, emissiveMap: glow.tex, emissive: 0xffffff, emissiveIntensity: 0 });
+    const m = std({ map, emissiveMap: glow.tex, emissive: 0xffffff, emissiveIntensity: 0 });
     winMats.push(m); return m;
   }
   // now and then somebody switches a light on or off. Each mapped building has its own glow map, so its
@@ -801,7 +944,7 @@ function boot(SCN, bootData) {
     }
   }
   function buildCity() {
-    const roof = new T.MeshLambertMaterial({ color: 0xf1f4f7 });
+    const roof = std({ color: 0xf1f4f7 });
     // a few variants of each facade so neighbouring buildings don't light up in the same pattern;
     // office towers burn more lights than the brick walk-ups
     const facades = { glass: windowTexture('#6d8292', '#3e5466'), stone: windowTexture('#b7aa93', '#46525d', '#d8cfbf'), brick: windowTexture('#8a4c39', '#353c44', '#e4ddd2') };
@@ -876,14 +1019,14 @@ function boot(SCN, bootData) {
     for (const [x, z] of [[-24, -23], [-20, -25.5], [24, -24], [25, 22], [-25, 23], [22, 25.5], [-26, -14], [26, -10]]) spots.push([x, z, 0.9 + Math.random() * 0.4]);
     const trunkG = new T.CylinderGeometry(0.14, 0.2, 1.4, 6); trunkG.translate(0, 0.7, 0);
     const parts = [[1.5, 2.6, 2.0], [1.15, 2.3, 3.3], [0.8, 1.9, 4.5]].map(([r, hh, y]) => { const g = new T.ConeGeometry(r, hh, 7); g.translate(0, y, 0); return g; });
-    const trunk = new T.InstancedMesh(trunkG, new T.MeshLambertMaterial({ color: 0x6b4a2e, flatShading: true }), spots.length);
-    const leafMat = new T.MeshLambertMaterial({ color: 0xffffff, flatShading: true });
+    const trunk = new T.InstancedMesh(trunkG, std({ color: 0x6b4a2e, flatShading: true }), spots.length);
+    const leafMat = std({ color: 0xffffff, flatShading: true });
     const leaves = parts.map(g => new T.InstancedMesh(g, leafMat, spots.length));
     const m = new T.Matrix4(), q = new T.Quaternion(), s = new T.Vector3(), p = new T.Vector3(), up = new T.Vector3(0, 1, 0), c = new T.Color();
     spots.forEach(([x, z, sc], n) => {
       m.compose(p.set(x, heightAt(x, z) - 0.1, z), q.setFromAxisAngle(up, Math.random() * 6.28), s.set(sc, sc * (0.9 + Math.random() * 0.4), sc));
       trunk.setMatrixAt(n, m);
-      c.setHSL(0.36 + Math.random() * 0.04, 0.42, 0.25 + Math.random() * 0.08);
+      c.setHSL(0.36 + Math.random() * 0.04, 0.42, 0.25 + Math.random() * 0.08, T.SRGBColorSpace);
       for (const l of leaves) { l.setMatrixAt(n, m); l.setColorAt(n, c); }
       trees.push({ x, z, r: 0.5 * sc + 0.2 });
     });
@@ -892,7 +1035,7 @@ function boot(SCN, bootData) {
 
   // stakes + grade string
   function buildStakes() {
-    const red = new T.MeshLambertMaterial({ color: 0xd8382e }), white = new T.MeshLambertMaterial({ color: 0xf4efe4 });
+    const red = std({ color: 0xd8382e }), white = std({ color: 0xf4efe4 });
     const seg = new T.CylinderGeometry(0.045, 0.045, 0.2, 6);
     const pink = new T.MeshBasicMaterial({ color: 0xff4f8b });
     const cs = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => [PAD.x + a * PAD.w / 2, PAD.z + b * PAD.d / 2]);
@@ -911,7 +1054,7 @@ function boot(SCN, bootData) {
 
   // rocks on the meadow
   function buildRocks() {
-    const g = new T.DodecahedronGeometry(1, 0), mat = new T.MeshLambertMaterial({ color: 0x8d8a82, flatShading: true });
+    const g = new T.DodecahedronGeometry(1, 0), mat = std({ color: 0x8d8a82, flatShading: true });
     for (let r = 0; r < 26; r++) {
       const a = Math.random() * 6.28, d = 30 + Math.random() * 40, m = new T.Mesh(g, mat);
       const sc = 0.3 + Math.random() * 0.7; m.scale.set(sc, sc * 0.6, sc * 0.9);
@@ -922,11 +1065,12 @@ function boot(SCN, bootData) {
   // ---------------- vehicles ----------------
   const box = (w, hh, d, mat, x = 0, y = 0, z = 0, parent) => { const m = new T.Mesh(new T.BoxGeometry(w, hh, d), mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; parent && parent.add(m); return m; };
   const mats = {
-    tan: new T.MeshLambertMaterial({ color: 0xd8b55c }), tanD: new T.MeshLambertMaterial({ color: 0xb08d3e }),
-    dark: new T.MeshLambertMaterial({ color: 0x2b2824 }), tire: new T.MeshLambertMaterial({ color: 0x232120, flatShading: true }),
-    glass: new T.MeshLambertMaterial({ color: 0x86a9b4, transparent: true, opacity: 0.75 }), steel: new T.MeshLambertMaterial({ color: 0x9a9890 }),
-    stripe: new T.MeshLambertMaterial({ color: 0xa8402c }), dirt: new T.MeshLambertMaterial({ color: SNOW ? 0xeef2f7 : 0x6d4325, flatShading: true }),
-    bed: new T.MeshLambertMaterial({ color: 0xdedbd2 }), cabRed: new T.MeshLambertMaterial({ color: 0xa9472f }), black: new T.MeshLambertMaterial({ color: 0x151412 }),
+    // machine paint is a fairly glossy enamel; steel is metal; glass is smooth and reflective
+    tan: std({ color: 0xd8b55c, roughness: 0.42 }), tanD: std({ color: 0xb08d3e, roughness: 0.5 }),
+    dark: std({ color: 0x2b2824, roughness: 0.6, metalness: 0.2 }), tire: std({ color: 0x232120, roughness: 0.95, flatShading: true }),
+    glass: std({ color: 0x86a9b4, transparent: true, opacity: 0.55, roughness: 0.05, metalness: 0.1, envMapIntensity: 1.5 }), steel: std({ color: 0x9a9890, roughness: 0.38, metalness: 0.75 }),
+    stripe: std({ color: 0xa8402c, roughness: 0.45 }), dirt: std({ color: SNOW ? 0xeef2f7 : 0x6d4325, roughness: 0.95, flatShading: true }),
+    bed: std({ color: 0xdedbd2, roughness: 0.55, metalness: 0.15 }), cabRed: std({ color: 0xa9472f, roughness: 0.42 }), black: std({ color: 0x151412, roughness: 0.7 }),
   };
   function wheel(r, w, rimMat, parent, x, y, z) {
     const g = new T.Group(); g.position.set(x, y, z); parent.add(g);
@@ -937,16 +1081,17 @@ function boot(SCN, bootData) {
     return g;
   }
 
-  const ARM_PIVOT = new T.Vector3(0, 1.75, 0.7), ARM_L = 2.6, HALF_WB = 1.25;
+  const ARM_PIVOT = new T.Vector3(0, 1.75, 0.7), ARM_L = 2.6, HALF_WB = 1.25, PLOW_Z = 0.95; // PLOW_Z: the plow's cutting edge, ahead of its coupler
   // amber warning beacons: two lamps that double-flash in turn, plus a light that washes the snow
-  const lampOn = new T.MeshBasicMaterial({ color: 0xffb21f }), lampOff = new T.MeshLambertMaterial({ color: 0x6b4a12 });
+  const lampOn = new T.MeshBasicMaterial({ color: new T.Color(0xffb21f).multiplyScalar(5) }), lampOff = std({ color: 0x6b4a12 });
   const beacons = [];
   function addBeacon(parent, x, y, z, spread) {
     const lamps = [-1, 1].map(sd => {
       box(0.2, 0.06, 0.2, mats.dark, x + sd * spread, y, z, parent);
       const m = new T.Mesh(new T.CylinderGeometry(0.08, 0.1, 0.18, 8), lampOff); m.position.set(x + sd * spread, y + 0.12, z); parent.add(m); return m;
     });
-    const light = new T.PointLight(0xffa21a, 0, 16, 2); light.position.set(x, y + 0.5, z); parent.add(light);
+    // the wash light hangs well above the lamps so its own roof doesn't flare white on every flash
+    const light = new T.PointLight(0xffa21a, 0, 16, 2); light.position.set(x, y + 1.3, z); parent.add(light);
     beacons.push({ lamps, light, off: Math.random() });
   }
   // Cab interiors, only shown from the driver's seat. Everything is laid out from each cab's real box
@@ -955,8 +1100,8 @@ function boot(SCN, bootData) {
   function buildInterior(parent, o) {
     const g = new T.Group(); g.visible = false; parent.add(g);
     const { cx, half, zF, zB, floor, roof } = o.cab, [ex, ey, ez] = o.eye;
-    const dash = new T.MeshLambertMaterial({ color: 0x26282b }), trim = new T.MeshLambertMaterial({ color: 0x41464b }), liner = new T.MeshLambertMaterial({ color: 0x6a6e73 });
-    const seat = new T.MeshLambertMaterial({ color: 0x1f2326 }), black = new T.MeshLambertMaterial({ color: 0x141414 }), steelL = new T.MeshLambertMaterial({ color: 0x8d9196 });
+    const dash = std({ color: 0x26282b }), trim = std({ color: 0x41464b }), liner = std({ color: 0x6a6e73 });
+    const seat = std({ color: 0x1f2326 }), black = std({ color: 0x141414 }), steelL = std({ color: 0x8d9196 });
     const glow = new T.MeshBasicMaterial({ color: 0x9fe0ff }), amber = new T.MeshBasicMaterial({ color: 0xffb347 });
     const dashTop = ey - 0.42, W = half * 2, room = zF - ez;
     // dashboard, padded top and the frame around the windshield
@@ -1000,7 +1145,7 @@ function boot(SCN, bootData) {
     if (o.wheel) {
       // tilted so its face points up at the driver's eyes (about 35°), like a real loader wheel
       const r = o.wheelR || 0.17, wz = ez + Math.min(0.42, room * 0.72);
-      const rimM = new T.MeshLambertMaterial({ color: 0x2b2b2d }), hubM = new T.MeshLambertMaterial({ color: 0x3c3f43 });
+      const rimM = std({ color: 0x2b2b2d }), hubM = std({ color: 0x3c3f43 });
       wheel = new T.Group(); wheel.position.set(ex, ey - 0.3, wz); wheel.rotation.x = 0.62; g.add(wheel);
       const spin = new T.Group(); wheel.add(spin); // the part that turns
       spin.add(new T.Mesh(new T.TorusGeometry(r, 0.016, 10, 36), rimM));
@@ -1013,7 +1158,7 @@ function boot(SCN, bootData) {
       const badge = new T.Mesh(new T.CircleGeometry(0.018, 12), amber); badge.position.z = -0.008; badge.rotation.y = Math.PI; spin.add(badge);
       // spinner knob for one-handed steering
       const knobArm = new T.Mesh(new T.CylinderGeometry(0.008, 0.008, 0.04, 6), hubM); knobArm.rotation.x = Math.PI / 2; knobArm.position.set(Math.sin(0.8) * r, Math.cos(0.8) * r, -0.02); spin.add(knobArm);
-      const knob = new T.Mesh(new T.SphereGeometry(0.02, 10, 8), new T.MeshLambertMaterial({ color: 0x1a1a1a })); knob.position.set(Math.sin(0.8) * r, Math.cos(0.8) * r, -0.045); spin.add(knob);
+      const knob = new T.Mesh(new T.SphereGeometry(0.02, 10, 8), std({ color: 0x1a1a1a })); knob.position.set(Math.sin(0.8) * r, Math.cos(0.8) * r, -0.045); spin.add(knob);
       // column runs from behind the hub forward into the dash
       const col = new T.Mesh(new T.CylinderGeometry(0.032, 0.04, 0.42, 10), hubM); col.rotation.x = Math.PI / 2; col.position.z = 0.23; wheel.add(col);
       const boot = new T.Mesh(new T.CylinderGeometry(0.06, 0.075, 0.1, 10), trim); boot.rotation.x = Math.PI / 2; boot.position.z = 0.42; wheel.add(boot);
@@ -1024,7 +1169,7 @@ function boot(SCN, bootData) {
       box(0.12, 0.06, 0.16, trim, 0, -0.03, 0, L);
       const st = new T.Group(); L.add(st);
       const rod = new T.Mesh(new T.CylinderGeometry(0.014, 0.018, 0.22, 6), black); rod.position.y = 0.11; st.add(rod);
-      const knob = new T.Mesh(new T.SphereGeometry(0.035, 8, 6), new T.MeshLambertMaterial({ color: 0xe36f2a })); knob.position.y = 0.23; st.add(knob);
+      const knob = new T.Mesh(new T.SphereGeometry(0.035, 8, 6), std({ color: 0xe36f2a })); knob.position.y = 0.23; st.add(knob);
       return st;
     };
     if (o.stick) stick = lever(o.stick);
@@ -1039,7 +1184,7 @@ function boot(SCN, bootData) {
     for (let k = 0; k < FLAKES; k++) flakes.setMatrixAt(k, ZERO);
     flakes.frustumCulled = false; g.add(flakes);
     const fl = Array.from({ length: FLAKES }, () => ({ on: false, x: 0, y: 0, ang: 0, r: 0 }));
-    return { g, wheel, stick, stick2, spreadLamp, wiper, wiperAng: -1.3, bladeL, flakes, fl, box: { cx, half, zF, dashTop, roof }, pivot: [wiper.position.x, wiper.position.y] };
+    return { g, wheel, stick, stick2, spreadLamp, wiper, wiperAng: -1.3, bladeL, flakes, fl, eye: o.eye, box: { cx, half, zF, dashTop, roof }, pivot: [wiper.position.x, wiper.position.y] };
   }
   let lastInp = null, lookKey = 0, cabFov = 76, flakeAcc = 0;
   const _fm = new T.Matrix4(), _fq = new T.Quaternion(), _fs = new T.Vector3(1, 1, 1), _fp = new T.Vector3();
@@ -1060,6 +1205,7 @@ function boot(SCN, bootData) {
     const M0 = M();
     if (!M0 || !M0.cab || !inCab) return;
     const cab = M0.cab;
+    updateCabInstruments(cab, dt);
     if (cab.spreadLamp && saltTruck) cab.spreadLamp.material.color.setHex(!saltTruck.on ? 0x3a3a3a : saltTruck.v > 0.8 && saltTruck.tank > 0 ? 0x5bd16c : 0xffb347);
     // seen from the seat (looking at the wheel's back face), turning left must read as counter-clockwise
     if (cab.wheel) cab.wheel.userData.spin.rotation.z = -(active === 'loader' ? loader.phi * 3.2 : (saltTruck ? saltTruck.steer : 0) * 7);
@@ -1089,7 +1235,8 @@ function boot(SCN, bootData) {
   }
   // a forward work light that follows the machine; aimed down the road ahead
   function addHeadlight(parent, x, y, z, reach) {
-    const sl = new T.SpotLight(0xfff1d6, 2.4, reach * 2.6, 0.62, 0.55, 1.4); headlights.push(sl);
+    // candela with a gentler-than-square falloff, so the machine's own bucket and arms aren't blown out
+    const sl = new T.SpotLight(0xfff1d6, 0, reach * 3, 0.62, 0.55, 1.5); sl.userData.base = 3.8 * Math.pow(reach, 1.5); headlights.push(sl);
     sl.position.set(x, y, z); parent.add(sl);
     const tgt = new T.Object3D(); tgt.position.set(x, 0, z + reach); parent.add(tgt); sl.target = tgt;
   }
@@ -1100,78 +1247,316 @@ function boot(SCN, bootData) {
         const ph = (t * 1.6 + b.off + i * 0.5) % 1, on = ph < 0.09 || (ph > 0.18 && ph < 0.27);
         m.material = on ? lampOn : lampOff; any = any || on;
       });
-      b.light.intensity = any ? (SNOW ? 2.2 : 1.2) : 0;
+      b.light.intensity = any ? (SNOW ? 28 : 20) * beaconScale : 0;
     }
   }
+  // ---------------- detailed machine parts (shared by the machines) ----------------
+  // Rounded boxes, shaped plates, real tyres with tread, telescoping hydraulic rams, handrails, and painted
+  // surfaces with wear and grime, so the machines read as heavy equipment rather than stacked blocks.
+  const geoCache = new Map();
+  const cached = (key, make) => { if (!geoCache.has(key)) geoCache.set(key, make()); return geoCache.get(key); };
+  function rbox(w, hh, d, r, mat, x = 0, y = 0, z = 0, parent) {
+    const g = cached(`rb${w},${hh},${d},${r}`, () => T.RoundedBoxGeometry ? new T.RoundedBoxGeometry(w, hh, d, 3, Math.min(r, w / 2, hh / 2, d / 2) * 0.999) : new T.BoxGeometry(w, hh, d));
+    const m = new T.Mesh(g, mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; parent && parent.add(m); return m;
+  }
+  // a flat plate cut to a side profile drawn in (z, y), extruded `t` thick across x and centred on `x`
+  function plateGeo(pts, t, bevel = 0.015) {
+    const sh = new T.Shape(); sh.moveTo(pts[0], pts[1]); for (let q = 2; q < pts.length; q += 2) sh.lineTo(pts[q], pts[q + 1]); sh.closePath();
+    const g = new T.ExtrudeGeometry(sh, { depth: Math.max(0.001, t - bevel * 2), bevelEnabled: bevel > 0, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 2, curveSegments: 6 });
+    g.rotateY(-Math.PI / 2); g.translate(t / 2 - bevel, 0, 0); return g;
+  }
+  function plate(pts, t, mat, x, parent, bevel = 0.015) {
+    const m = new T.Mesh(plateGeo(pts, t, bevel), mat); m.position.x = x; m.castShadow = true; m.receiveShadow = true; parent.add(m); return m;
+  }
+  // a shell of thickness `th` following an open polyline in (z, y), extruded `w` across x
+  function shellGeo(line, th, w, bevel = 0.01) {
+    const outer = line.map(([z, y], i) => { const [z0, y0] = line[Math.max(0, i - 1)], [z1, y1] = line[Math.min(line.length - 1, i + 1)]; const tz = z1 - z0, ty = y1 - y0, l = Math.hypot(tz, ty) || 1; return [z - ty / l * th, y + tz / l * th]; });
+    return plateGeo([...line.flat(), ...outer.reverse().flat()], w, bevel);
+  }
+  // transform a copy of a geometry (for merging many parts into one mesh per material)
+  function put(geo, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) {
+    const g = geo.index ? geo.toNonIndexed() : geo.clone();
+    g.applyMatrix4(new T.Matrix4().compose(new T.Vector3(x, y, z), new T.Quaternion().setFromEuler(new T.Euler(rx, ry, rz)), new T.Vector3(sx, sy, sz)));
+    if (!g.attributes.uv) g.setAttribute('uv', new T.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+    return g;
+  }
+  const mergeAll = list => { const ok = list.filter(Boolean); return T.mergeGeometries ? T.mergeGeometries(ok) : ok[0]; };
+  function cyl(r, len, mat, parent, axis = 'y', seg = 16) {
+    const m = new T.Mesh(cached(`cy${r},${len},${seg}`, () => new T.CylinderGeometry(r, r, len, seg)), mat);
+    if (axis === 'x') m.rotation.z = Math.PI / 2; else if (axis === 'z') m.rotation.x = Math.PI / 2;
+    m.castShadow = true; parent && parent.add(m); return m;
+  }
+  function tube(points, r, mat, parent) {
+    const curve = new T.CatmullRomCurve3(points.map(p => new T.Vector3(...p)), false, 'catmullrom', 0.1);
+    const m = new T.Mesh(new T.TubeGeometry(curve, Math.max(8, points.length * 6), r, 8, false), mat); m.castShadow = true; parent.add(m); return m;
+  }
+  // canvas textures: paint wear and grime (colour + roughness), hazard chevrons, radiator mesh, tread rubber
+  function wearTextures(seed, grime = 0.55) {
+    const S = 512, c = document.createElement('canvas'), r = document.createElement('canvas'); c.width = c.height = r.width = r.height = S;
+    const x = c.getContext('2d'), y = r.getContext('2d');
+    let sd = seed; const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+    x.fillStyle = '#fff'; x.fillRect(0, 0, S, S); y.fillStyle = 'rgb(105,105,105)'; y.fillRect(0, 0, S, S);
+    // grime collects toward the bottom of every panel
+    const gr = x.createLinearGradient(0, S * 0.45, 0, S); gr.addColorStop(0, 'rgba(70,52,34,0)'); gr.addColorStop(1, `rgba(70,52,34,${0.45 * grime})`);
+    x.fillStyle = gr; x.fillRect(0, 0, S, S);
+    for (let k = 0; k < 70; k++) {
+      const px = rnd() * S, py = S * (0.25 + 0.75 * rnd()), rr = 8 + rnd() * 50, a = (0.05 + rnd() * 0.18) * grime;
+      const b = x.createRadialGradient(px, py, 0, px, py, rr); b.addColorStop(0, `rgba(66,50,34,${a})`); b.addColorStop(1, 'rgba(66,50,34,0)');
+      x.fillStyle = b; x.fillRect(px - rr, py - rr, rr * 2, rr * 2);
+      const b2 = y.createRadialGradient(px, py, 0, px, py, rr); b2.addColorStop(0, `rgba(220,220,220,${a * 2.2})`); b2.addColorStop(1, 'rgba(220,220,220,0)');
+      y.fillStyle = b2; y.fillRect(px - rr, py - rr, rr * 2, rr * 2);
+    }
+    // chips and scratches show darker primer and rougher metal
+    for (let k = 0; k < 260; k++) {
+      const px = rnd() * S, py = rnd() * S, len = 2 + rnd() * (rnd() < 0.2 ? 30 : 6), ang = rnd() * Math.PI;
+      x.strokeStyle = `rgba(48,42,36,${0.25 + rnd() * 0.4})`; x.lineWidth = 0.6 + rnd() * 1.4;
+      x.beginPath(); x.moveTo(px, py); x.lineTo(px + Math.cos(ang) * len, py + Math.sin(ang) * len); x.stroke();
+      y.strokeStyle = 'rgba(235,235,235,0.7)'; y.lineWidth = x.lineWidth;
+      y.beginPath(); y.moveTo(px, py); y.lineTo(px + Math.cos(ang) * len, py + Math.sin(ang) * len); y.stroke();
+    }
+    // streaks running down from edges
+    for (let k = 0; k < 24; k++) {
+      const px = rnd() * S, py = rnd() * S * 0.5, len = 40 + rnd() * 140;
+      const st = x.createLinearGradient(0, py, 0, py + len); st.addColorStop(0, `rgba(60,46,32,${0.12 * grime})`); st.addColorStop(1, 'rgba(60,46,32,0)');
+      x.fillStyle = st; x.fillRect(px, py, 2 + rnd() * 5, len);
+    }
+    const mk = (cv, srgb) => { const t = new T.CanvasTexture(cv); if (srgb) t.colorSpace = T.SRGBColorSpace; t.anisotropy = 8; return t; };
+    return { map: mk(c, true), rough: mk(r, false) };
+  }
+  const WEAR = [wearTextures(7), wearTextures(91, 0.8), wearTextures(313, 0.35)];
+  function paint(color, opts = {}) {
+    const w = WEAR[opts.wear ?? 0];
+    return std(Object.assign({ color, map: w.map, roughnessMap: w.rough, roughness: 1, metalness: 0.08 }, opts.extra || {}));
+  }
+  function stripeTexture(a = '#141414', b = '#f2c21a') {
+    const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d');
+    x.fillStyle = b; x.fillRect(0, 0, 128, 128); x.fillStyle = a;
+    for (let k = -2; k < 4; k++) { x.beginPath(); x.moveTo(k * 48, 128); x.lineTo(k * 48 + 24, 128); x.lineTo(k * 48 + 24 + 128, 0); x.lineTo(k * 48 + 128, 0); x.closePath(); x.fill(); }
+    const t = srgbTex(new T.CanvasTexture(c)); t.wrapS = t.wrapT = T.RepeatWrapping; return t;
+  }
+  function grilleTexture() {
+    const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d');
+    x.fillStyle = '#0d0d0d'; x.fillRect(0, 0, 128, 128);
+    for (let k = 0; k < 16; k++) { x.fillStyle = '#4a4a46'; x.fillRect(0, k * 8 + 1, 128, 3); x.fillStyle = '#26251f'; x.fillRect(0, k * 8 + 4, 128, 1); }
+    const t = srgbTex(new T.CanvasTexture(c)); t.wrapS = t.wrapT = T.RepeatWrapping; return t;
+  }
+  const hazardMat = std({ map: stripeTexture(), roughness: 0.6 });
+  const grilleMat = std({ map: grilleTexture(), roughness: 0.7, metalness: 0.4 });
+  const rubberMat = std({ color: 0x1a1a1a, roughness: 0.92 });
+  const chromeMat = std({ color: 0xd8dade, roughness: 0.18, metalness: 1 });
+  const rodMat = std({ color: 0xe9eaec, roughness: 0.12, metalness: 1 });
+  const ironMat = std({ color: 0x2c2c2e, roughness: 0.55, metalness: 0.5 });
+  const lensMat = std({ color: 0xfff4dc, roughness: 0.05, metalness: 0, emissive: 0xfff0d0, emissiveIntensity: 1.5 });
+  const redLensMat = std({ color: 0x9c1c14, roughness: 0.1, emissive: 0xb0170f, emissiveIntensity: 0.9 });
+  const tintGlass = std({ color: 0x29343a, roughness: 0.04, metalness: 0.2, transparent: true, opacity: 0.42, envMapIntensity: 2 });
+
+  // An earthmover tyre: rounded carcass from a lathe profile, chevron lugs round the tread, and a steel
+  // rim with a dished centre and wheel nuts. Built once per size and shared.
+  function tyreGeometry(R, W) {
+    return cached(`tyre${R},${W}`, () => {
+      const prof = [], rIn = R * 0.62, hw = W / 2;
+      for (let k = 0; k <= 10; k++) { const a = -Math.PI / 2 + (k / 10) * Math.PI; prof.push(new T.Vector2(R - 0.11 + Math.cos(a) * 0.11, Math.sin(a) * hw * 0.96)); }
+      prof.unshift(new T.Vector2(rIn, -hw * 0.86)); prof.push(new T.Vector2(rIn, hw * 0.86));
+      const carcass = new T.LatheGeometry(prof, 40);
+      const lugs = [], N = 22, lug = new T.BoxGeometry(0.11, hw * 0.92, 0.2);
+      for (let i = 0; i < N; i++) for (const sd of [-1, 1]) {
+        const a = (i + (sd > 0 ? 0.5 : 0)) / N * Math.PI * 2, g = lug.clone();
+        g.rotateX(sd * 0.55); g.translate(0, sd * hw * 0.46, 0); g.translate(R + 0.025, 0, 0); g.rotateY(a);
+        lugs.push(g.toNonIndexed ? g.toNonIndexed() : g);
+      }
+      const parts = [carcass.toNonIndexed(), ...lugs.map(g => { g.deleteAttribute('uv'); return g; })];
+      parts[0].deleteAttribute('uv');
+      const merged = T.mergeGeometries ? T.mergeGeometries(parts) : carcass;
+      merged.computeVertexNormals(); merged.rotateZ(Math.PI / 2);
+      return merged;
+    });
+  }
+  function rimGeometry(R, W) {
+    return cached(`rim${R},${W}`, () => {
+      const rr = R * 0.6, hw = W / 2, prof = [
+        new T.Vector2(0.001, hw * 0.25), new T.Vector2(rr * 0.35, hw * 0.3), new T.Vector2(rr * 0.5, hw * 0.55), new T.Vector2(rr * 0.92, hw * 0.6),
+        new T.Vector2(rr, hw * 0.85), new T.Vector2(rr * 1.04, hw * 0.9), new T.Vector2(rr * 1.04, -hw * 0.9), new T.Vector2(rr, -hw * 0.85), new T.Vector2(rr * 0.5, -hw * 0.4), new T.Vector2(0.001, -hw * 0.35)];
+      const g = new T.LatheGeometry(prof, 32); g.rotateZ(Math.PI / 2); return g;
+    });
+  }
+  // a road tyre: squarer shoulders and four circumferential grooves instead of lugs
+  function roadTyreGeometry(R, W) {
+    return cached(`rtyre${R},${W}`, () => {
+      // profile runs from the inner bead, round one shoulder, across the tread (four grooves), round the other
+      const hw = W / 2, rIn = R * 0.58, sh = 0.06, tw = hw - sh, prof = [new T.Vector2(rIn, -hw * 0.85), new T.Vector2(R - sh * 1.4, -hw)];
+      for (let k = 1; k <= 4; k++) prof.push(new T.Vector2(R - sh + Math.sin(k / 4 * Math.PI / 2) * sh, -tw - Math.cos(k / 4 * Math.PI / 2) * sh));
+      for (const f of [-0.55, -0.18, 0.18, 0.55]) { const c = f * tw, gw = 0.045 * tw; prof.push(new T.Vector2(R, c - gw * 1.4), new T.Vector2(R - 0.022, c - gw), new T.Vector2(R - 0.022, c + gw), new T.Vector2(R, c + gw * 1.4)); }
+      for (let k = 0; k <= 3; k++) prof.push(new T.Vector2(R - sh + Math.cos(k / 4 * Math.PI / 2) * sh, tw + Math.sin(k / 4 * Math.PI / 2) * sh));
+      prof.push(new T.Vector2(R - sh * 1.4, hw), new T.Vector2(rIn, hw * 0.85));
+      const g = new T.LatheGeometry(prof, 36); g.rotateZ(Math.PI / 2); return g;
+    });
+  }
+  function bigWheel(R, W, rimMatl, parent, x, y, z, road = false) {
+    const g = new T.Group(); g.position.set(x, y, z); parent.add(g);
+    const t = new T.Mesh(road ? roadTyreGeometry(R, W) : tyreGeometry(R, W), rubberMat); t.castShadow = true; t.receiveShadow = true; g.add(t);
+    const rim = new T.Mesh(rimGeometry(R, W), rimMatl); rim.castShadow = true; g.add(rim);
+    const out = Math.sign(x) || 1, hub = cyl(R * 0.16, 0.1, ironMat, g, 'x'); hub.position.x = out * W * 0.3;
+    for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2, n = cyl(0.025, 0.06, chromeMat, g, 'x', 6); n.position.set(out * W * 0.33, Math.sin(a) * R * 0.24, Math.cos(a) * R * 0.24); }
+    return g;
+  }
+  // a hydraulic ram: painted barrel at the base, chrome rod sliding out of it, eye at each end
+  function hydRam(rB, rR, barrelLen, barrelMat, parent) {
+    const g = new T.Group(); parent.add(g);
+    const barrel = cyl(rB, barrelLen, barrelMat, g); barrel.position.y = barrelLen / 2;
+    const gland = cyl(rB * 1.12, 0.07, ironMat, g); gland.position.y = barrelLen;
+    const rod = cyl(rR, 1, rodMat, g);
+    const eyeA = cyl(rB * 1.1, rB * 1.6, ironMat, g, 'x', 12), eyeB = cyl(rR * 1.6, rR * 2.6, ironMat, g, 'x', 12);
+    return { g, set(a, b) {
+      const d = _rv.copy(b).sub(a), len = d.length();
+      g.position.copy(a); g.quaternion.setFromUnitVectors(_up, d.normalize());
+      const rl = Math.max(0.05, len - barrelLen * 0.9); rod.scale.y = rl; rod.position.y = len - rl / 2; eyeB.position.y = len;
+      barrel.scale.y = Math.min(1, len / barrelLen); barrel.position.y = barrelLen * barrel.scale.y / 2;
+    } };
+  }
+  const _rv = new T.Vector3(), _up = new T.Vector3(0, 1, 0), _ra = new T.Vector3(), _rb = new T.Vector3();
+  // simple person: hi-vis jacket, head, hard hat
+  function operatorFigure(parent, x, y, z) {
+    const jacket = std({ color: 0xe36f2a, roughness: 0.8 }), skin = std({ color: 0xd9a47e, roughness: 0.7 }), hat = std({ color: 0xf2d34a, roughness: 0.4 });
+    const body = new T.Mesh(new T.CapsuleGeometry(0.17, 0.3, 4, 10), jacket); body.position.set(x, y, z); parent.add(body);
+    const head = new T.Mesh(new T.SphereGeometry(0.11, 14, 10), skin); head.position.set(x, y + 0.36, z + 0.02); parent.add(head);
+    const helm = new T.Mesh(new T.SphereGeometry(0.125, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), hat); helm.position.set(x, y + 0.4, z + 0.02); parent.add(helm);
+    const brim = cyl(0.15, 0.015, hat, null, 'y', 16); brim.position.set(x, y + 0.4, z + 0.04); parent.add(brim);
+    return [body, head, helm, brim];
+  }
+
   let loader;
   function buildLoader() {
     // two frames joined by a vertical center pin at local z = 0
     const g = new T.Group(); g.rotation.order = 'YXZ';   // rear frame: engine, cab, rear axle
     const fg = new T.Group(); fg.rotation.order = 'YXZ'; // front frame: front axle, lift arms, bucket
-    box(1.9, 1.05, 1.75, mats.tan, 0, 1.2, -1.15, g);
-    box(1.7, 0.45, 1.3, mats.tanD, 0, 1.92, -1.45, g);
-    box(1.4, 0.5, 0.06, mats.dark, 0, 1.92, -2.12, g);
-    box(2.05, 0.8, 0.5, mats.tanD, 0, 0.98, -2.2, g);
-    box(1.92, 0.08, 1.75, mats.stripe, 0, 1.4, -1.15, g).scale.set(1.01, 1, 1.01);
-    box(0.95, 0.75, 0.55, mats.tanD, 0, 1.0, -0.3, g);
-    const pin = new T.Mesh(new T.CylinderGeometry(0.13, 0.13, 1.0, 10), mats.dark); pin.position.set(0, 1.0, 0); g.add(pin);
-    // cab sits on the rear frame, just behind the joint
-    const cz = -0.6;
-    box(1.36, 1.35, 1.3, mats.glass, 0, 2.4, cz, g);
-    for (const [x, z] of [[-0.68, -0.65], [0.68, -0.65], [-0.68, 0.65], [0.68, 0.65]]) box(0.1, 1.38, 0.1, mats.tan, x, 2.4, cz + z, g);
-    box(1.55, 0.14, 1.55, mats.tan, 0, 3.12, cz, g);
-    addBeacon(g, 0, 3.22, cz + 0.2, 0.5);
-    box(1.4, 0.18, 1.4, mats.tanD, 0, 1.7, cz, g);
-    const operatorL = [box(0.38, 0.45, 0.32, new T.MeshLambertMaterial({ color: 0xe36f2a }), 0, 2.2, cz - 0.15, g),
-      box(0.24, 0.24, 0.24, new T.MeshLambertMaterial({ color: 0xe9b991 }), 0, 2.56, cz - 0.13, g),
-      box(0.28, 0.1, 0.3, new T.MeshLambertMaterial({ color: 0xf2d34a }), 0, 2.72, cz - 0.13, g)];
-    const cabL = buildInterior(g, { eye: [0, 2.75, cz + 0.15], cab: { cx: 0, half: 0.68, zF: cz + 0.65, zB: cz - 0.65, floor: 1.79, roof: 3.05 }, wheel: true, stick: [-0.42, 2.2, cz + 0.12] });
-    const lamp = new T.MeshBasicMaterial({ color: 0xfff4d8 });
-    addHeadlight(g, 0, 2.95, cz + 0.85, 16);
-    box(0.3, 0.1, 0.15, lamp, -0.5, 3.0, cz + 0.77, g); box(0.3, 0.1, 0.15, lamp, 0.5, 3.0, cz + 0.77, g);
-    const ex = new T.Mesh(new T.CylinderGeometry(0.07, 0.07, 0.8, 8), mats.dark); ex.position.set(0.55, 2.45, -1.75); ex.castShadow = true; g.add(ex);
-    box(2.45, 0.08, 1.1, mats.tanD, 0, 1.48, -HALF_WB, g);
-    // front frame
-    box(1.3, 0.7, 1.55, mats.tan, 0, 0.98, 1.1, fg);
-    box(0.7, 0.45, 0.5, mats.tan, 0, 1.0, 0.25, fg);
-    box(1.32, 0.08, 1.4, mats.stripe, 0, 1.3, 1.1, fg);
-    box(2.45, 0.08, 1.1, mats.tanD, 0, 1.48, HALF_WB, fg);
-    const wheels = [];
-    for (const x of [-1.05, 1.05]) wheels.push(wheel(0.7, 0.55, mats.tan, fg, x, 0.7, HALF_WB));
-    for (const x of [-1.05, 1.05]) wheels.push(wheel(0.7, 0.55, mats.tan, g, x, 0.7, -HALF_WB));
+    const body = paint(0xd9a21b), bodyD = paint(0xb8860f, { wear: 1 }), frame = paint(0x2f2d2a, { wear: 1, extra: { metalness: 0.3 } });
+    const cz = -0.6; // cab centre (the cab interior and mirrors are laid out from this)
 
+    // ---- rear frame: engine bay, counterweight, fenders, steps, rails ----
+    plate([0.05, 0.55, -2.55, 0.55, -2.55, 1.15, -0.2, 1.15, 0.05, 0.85], 0.16, frame, -0.62, g);   // frame side plates
+    plate([0.05, 0.55, -2.55, 0.55, -2.55, 1.15, -0.2, 1.15, 0.05, 0.85], 0.16, frame, 0.62, g);
+    rbox(1.4, 0.3, 2.4, 0.06, frame, 0, 0.72, -1.3, g);                                                // belly pan
+    rbox(1.86, 0.9, 1.75, 0.16, body, 0, 1.58, -1.55, g);                                              // engine hood
+    rbox(1.7, 0.08, 1.6, 0.04, bodyD, 0, 2.06, -1.55, g);                                              // hood top panel
+    for (const sx of [-0.935, 0.935]) for (let k = 0; k < 7; k++) box(0.02, 0.05, 1.05, grilleMat, sx, 1.32 + k * 0.08, -1.6, g); // side louvres
+    rbox(2.12, 0.86, 0.56, 0.18, body, 0, 1.15, -2.42, g);                                             // counterweight
+    const hz = box(1.7, 0.2, 0.02, hazardMat, 0, 1.25, -2.71, g); hz.material = hazardMat;
+    box(1.32, 0.5, 0.02, grilleMat, 0, 1.72, -2.36, g);                                                 // radiator grille
+    for (const sx of [-0.82, 0.82]) { rbox(0.2, 0.12, 0.05, 0.02, redLensMat, sx, 1.42, -2.71, g); rbox(0.14, 0.1, 0.05, 0.02, lensMat, sx * 0.7, 1.42, -2.71, g); }
+    // exhaust stack and air pre-cleaner poking through the hood
+    const ex = cyl(0.075, 0.75, ironMat, g); ex.position.set(0.48, 2.35, -1.95);
+    const cap = cyl(0.09, 0.05, ironMat, g); cap.position.set(0.48, 2.74, -1.95); cap.rotation.x = -0.4;
+    const pre = cyl(0.13, 0.32, std({ color: 0x1d1d1d, roughness: 0.5 }), g); pre.position.set(-0.45, 2.24, -1.35);
+    const dome = new T.Mesh(new T.SphereGeometry(0.13, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), std({ color: 0x1d1d1d, roughness: 0.5 })); dome.position.set(-0.45, 2.4, -1.35); g.add(dome);
+    // rear fenders: curved shells over the tyres
+    const fenderG = cached('fenderR', () => { const fg2 = new T.CylinderGeometry(0.86, 0.86, 0.66, 24, 1, true, Math.PI * 0.12, Math.PI * 0.9); fg2.rotateZ(Math.PI / 2); return fg2; });
+    for (const sx of [-1.05, 1.05]) { const f = new T.Mesh(fenderG, body); f.material.side = T.DoubleSide; f.position.set(sx, 0.7, -HALF_WB); f.castShadow = true; g.add(f); }
+    // steps and grab rails up to the cab door (left side)
+    for (let k = 0; k < 3; k++) rbox(0.36, 0.04, 0.24, 0.015, ironMat, -0.98, 0.62 + k * 0.38, -0.32, g);
+    tube([[-1.12, 0.6, -0.48], [-1.14, 1.4, -0.48], [-1.08, 2.0, -0.5]], 0.022, ironMat, g);
+    tube([[-0.92, 2.12, -1.0], [-0.95, 2.18, -1.6], [-0.92, 2.14, -2.2]], 0.02, ironMat, g);   // hood handrails
+    tube([[0.92, 2.12, -1.0], [0.95, 2.18, -1.6], [0.92, 2.14, -2.2]], 0.02, ironMat, g);
+    // articulation hitch and its pin
+    rbox(0.9, 0.5, 0.5, 0.06, frame, 0, 1.0, -0.3, g);
+    const pin = cyl(0.13, 1.0, ironMat, g); pin.position.set(0, 1.0, 0);
+
+    // ---- cab: ROPS frame, glass all round, roof with lights and beacon, mirrors ----
+    rbox(1.42, 0.16, 1.42, 0.05, frame, 0, 1.72, cz, g);                                    // cab floor plate
+    for (const [px, pz] of [[-0.66, -0.63], [0.66, -0.63], [-0.66, 0.63], [0.66, 0.63]]) rbox(0.1, 1.36, 0.1, 0.03, frame, px, 2.42, cz + pz, g);
+    const glassL = [[1.24, 0.02, 0, 0.65], [1.24, 0.02, 0, -0.65], [0.02, 1.2, -0.68, 0], [0.02, 1.2, 0.68, 0]].map(([w, d, px, pz]) => box(w, 1.22, d, tintGlass, px, 2.44, cz + pz, g));
+    box(1.3, 0.05, 0.05, frame, 0, 2.0, cz + 0.66, g); box(0.05, 0.05, 1.28, frame, -0.69, 2.0, cz, g); box(0.05, 0.05, 1.28, frame, 0.69, 2.0, cz, g); // waist rails
+    rbox(1.6, 0.14, 1.62, 0.06, body, 0, 3.12, cz + 0.02, g);                                // roof with an overhang
+    rbox(1.3, 0.06, 1.2, 0.03, bodyD, 0, 3.21, cz, g);
+    addBeacon(g, 0, 3.24, cz + 0.2, 0.5);
+    const lamp = new T.MeshBasicMaterial({ color: new T.Color(0xfff4d8).multiplyScalar(4) });
+    addHeadlight(g, 0, 2.95, cz + 0.85, 16);
+    for (const sx of [-0.55, 0.55]) { rbox(0.26, 0.14, 0.12, 0.03, ironMat, sx, 3.02, cz + 0.8, g); box(0.2, 0.09, 0.02, lamp, sx, 3.02, cz + 0.865, g); }
+    for (const sx of [-0.5, 0.5]) { rbox(0.2, 0.12, 0.1, 0.03, ironMat, sx, 3.02, cz - 0.82, g); box(0.15, 0.08, 0.02, lamp, sx, 3.02, cz - 0.875, g); }
+    const wiper = box(0.02, 0.62, 0.015, std({ color: 0x111111 }), 0.2, 2.36, cz + 0.67, g); wiper.rotation.z = 0.5;
+    for (const sd of [-1, 1]) {
+      tube([[sd * 0.7, 2.9, cz + 0.6], [sd * 0.95, 2.92, cz + 0.62], [sd * 1.02, 2.75, cz + 0.62]], 0.015, ironMat, g);
+      rbox(0.04, 0.3, 0.2, 0.02, std({ color: 0x111111, roughness: 0.4 }), sd * 1.03, 2.6, cz + 0.62, g);
+    }
+    const operatorL = operatorFigure(g, 0, 2.2, cz - 0.15);
+    const cabL = buildInterior(g, { eye: [0, 2.75, cz + 0.15], cab: { cx: 0, half: 0.68, zF: cz + 0.65, zB: cz - 0.65, floor: 1.79, roof: 3.05 }, wheel: true, stick: [-0.42, 2.2, cz + 0.12] });
+
+    // ---- front frame: boxed side plates, axle, fenders, lights ----
+    plate([0.1, 0.55, 2.0, 0.55, 2.0, 0.95, 1.55, 1.55, 0.85, 1.6, 0.1, 1.15], 0.18, frame, -0.58, fg);
+    plate([0.1, 0.55, 2.0, 0.55, 2.0, 0.95, 1.55, 1.55, 0.85, 1.6, 0.1, 1.15], 0.18, frame, 0.58, fg);
+    rbox(1.0, 0.36, 1.7, 0.06, frame, 0, 0.78, 1.1, fg);
+    rbox(0.7, 0.45, 0.5, 0.06, frame, 0, 1.0, 0.25, fg);
+    const axleF = cyl(0.17, 1.6, ironMat, fg, 'x'); axleF.position.set(0, 0.7, HALF_WB);
+    const axleR = cyl(0.17, 1.6, ironMat, g, 'x'); axleR.position.set(0, 0.7, -HALF_WB);
+    for (const sx of [-1.05, 1.05]) { const f = new T.Mesh(fenderG, body); f.position.set(sx, 0.7, HALF_WB); f.rotation.y = Math.PI; f.castShadow = true; fg.add(f); }
+    for (const sx of [-0.78, 0.78]) { rbox(0.22, 0.16, 0.12, 0.04, ironMat, sx, 1.62, 1.72, fg); box(0.17, 0.1, 0.02, lamp, sx, 1.62, 1.785, fg); }
+    const wheels = [];
+    for (const x of [-1.05, 1.05]) wheels.push(bigWheel(0.7, 0.58, body, fg, x, 0.7, HALF_WB));
+    for (const x of [-1.05, 1.05]) wheels.push(bigWheel(0.7, 0.58, body, g, x, 0.7, -HALF_WB));
+
+    // ---- lift arms (bent box-section plates), cross tube, tilt linkage ----
     const arm = new T.Group(); arm.position.copy(ARM_PIVOT); fg.add(arm);
-    for (const x of [-0.78, 0.78]) box(0.2, 0.3, ARM_L + 0.2, mats.tan, x, 0, ARM_L / 2 - 0.05, arm);
-    box(1.76, 0.22, 0.24, mats.tanD, 0, 0.05, ARM_L * 0.55, arm);
+    const armProf = [-0.12, -0.17, 0.9, -0.05, 1.9, -0.2, ARM_L + 0.14, -0.12, ARM_L + 0.14, 0.13, 1.9, 0.12, 0.9, 0.26, -0.12, 0.16];
+    for (const x of [-0.78, 0.78]) { plate(armProf, 0.2, body, x, arm, 0.025); const bo = cyl(0.11, 0.26, ironMat, arm, 'x'); bo.position.set(x, 0, 0); const bo2 = cyl(0.1, 0.26, ironMat, arm, 'x'); bo2.position.set(x, 0, ARM_L); }
+    const cross = cyl(0.13, 1.5, body, arm, 'x'); cross.position.set(0, 0.06, ARM_L * 0.58);
+    plate([-0.15, -0.1, 0.25, -0.25, 0.42, 0.45, 0.05, 0.6], 0.16, bodyD, 0, arm, 0.02).position.z = ARM_L * 0.52; // tilt bellcrank
+
+    // ---- bucket: curved shell, side plates, wear strip, cutting edge and teeth ----
     const bucket = new T.Group(); bucket.position.set(0, 0, ARM_L); arm.add(bucket);
-    box(2.5, 0.08, 1.2, mats.tan, 0, -0.55, 0.55, bucket);
-    box(2.5, 1.05, 0.08, mats.tan, 0, -0.05, -0.05, bucket);
-    box(2.5, 0.08, 0.38, mats.tanD, 0, 0.46, 0.12, bucket);
-    const sh = new T.Shape(); sh.moveTo(-0.05, -0.59); sh.lineTo(1.18, -0.59); sh.lineTo(1.18, -0.45); sh.lineTo(0.32, 0.5); sh.lineTo(-0.05, 0.5); sh.closePath();
-    const sg = new T.ExtrudeGeometry(sh, { depth: 0.07, bevelEnabled: false }); sg.rotateY(-Math.PI / 2);
-    for (const x of [-1.18, 1.25]) { const s = new T.Mesh(sg, mats.tanD); s.position.x = x; s.castShadow = true; bucket.add(s); }
-    box(2.56, 0.06, 0.14, mats.steel, 0, -0.57, 1.2, bucket);
-    for (let t = 0; t < 7; t++) box(0.1, 0.06, 0.16, mats.steel, -1.08 + t * 0.36, -0.57, 1.32, bucket);
+    const inner = [[1.18, -0.57], [0.25, -0.57], [0.02, -0.5], [-0.09, -0.3], [-0.1, 0.0], [-0.05, 0.3], [0.05, 0.47], [0.36, 0.52]];
+    const outer = inner.map(([z, y], i) => { const [z0, y0] = inner[Math.max(0, i - 1)], [z1, y1] = inner[Math.min(inner.length - 1, i + 1)]; const tz = z1 - z0, ty = y1 - y0, l = Math.hypot(tz, ty) || 1; return [z - ty / l * 0.07, y + tz / l * 0.07]; });
+    const shellPts = [...inner.flat(), ...outer.reverse().flat()];
+    plate(shellPts, 2.44, bodyD, 0, bucket, 0.01);
+    const sideProf = [-0.1, -0.62, 1.2, -0.62, 1.22, -0.48, 0.42, 0.55, -0.1, 0.55];
+    for (const x of [-1.25, 1.25]) plate(sideProf, 0.06, body, x, bucket, 0.012);
+    rbox(2.56, 0.07, 0.16, 0.02, chromeMat, 0, -0.58, 1.2, bucket).material = std({ color: 0x8a8880, roughness: 0.35, metalness: 0.9 });
+    const tooth = cached('tooth', () => { const tg = new T.ConeGeometry(0.06, 0.24, 4); tg.rotateX(Math.PI / 2); tg.rotateZ(Math.PI / 4); tg.scale(1.3, 0.55, 1); return tg; });
+    for (let t = 0; t < 8; t++) { const m = new T.Mesh(tooth, std({ color: 0x7c7a73, roughness: 0.4, metalness: 0.9 })); m.position.set(-1.12 + t * 0.32, -0.57, 1.36); m.castShadow = true; bucket.add(m); }
+    for (const x of [-0.35, 0.35]) rbox(0.12, 0.5, 0.18, 0.03, bodyD, x, 0.2, -0.13, bucket);        // pin bosses on the back
     const fillG = new T.BoxGeometry(2.3, 1, 1.05); fillG.translate(0, 0.5, 0.55);
     const fill = new T.Mesh(fillG, mats.dirt); fill.position.y = -0.52; bucket.add(fill);
-    const heapG = new T.SphereGeometry(1, 9, 5, 0, Math.PI * 2, 0, Math.PI / 2);
+    const heapG = new T.SphereGeometry(1, 14, 7, 0, Math.PI * 2, 0, Math.PI / 2);
     const heap = new T.Mesh(heapG, mats.dirt); heap.position.z = 0.55; bucket.add(heap);
-    const rams = [-0.55, 0.55].map(x => { const m = new T.Mesh(new T.CylinderGeometry(0.08, 0.08, 1, 8), mats.steel); m.castShadow = true; fg.add(m); return { m, x }; });
-    // snow plow blade, hung on the same coupler as the bucket; it stays level and swivels left/right
+
+    // lift rams (frame to arm) and the tilt ram (frame to bellcrank), all live in world space
+    const rams = [-0.55, 0.55].map(x => ({ x, ram: hydRam(0.1, 0.055, 0.9, body, scene) }));
+    const tiltRam = hydRam(0.11, 0.06, 0.9, body, scene);
+
+    // ---- snow plow: curved moldboard with ribs, steel cutting edge, curb markers ----
     const plow = new T.Group(); plow.position.set(0, 0, ARM_L); arm.add(plow); plow.visible = false;
-    const orange = new T.MeshLambertMaterial({ color: 0xe8692c });
-    const mb = box(3.4, 0.85, 0.1, orange, 0, 0.1, 0.42, plow); mb.rotation.x = -0.28;
-    box(3.4, 0.1, 0.25, orange, 0, 0.52, 0.32, plow);
-    box(3.46, 0.08, 0.16, mats.steel, 0, -0.31, 0.5, plow);
-    for (const x of [-1.72, 1.72]) { box(0.06, 0.9, 0.5, orange, x, 0.1, 0.4, plow); box(0.03, 1.2, 0.03, mats.dark, x, 1.0, 0.3, plow); box(0.07, 0.2, 0.07, orange, x, 1.65, 0.3, plow); }
-    box(0.9, 0.5, 0.5, mats.dark, 0, 0.0, 0.05, plow);
-    for (let k = 0; k < 6; k++) box(0.25, 0.86, 0.02, k % 2 ? mats.dark : orange, -1.4 + k * 0.56, 0.1, 0.49, plow).rotation.x = -0.28;
+    const orange = paint(0xe8692c, { wear: 2 }), orangeD2 = paint(0xc4541f, { wear: 1 });
+    // The moldboard: a smooth, shallow curve facing the snow (a 1 m-radius arc from the cutting edge at the
+    // bottom to the lip at the top), closed at the back by a flat sheet with two stiffeners
+    // and an end plate on each side. Drawn in (z, y) with the cutting edge at z = 0.5, then moved forward.
+    const MB_C = [1.385, 0.166], MB_R = 1.0, MB_T0 = 2.506, MB_T1 = 3.626;           // arc: top lip .. cutting edge
+    const arcAt = th => [MB_C[0] + Math.cos(th) * MB_R, MB_C[1] + Math.sin(th) * MB_R];
+    const arc = []; for (let k = 0; k <= 16; k++) arc.push(arcAt(MB_T0 + (MB_T1 - MB_T0) * k / 16));
+    const [tz, ty] = arc[0], [bz, by] = arc[16], back = [-0.997, 0.0753], dep = 0.19;   // back sheet: parallel to the chord, 19 cm behind it
+    const T_b = [tz + back[0] * dep, ty + back[1] * dep], B_b = [bz + back[0] * dep, by + back[1] * dep];
+    const mbG = cached('moldboard2', () => { const mg = new T.CylinderGeometry(MB_R, MB_R, 3.4, 40, 1, true, MB_T0, MB_T1 - MB_T0); mg.rotateZ(Math.PI / 2); return mg; });
+    const mb = new T.Mesh(mbG, orange); mb.material.side = T.DoubleSide; mb.position.set(0, MB_C[1], MB_C[0]); mb.castShadow = true; mb.receiveShadow = true; plow.add(mb);
+    const shut = [...arc.flat(), ...B_b, ...T_b];                                   // closed side profile: face + back
+    for (const x of [-1.72, 1.72]) plate(shut, 0.05, orange, x, plow, 0.01);          // end plates
+    plate([...T_b, ...B_b, B_b[0] - 0.03, B_b[1], T_b[0] - 0.03, T_b[1]], 3.44, orange, 0, plow, 0.01);               // flat back sheet
+    for (const f of [0.3, 0.7]) { const z = B_b[0] + (T_b[0] - B_b[0]) * f - 0.05, y = B_b[1] + (T_b[1] - B_b[1]) * f; rbox(3.3, 0.1, 0.07, 0.02, orangeD2, 0, y, z, plow); } // horizontal stiffeners
+    rbox(3.46, 0.1, 0.12, 0.02, std({ color: 0x8a8880, roughness: 0.35, metalness: 0.9 }), 0, by - 0.02, bz + 0.02, plow);   // steel cutting edge
+    rbox(3.44, 0.07, 0.26, 0.025, orange, 0, ty + 0.03, (tz + T_b[0]) / 2, plow);                                         // top lip
+    box(3.38, 0.05, 0.01, hazardMat, 0, ty + 0.03, tz + 0.005, plow);
+    for (const x of [-1.72, 1.72]) { cyl(0.012, 1.2, std({ color: 0x111111 }), plow).position.set(x, ty + 0.62, T_b[0] + 0.05); cyl(0.03, 0.18, std({ color: 0xff7a1a, emissive: 0xff5a00, emissiveIntensity: 0.4 }), plow).position.set(x, ty + 1.25, T_b[0] + 0.05); }
+    rbox(0.9, 0.42, 0.4, 0.06, frame, 0, 0.05, -0.22, plow);     // mount, tucked behind the blade
+    // The blade stands 0.45 m ahead of the coupler on a short frame, so at full swing its trailing side
+    // still clears the lift-arm tips (the plow physics samples the cutting edge at PLOW_Z, 0.5 + 0.45)
+    for (const c of plow.children) c.position.z += PLOW_Z - 0.5;
+    const pivotPin = cyl(0.09, 0.5, ironMat, plow); pivotPin.position.set(0, 0.05, 0.08);
+    for (const sd of [-1, 1]) { const st = rbox(0.12, 0.12, 0.72, 0.03, frame, sd * 0.3, 0.05, 0.45, plow); st.rotation.y = -sd * 0.32; }
+    // coupler beam across the arm tips; it doesn't swivel, the blade turns on the pin beneath it
+    const coupler = rbox(1.82, 0.3, 0.26, 0.05, frame, 0, 0.02, ARM_L + 0.08, arm); coupler.visible = false;
+
     // steering rams across the joint, one each side
-    const steerRams = [-0.42, 0.42].map(x => { const m = new T.Mesh(new T.CylinderGeometry(0.06, 0.06, 1, 8), mats.steel); m.castShadow = true; scene.add(m); return { m, x }; });
+    const steerRams = [-0.42, 0.42].map(x => ({ x, ram: hydRam(0.075, 0.04, 0.55, frame, scene) }));
 
     scene.add(g, fg);
     const yaw0 = Math.atan2(PILE.x + 1, PILE.z - 8);
-    loader = { g, fg, arm, bucket, plow, operator: operatorL, cab: cabL, tool: SNOW ? 'plow' : 'bucket', plowAng: 0.3, wheels, fill, heap, rams, steerRams, x: -1, z: 8, y: 0, tF: yaw0, tR: yaw0, phi: 0, yaw: yaw0, pitch: 0, rollF: 0, rollR: 0, v: 0, a: 0.05, b: 0.15, load: 0, spin: 0, spots: null };
+    loader = { g, fg, arm, bucket, plow, coupler, operator: operatorL, cab: cabL, glass: glassL, tool: SNOW ? 'plow' : 'bucket', plowAng: 0.3, wheels, fill, heap, rams, tiltRam, steerRams, x: -1, z: 8, y: 0, tF: yaw0, tR: yaw0, phi: 0, yaw: yaw0, pitch: 0, rollF: 0, rollR: 0, v: 0, a: 0.05, b: 0.15, load: 0, spin: 0, spots: null };
   }
 
   // ---------------- hopper + conveyor ----------------
@@ -1179,7 +1564,7 @@ function boot(SCN, bootData) {
   function buildHopper() {
     const g = new T.Group(), base = heightAt(HOPPER.x, HOPPER.z);
     g.position.set(HOPPER.x, base, HOPPER.z);
-    const steel = new T.MeshLambertMaterial({ color: 0x5d6a58, side: T.DoubleSide }), steelD = new T.MeshLambertMaterial({ color: 0x3f473c });
+    const steel = std({ color: 0x5d6a58, side: T.DoubleSide }), steelD = std({ color: 0x3f473c });
     for (const sx of [-1.25, 1.25]) for (const sz of [-1.25, 1.25]) box(0.2, HOPPER.floor + 0.2, 0.2, steelD, sx, (HOPPER.floor + 0.2) / 2, sz, g);
     const fh = HOPPER.rim - 0.35 - HOPPER.floor;
     const fun = new T.Mesh(new T.CylinderGeometry(HOPPER.half * Math.SQRT2, 0.45, fh, 4, 1, true), steel);
@@ -1194,7 +1579,7 @@ function boot(SCN, bootData) {
     // conveyor, rising along +x
     const ang = Math.atan2(CONV.rise, CONV.len), cg = new T.Group();
     cg.position.set(0.5, HOPPER.floor - 0.3, 0); cg.rotation.z = ang; g.add(cg);
-    const rubber = new T.MeshLambertMaterial({ color: 0x1e1c1a });
+    const rubber = std({ color: 0x1e1c1a });
     box(CONV.len, 0.06, 0.7, rubber, CONV.len / 2, 0, 0, cg);
     for (const sz of [-0.4, 0.4]) box(CONV.len, 0.2, 0.06, mats.tan, CONV.len / 2, 0.04, sz, cg);
     for (let k = 0; k <= 12; k++) box(0.08, 0.08, 0.86, steelD, k * CONV.len / 12, -0.1, 0, cg);
@@ -1246,11 +1631,11 @@ function boot(SCN, bootData) {
   function buildTrench() {
     const g = new T.Group(); g.rotation.y = Math.atan2(-TDZ, TDX);
     const len = TLEN - 0.8;
-    const p = new T.Mesh(new T.CylinderGeometry(0.3, 0.3, len, 18), new T.MeshLambertMaterial({ color: 0x1c1c1c })); p.rotation.z = Math.PI / 2; p.castShadow = true; p.receiveShadow = true; g.add(p);
-    const ring = new T.MeshLambertMaterial({ color: 0x3a3a38 });
+    const p = new T.Mesh(new T.CylinderGeometry(0.3, 0.3, len, 18), std({ color: 0x1c1c1c })); p.rotation.z = Math.PI / 2; p.castShadow = true; p.receiveShadow = true; g.add(p);
+    const ring = std({ color: 0x3a3a38 });
     for (let k = 0; k <= Math.floor(len / 5); k++) { const r = new T.Mesh(new T.CylinderGeometry(0.34, 0.34, 0.25, 18), ring); r.rotation.z = Math.PI / 2; r.position.x = -len / 2 + k * 5 + 0.2; r.castShadow = true; g.add(r); }
     scene.add(g);
-    const red = new T.MeshLambertMaterial({ color: 0xd8382e }), white = new T.MeshLambertMaterial({ color: 0xf4efe4 }), seg = new T.CylinderGeometry(0.045, 0.045, 0.2, 6);
+    const red = std({ color: 0xd8382e }), white = std({ color: 0xf4efe4 }), seg = new T.CylinderGeometry(0.045, 0.045, 0.2, 6);
     for (const a of [-0.4, TLEN + 0.4]) for (const s of [-1, 1]) {
       const x = TRENCH.x0 + TDX * a - TDZ * s * (TRENCH.half + 0.3), z = TRENCH.z0 + TDZ * a + TDX * s * (TRENCH.half + 0.3);
       const st = new T.Group(); for (let k = 0; k < 8; k++) { const m = new T.Mesh(seg, k % 2 ? white : red); m.position.y = k * 0.2 - 0.2; m.castShadow = true; st.add(m); }
@@ -1300,58 +1685,82 @@ function boot(SCN, bootData) {
   }
   const EXC_HOME = (() => { const a = TLEN / 2, side = TRENCH.half + 3.6; return { x: TRENCH.x0 + TDX * a + TDZ * side, z: TRENCH.z0 + TDZ * a - TDX * side, yaw: Math.atan2(-TDZ, TDX) }; })();
   let exc;
-  function makeRam(r) { const m = new T.Mesh(new T.CylinderGeometry(r, r, 1, 8), mats.steel); m.castShadow = true; scene.add(m); return m; }
-  function setRam(m, a, b) { const d = b.clone().sub(a), len = d.length(); m.position.copy(a).addScaledVector(d, 0.5); m.scale.set(1, len, 1); m.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), d.normalize()); }
   function buildExcavator() {
     const g = new T.Group(); g.rotation.order = 'YXZ';
-    const trk = new T.MeshLambertMaterial({ color: 0x2a2826, flatShading: true });
+    const body = paint(0xd9a21b), bodyD = paint(0xb8860f, { wear: 1 }), frame = paint(0x2f2d2a, { wear: 1, extra: { metalness: 0.3 } });
+    const shoeMat = std({ color: 0x2b2a28, roughness: 0.6, metalness: 0.55 });
+    // ---- undercarriage: track frames, rollers, idler and sprocket, a loop of grousered shoes ----
     const sprockets = [];
+    const shoe = cached('shoe', () => mergeAll([put(new T.BoxGeometry(0.66, 0.06, 0.2)), put(new T.BoxGeometry(0.66, 0.05, 0.035), 0, 0.05, 0.06)]));
+    const loopPts = []; { const L = 1.5, r = 0.42, per = 2 * L * 2 + 2 * Math.PI * r, n = 40;
+      for (let i = 0; i < n; i++) { let d = i / n * per, y, z, a;
+        if (d < 2 * L) { z = -L + d; y = 0.84; a = 0; } else if ((d -= 2 * L) < Math.PI * r) { a = d / r; z = L + Math.sin(a) * r; y = 0.42 + Math.cos(a) * r; } else if ((d -= Math.PI * r) < 2 * L) { z = L - d; y = 0.0; a = Math.PI; } else { d -= 2 * L; a = Math.PI + d / r; z = -L + Math.sin(a) * r; y = 0.42 + Math.cos(a) * r; }
+        loopPts.push([y, z, a]); } }
     for (const sx of [-1.1, 1.1]) {
-      box(0.62, 0.55, 3.0, trk, sx, 0.42, 0, g);
-      for (const sz of [-1.5, 1.5]) { const c = new T.Mesh(new T.CylinderGeometry(0.42, 0.42, 0.62, 12), trk); c.rotation.z = Math.PI / 2; c.position.set(sx, 0.42, sz); c.castShadow = true; g.add(c); }
-      for (let k = 0; k < 11; k++) { box(0.66, 0.08, 0.14, mats.dark, sx, 0.02, -1.4 + k * 0.28, g); box(0.66, 0.08, 0.14, mats.dark, sx, 0.84, -1.4 + k * 0.28, g); }
+      const shoes = new T.InstancedMesh(shoe, shoeMat, loopPts.length), m4 = new T.Matrix4(), q = new T.Quaternion(), e = new T.Euler();
+      loopPts.forEach(([y, z, a], i) => { m4.compose(new T.Vector3(sx, y, z), q.setFromEuler(e.set(-a, 0, 0)), new T.Vector3(1, 1, 1)); shoes.setMatrixAt(i, m4); });
+      shoes.castShadow = true; shoes.receiveShadow = true; g.add(shoes);
+      rbox(0.4, 0.42, 2.9, 0.08, body, sx, 0.42, 0, g);                         // track frame
+      for (let k = 0; k < 5; k++) { const r = cyl(0.12, 0.46, ironMat, g, 'x', 14); r.position.set(sx, 0.14, -1.0 + k * 0.5); }
+      for (const z of [-0.5, 0.5]) { const r = cyl(0.09, 0.3, ironMat, g, 'x', 12); r.position.set(sx, 0.74, z); }
       for (const sz of [-1.5, 1.5]) {
-        const sp = new T.Group(); sp.position.set(sx + Math.sign(sx) * 0.33, 0.42, sz); g.add(sp);
-        box(0.05, 0.55, 0.12, mats.tanD, 0, 0, 0, sp); box(0.05, 0.12, 0.55, mats.tanD, 0, 0, 0, sp);
+        const sp = new T.Group(); sp.position.set(sx, 0.42, sz); g.add(sp);
+        const hub = cyl(0.36, 0.46, ironMat, sp, 'x', 20);
+        for (let k = 0; k < 6; k++) { const sk = box(0.48, 0.07, 0.62, bodyD, 0, 0, 0, sp); sk.rotation.x = k * Math.PI / 6; sk.scale.z = 1.05; }
+        const cap = cyl(0.14, 0.5, chromeMat, sp, 'x', 12);
         sprockets.push({ sp, side: Math.sign(sx) });
       }
     }
-    box(1.6, 0.4, 2.2, mats.dark, 0, 0.6, 0, g);
+    rbox(1.6, 0.42, 2.2, 0.08, frame, 0, 0.6, 0, g);                             // carbody
+    // ---- upper house: body, counterweight, engine hood, cab ----
     const house = new T.Group(); house.position.y = 0.95; g.add(house);
-    const ring = new T.Mesh(new T.CylinderGeometry(0.9, 0.9, 0.18, 16), mats.dark); house.add(ring);
-    box(2.4, 0.95, 2.5, mats.tan, 0, 0.6, -0.45, house);
-    box(2.45, 0.8, 0.6, mats.tanD, 0, 0.55, -1.75, house);
-    box(2.42, 0.08, 2.52, mats.stripe, 0, 0.9, -0.45, house);
-    box(1.0, 0.25, 1.4, mats.tanD, -0.65, 1.2, -0.9, house);
-    box(0.95, 1.35, 1.15, mats.glass, 0.68, 1.75, 0.35, house);
-    for (const [x, z] of [[0.21, -0.22], [1.15, -0.22], [0.21, 0.92], [1.15, 0.92]]) box(0.08, 1.38, 0.08, mats.tan, x, 1.75, z, house);
-    box(1.05, 0.12, 1.25, mats.tan, 0.68, 2.48, 0.35, house);
-    const operatorE = [box(0.34, 0.42, 0.3, new T.MeshLambertMaterial({ color: 0xe36f2a }), 0.68, 1.55, 0.2, house),
-      box(0.22, 0.22, 0.22, new T.MeshLambertMaterial({ color: 0xe9b991 }), 0.68, 1.88, 0.22, house),
-      box(0.26, 0.1, 0.28, new T.MeshLambertMaterial({ color: 0xf2d34a }), 0.68, 2.03, 0.22, house)];
+    const ring = cyl(0.9, 0.18, ironMat, house, 'y', 28);
+    rbox(2.4, 0.92, 2.5, 0.14, body, 0, 0.6, -0.45, house);
+    rbox(2.48, 0.86, 0.66, 0.28, bodyD, 0, 0.58, -1.78, house);                 // counterweight
+    box(1.9, 0.14, 0.02, hazardMat, 0, 0.7, -2.12, house);
+    for (const sx of [-0.95, 0.95]) rbox(0.18, 0.1, 0.04, 0.02, redLensMat, sx, 0.88, -2.11, house);
+    rbox(1.05, 0.32, 1.45, 0.08, bodyD, -0.65, 1.2, -0.9, house);               // engine hood
+    for (let k = 0; k < 6; k++) box(0.02, 0.04, 0.9, grilleMat, -1.18, 0.78 + k * 0.07, -0.85, house);
+    for (let k = 0; k < 6; k++) box(0.7, 0.02, 0.05, grilleMat, -0.65, 1.37, -1.4 + k * 0.12, house);
+    const ex = cyl(0.06, 0.62, ironMat, house); ex.position.set(-0.95, 1.62, -1.1);
+    tube([[-1.18, 1.1, -0.2], [-1.2, 1.5, -0.3], [-1.18, 1.5, -1.5], [-1.15, 1.1, -1.6]], 0.02, ironMat, house);
+    tube([[1.2, 1.1, -0.6], [1.22, 1.45, -0.7], [1.2, 1.45, -1.5], [1.18, 1.1, -1.6]], 0.02, ironMat, house);
+    // cab: frame posts, glass on four sides, roof, wiper; the interior is laid out from the same box
+    for (const [px, pz] of [[0.23, -0.2], [1.13, -0.2], [0.23, 0.9], [1.13, 0.9]]) rbox(0.08, 1.36, 0.08, 0.025, frame, px, 1.75, pz, house);
+    const glassE = [[0.86, 0.02, 0.68, 0.92], [0.86, 0.02, 0.68, -0.22], [0.02, 1.06, 0.2, 0.35], [0.02, 1.06, 1.16, 0.35]].map(([w, d, px, pz]) => box(w, 1.24, d, tintGlass, px, 1.76, pz, house));
+    rbox(1.08, 0.1, 1.28, 0.04, body, 0.68, 2.48, 0.35, house);
+    rbox(0.92, 0.05, 1.05, 0.02, bodyD, 0.68, 2.55, 0.35, house);
+    const wipE = box(0.015, 0.5, 0.012, std({ color: 0x111111 }), 0.6, 1.95, 0.935, house); wipE.rotation.z = 0.4;
+    for (const sx of [0.35, 1.0]) { rbox(0.16, 0.1, 0.08, 0.02, ironMat, sx, 2.44, 0.95, house); box(0.12, 0.07, 0.02, new T.MeshBasicMaterial({ color: new T.Color(0xfff4d8).multiplyScalar(4) }), sx, 2.44, 0.995, house); }
+    const operatorE = operatorFigure(house, 0.68, 1.5, 0.2);
     const cabE = buildInterior(house, { eye: [0.68, 1.95, 0.3], cab: { cx: 0.68, half: 0.47, zF: 0.92, zB: -0.22, floor: 1.08, roof: 2.42 }, wheel: false, stick: [0.42, 1.6, 0.4], stick2: [0.95, 1.6, 0.4] });
-    const ex = new T.Mesh(new T.CylinderGeometry(0.06, 0.06, 0.6, 8), mats.dark); ex.position.set(-0.9, 1.55, -1.1); house.add(ex);
+    // ---- boom: a bent box-section, bosses at each pin, a lug under it for the boom rams ----
     const boomG = new T.Group(); boomG.position.set(-0.25, 1.15, 0.85); house.add(boomG);
-    box(0.4, 0.5, BOOM_L + 0.3, mats.tan, 0, 0, BOOM_L / 2, boomG);
-    box(0.42, 0.14, BOOM_L * 0.6, mats.tanD, 0, 0.3, BOOM_L * 0.45, boomG);
+    plate([-0.28, -0.25, 1.7, 0.18, BOOM_L + 0.18, -0.17, BOOM_L + 0.18, 0.16, 1.5, 0.64, -0.28, 0.24], 0.44, body, 0, boomG, 0.03);
+    plate([0.9, 0.05, 1.6, -0.05, 1.75, 0.2, 1.1, 0.25], 0.22, bodyD, 0, boomG, 0.015);     // ram lug
+    for (const z of [0, BOOM_L]) { const b2 = cyl(0.13, 0.5, ironMat, boomG, 'x', 14); b2.position.z = z; }
+    tube([[0.18, 0.4, 0.3], [0.2, 0.62, 1.5], [0.19, 0.3, 3.0], [0.17, 0.1, BOOM_L]], 0.022, std({ color: 0x151515, roughness: 0.6 }), boomG);   // hydraulic hoses
+    tube([[-0.18, 0.4, 0.3], [-0.2, 0.62, 1.5], [-0.19, 0.3, 3.0], [-0.17, 0.1, BOOM_L]], 0.022, std({ color: 0x151515, roughness: 0.6 }), boomG);
+    // ---- stick ----
     const stickG = new T.Group(); stickG.position.set(0, 0, BOOM_L); boomG.add(stickG);
-    box(0.3, 0.38, STICK_L + 0.6, mats.tan, 0, 0, STICK_L / 2 - 0.3, stickG);
+    plate([-0.6, 0.26, STICK_L + 0.12, 0.13, STICK_L + 0.12, -0.14, -0.6, -0.22], 0.34, body, 0, stickG, 0.025);
+    for (const z of [-0.35, STICK_L]) { const b2 = cyl(0.1, 0.4, ironMat, stickG, 'x', 12); b2.position.set(0, z < 0 ? 0.3 : 0, z); }
+    // ---- bucket: curved shell along BK_POLY, side plates, wear edge, teeth ----
     const bucketG = new T.Group(); bucketG.position.set(0, 0, STICK_L); stickG.add(bucketG);
-    for (let i = 0; i < BK_POLY.length - 1; i++) {
-      const [z0, y0] = BK_POLY[i], [z1, y1] = BK_POLY[i + 1];
-      const m = box(1.0, 0.06, Math.hypot(z1 - z0, y1 - y0) + 0.04, mats.tan, 0, (y0 + y1) / 2, (z0 + z1) / 2, bucketG);
-      m.rotation.x = -Math.atan2(y1 - y0, z1 - z0);
-    }
-    const sh = new T.Shape(); sh.moveTo(BK_POLY[0][0], BK_POLY[0][1]); for (const [z, y] of BK_POLY.slice(1)) sh.lineTo(z, y); sh.closePath();
-    const sg = new T.ExtrudeGeometry(sh, { depth: 0.05, bevelEnabled: false }); sg.rotateY(-Math.PI / 2);
-    for (const x of [-0.47, 0.52]) { const s = new T.Mesh(sg, mats.tanD); s.position.x = x; s.castShadow = true; bucketG.add(s); }
+    const bk = new T.Mesh(shellGeo(BK_POLY, 0.06, 1.0), bodyD); bk.castShadow = true; bucketG.add(bk);
+    const sideP = BK_POLY.flat();
+    for (const x of [-0.5, 0.5]) plate(sideP, 0.05, body, x, bucketG, 0.01);
     const ta = -Math.atan2(-0.4, 0.2);
-    for (let t = 0; t < 5; t++) { const m = box(0.09, 0.07, 0.22, mats.steel, -0.4 + t * 0.2, -0.12, 1.3, bucketG); m.rotation.x = ta; }
-    const fill = new T.Mesh(new T.SphereGeometry(1, 9, 6), mats.dirt); fill.position.set(0, 0.26, 0.6); bucketG.add(fill);
-    const domeG = new T.SphereGeometry(1, 10, 5, 0, Math.PI * 2, 0, Math.PI / 2); domeG.rotateX(Math.PI); // heaped dirt bulging out of the mouth
+    rbox(1.04, 0.05, 0.12, 0.02, std({ color: 0x8a8880, roughness: 0.35, metalness: 0.9 }), 0, -0.07, 1.24, bucketG);
+    const tooth = cached('etooth', () => { const tg = new T.ConeGeometry(0.05, 0.22, 4); tg.rotateX(Math.PI / 2); tg.rotateZ(Math.PI / 4); tg.scale(1.3, 0.55, 1); return tg; });
+    for (let t = 0; t < 5; t++) { const m = new T.Mesh(tooth, std({ color: 0x7c7a73, roughness: 0.4, metalness: 0.9 })); m.position.set(-0.4 + t * 0.2, -0.12, 1.33); m.rotation.x = -ta; m.castShadow = true; bucketG.add(m); }
+    for (const x of [-0.18, 0.18]) rbox(0.07, 0.3, 0.3, 0.02, body, x, 0.5, 0.1, bucketG);           // linkage ears
+    const fill = new T.Mesh(new T.SphereGeometry(1, 14, 9), mats.dirt); fill.position.set(0, 0.26, 0.6); bucketG.add(fill);
+    const domeG = new T.SphereGeometry(1, 14, 7, 0, Math.PI * 2, 0, Math.PI / 2); domeG.rotateX(Math.PI); // heaped dirt bulging out of the mouth
     const dome = new T.Mesh(domeG, mats.dirt); dome.position.set(0, -0.04, 0.62); bucketG.add(dome);
     scene.add(g);
-    exc = { g, house, boomG, stickG, bucketG, fill, dome, sprockets, operator: operatorE, cab: cabE, rams: [makeRam(0.09), makeRam(0.08), makeRam(0.07)],
+    const rams = [hydRam(0.11, 0.06, 1.1, body, scene), hydRam(0.1, 0.055, 1.2, body, scene), hydRam(0.085, 0.045, 0.9, body, scene)];
+    exc = { g, house, boomG, stickG, bucketG, fill, dome, sprockets, operator: operatorE, cab: cabE, glass: glassE, rams,
       x: EXC_HOME.x, z: EXC_HOME.z, y: 0, yaw: EXC_HOME.yaw, pitch: 0, roll: 0, v: 0, w: 0, sw: 0, bA: 0.55, sR: 1.7, bR: 1.4, load: 0, spinL: 0, spinR: 0, lastPen: 0, spots: [] };
     exc.y = heightAt(exc.x, exc.z);
   }
@@ -1400,9 +1809,9 @@ function boot(SCN, bootData) {
     E.fill.visible = f > 0.01; E.fill.scale.set(0.44, 0.06 + 0.26 * fi, 0.15 + 0.38 * fi);
     E.dome.visible = fo > 0.02; E.dome.scale.set(0.44, 0.28 * fo, 0.52);
     E.g.updateMatrixWorld(true);
-    setRam(E.rams[0], new T.Vector3(-0.25, 0.75, 0.6).applyMatrix4(E.house.matrixWorld), new T.Vector3(0, -0.3, 1.4).applyMatrix4(E.boomG.matrixWorld));
-    setRam(E.rams[1], new T.Vector3(0, 0.45, BOOM_L * 0.4).applyMatrix4(E.boomG.matrixWorld), new T.Vector3(0, 0.3, -0.35).applyMatrix4(E.stickG.matrixWorld));
-    setRam(E.rams[2], new T.Vector3(0, 0.3, 0.3).applyMatrix4(E.stickG.matrixWorld), new T.Vector3(0, 0.45, 0.12).applyMatrix4(E.bucketG.matrixWorld));
+    E.rams[0].set(_ra.set(-0.25, 0.75, 0.6).applyMatrix4(E.house.matrixWorld), _rb.set(0, 0.05, 1.45).applyMatrix4(E.boomG.matrixWorld));
+    E.rams[1].set(_ra.set(0, 0.62, BOOM_L * 0.4).applyMatrix4(E.boomG.matrixWorld), _rb.set(0, 0.3, -0.35).applyMatrix4(E.stickG.matrixWorld));
+    E.rams[2].set(_ra.set(0, 0.3, 0.3).applyMatrix4(E.stickG.matrixWorld), _rb.set(0, 0.45, 0.12).applyMatrix4(E.bucketG.matrixWorld));
   }
   const _m = new T.Vector3(), _tt = new T.Vector3(), prevTeeth = new T.Vector3();
   // The digging bucket fills when the mouth leads through the dirt (curling, pulling the stick in).
@@ -1494,26 +1903,48 @@ function boot(SCN, bootData) {
     : { leave: [[8, ROAD_Z], [95, ROAD_Z]], back: [[-95, ROAD_Z], [8, ROAD_Z]], yaw: Math.PI / 2 };
   function buildTruck() {
     const g = new T.Group();
-    box(2.2, 0.4, 6.4, mats.dark, 0, 0.95, 0, g);
-    box(2.3, 1.5, 1.6, mats.cabRed, 0, 1.95, 2.25, g);
-    box(2.0, 0.7, 1.0, mats.glass, 0, 2.35, 2.62, g).scale.set(1, 1, 1.02);
-    box(2.36, 0.12, 1.66, mats.bed, 0, 2.76, 2.25, g);
-    if (SNOW) addBeacon(g, 0, 2.85, 2.3, 0.7);
-    box(2.3, 0.6, 0.4, mats.cabRed, 0, 1.3, 3.15, g);
-    const tl = new T.MeshBasicMaterial({ color: 0xfff4d8 });
-    box(0.3, 0.12, 0.08, tl, -0.8, 1.35, 3.36, g); box(0.3, 0.12, 0.08, tl, 0.8, 1.35, 3.36, g);
-    addHeadlight(g, 0, 1.4, 3.5, 18);
-    // bed
-    box(2.5, 0.12, 3.9, mats.bed, 0, 1.45, -0.7, g);
-    for (const x of [-1.22, 1.22]) box(0.1, 0.95, 3.9, mats.bed, x, 1.95, -0.7, g);
-    box(2.5, 1.25, 0.12, mats.bed, 0, 2.1, 1.25, g);
-    box(2.5, 0.8, 0.12, mats.bed, 0, 1.85, -2.65, g);
-    for (let k = 0; k < 4; k++) box(2.56, 0.08, 0.1, new T.MeshLambertMaterial({ color: 0xb9b5aa }), 0, 2.38, -2.3 + k * 1.1, g);
+    const red = paint(0xa9472f), bed = paint(0x8f8b82, { wear: 1, extra: { metalness: 0.35 } }), frame = paint(0x262523, { wear: 1, extra: { metalness: 0.3 } });
+    const tl = new T.MeshBasicMaterial({ color: new T.Color(0xfff4d8).multiplyScalar(4) });
+    // chassis rails, bumper, hood with grille, cab
+    for (const x of [-0.48, 0.48]) rbox(0.2, 0.3, 6.6, 0.03, frame, x, 0.92, -0.1, g);
+    rbox(2.44, 0.34, 0.3, 0.06, frame, 0, 0.86, 3.48, g);
+    rbox(2.06, 0.92, 1.1, 0.2, red, 0, 1.5, 2.95, g);
+    rbox(1.9, 0.06, 0.95, 0.03, paint(0x8e3a25, { wear: 1 }), 0, 1.98, 2.95, g);
+    box(1.3, 0.62, 0.02, grilleMat, 0, 1.45, 3.51, g);
+    rbox(1.42, 0.7, 0.04, 0.02, chromeMat, 0, 1.45, 3.5, g).scale.set(1, 1, 0.5);
+    for (const sx of [-0.82, 0.82]) { rbox(0.32, 0.2, 0.06, 0.03, ironMat, sx, 1.42, 3.5, g); box(0.26, 0.15, 0.02, tl, sx, 1.42, 3.535, g); }
+    addHeadlight(g, 0, 1.4, 3.6, 18);
+    rbox(2.32, 1.5, 1.55, 0.18, red, 0, 2.05, 1.82, g);                          // cab
+    const ws = box(2.0, 0.72, 0.02, tintGlass, 0, 2.38, 2.6, g); ws.rotation.x = -0.08;
+    for (const sx of [-1.165, 1.165]) box(0.02, 0.62, 1.0, tintGlass, sx, 2.36, 1.92, g);
+    box(2.36, 0.08, 0.22, std({ color: 0x1a1a1a, roughness: 0.5 }), 0, 2.85, 2.55, g);   // sun visor
+    for (const sd of [-1, 1]) { tube([[sd * 1.1, 2.6, 2.4], [sd * 1.42, 2.62, 2.5], [sd * 1.45, 2.2, 2.5]], 0.016, ironMat, g); rbox(0.05, 0.38, 0.22, 0.02, std({ color: 0x111111, roughness: 0.4 }), sd * 1.46, 2.4, 2.5, g); }
+    if (SNOW) addBeacon(g, 0, 2.86, 1.9, 0.7);
+    // fuel tank, steps, exhaust stack behind the cab, air tanks
+    const tank = cyl(0.3, 1.1, chromeMat, g, 'z', 20); tank.position.set(1.0, 1.0, 0.75);
+    for (let k = 0; k < 2; k++) rbox(0.34, 0.04, 0.3, 0.015, ironMat, -1.05, 0.72 + k * 0.42, 1.55, g);
+    const stack = cyl(0.08, 1.7, chromeMat, g); stack.position.set(-0.95, 2.45, 0.98);
+    const air = cyl(0.13, 0.8, frame, g, 'z', 14); air.position.set(-0.9, 0.95, 0.6);
+    // dump body: floor, sloped-top side walls with ribs, headboard and cab guard, tailgate, hoist ram
+    rbox(2.5, 0.14, 3.95, 0.04, bed, 0, 1.45, -0.7, g);
+    for (const x of [-1.22, 1.22]) {
+      rbox(0.1, 0.98, 3.95, 0.03, bed, x, 1.95, -0.7, g);
+      rbox(0.16, 0.1, 4.0, 0.03, bed, x, 2.46, -0.7, g);
+      for (let k = 0; k < 5; k++) rbox(0.07, 0.9, 0.09, 0.02, bed, x + Math.sign(x) * 0.08, 1.95, -2.5 + k * 0.9, g);
+    }
+    rbox(2.5, 1.3, 0.12, 0.03, bed, 0, 2.1, 1.25, g);
+    rbox(2.5, 0.08, 0.85, 0.03, bed, 0, 2.78, 1.62, g);                          // cab guard
+    rbox(2.5, 0.9, 0.12, 0.03, bed, 0, 1.9, -2.66, g);
+    for (let k = 0; k < 4; k++) rbox(2.56, 0.06, 0.08, 0.02, paint(0xb9b5aa, { wear: 1 }), 0, 2.38, -2.3 + k * 1.1, g);
+    for (const sx of [-0.9, 0.9]) { rbox(0.22, 0.12, 0.05, 0.02, redLensMat, sx, 1.25, -2.74, g); }
+    for (const sx of [-1.1, 1.1]) rbox(0.5, 0.5, 0.02, 0.01, rubberMat, sx, 0.62, -2.85, g);   // mud flaps
+    const hoist = hydRam(0.12, 0.07, 0.7, frame, g); hoist.set(new T.Vector3(0, 0.95, 1.05), new T.Vector3(0, 1.4, 0.6));
     const fillG = new T.BoxGeometry(2.3, 1, 3.7); fillG.translate(0, 0.5, 0);
     const fill = new T.Mesh(fillG, mats.dirt); fill.position.set(0, 1.51, -0.7); g.add(fill);
-    const heap = new T.Mesh(new T.SphereGeometry(1, 10, 5, 0, Math.PI * 2, 0, Math.PI / 2), mats.dirt); heap.position.set(0, 1.5, -0.7); g.add(heap);
+    const heap = new T.Mesh(new T.SphereGeometry(1, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), mats.dirt); heap.position.set(0, 1.5, -0.7); g.add(heap);
+    const rim = paint(0xc9ccd0, { wear: 2, extra: { metalness: 0.6 } });
     const wheels = [];
-    for (const z of [2.3, -0.9, -2.2]) for (const x of [-1.1, 1.1]) wheels.push(wheel(0.62, 0.5, mats.steel, g, x, 0.62, z));
+    for (const z of [2.3, -0.9, -2.2]) for (const x of [-1.1, 1.1]) wheels.push(bigWheel(0.62, 0.46, rim, g, x, 0.62, z, true));
     scene.add(g);
     truck = { g, fill, heap, wheels, load: 0, state: 'parked', x: TRUCK_PARK.x, z: TRUCK_PARK.z, yaw: TRUCK_PARK.yaw, v: 0, timer: 0, loads: 0, path: null, seg: 0 };
     g.rotation.y = truck.yaw;
@@ -1547,34 +1978,50 @@ function boot(SCN, bootData) {
   function buildSaltTruck() {
     saltMap = new Float32Array(NV);
     const g = new T.Group(); g.rotation.order = 'YXZ';
-    const orange = new T.MeshLambertMaterial({ color: 0xe8692c }), grey = new T.MeshLambertMaterial({ color: 0x8c949b });
-    const saltMat = new T.MeshLambertMaterial({ color: 0xd9dfe6, flatShading: true });
-    box(2.3, 0.45, 7.0, mats.dark, 0, 1.0, 0, g);
-    box(2.4, 1.6, 1.8, orange, 0, 2.05, 2.6, g);
-    const glassS = [box(2.1, 0.7, 0.06, mats.glass, 0, 2.45, 3.52, g)];
-    for (const x of [-1.21, 1.21]) glassS.push(box(0.04, 0.6, 1.2, mats.glass, x, 2.45, 2.6, g));
-    box(2.45, 0.12, 1.85, orange, 0, 2.9, 2.6, g);
-    box(2.3, 0.95, 1.1, orange, 0, 1.6, 3.95, g);
-    box(2.5, 0.3, 0.25, mats.dark, 0, 0.95, 4.55, g);
-    for (let k = 0; k < 5; k++) box(0.12, 0.6, 0.04, mats.dark, -0.5 + k * 0.25, 1.65, 4.51, g);
-    const tl = new T.MeshBasicMaterial({ color: 0xfff4d8 });
-    box(0.32, 0.18, 0.06, tl, -0.85, 1.55, 4.52, g); box(0.32, 0.18, 0.06, tl, 0.85, 1.55, 4.52, g);
-    // V-box hopper, salt level inside, chain chute and spinner at the back
-    box(2.35, 1.2, 4.2, grey, 0, 2.0, -1.2, g);
-    for (const x of [-1.2, 1.2]) box(0.06, 0.25, 4.2, orange, x, 2.62, -1.2, g);
+    const orange = paint(0xe8692c), orangeD = paint(0xc4541f, { wear: 1 }), frame = paint(0x262523, { wear: 1, extra: { metalness: 0.3 } });
+    const galv = paint(0x9aa1a6, { wear: 1, extra: { metalness: 0.65 } });
+    const saltMat = std({ color: 0xd9dfe6, roughness: 0.95, flatShading: true });
+    for (const x of [-0.5, 0.5]) rbox(0.2, 0.32, 7.4, 0.03, frame, x, 1.0, 0.3, g);
+    // cab: the interior is laid out from this same box (x +-1.2, z 1.72..3.5, floor 1.25, roof 2.85)
+    rbox(2.42, 1.62, 1.82, 0.18, orange, 0, 2.05, 2.6, g);
+    const glassS = [box(2.06, 0.72, 0.02, tintGlass, 0, 2.45, 3.52, g)];
+    for (const x of [-1.215, 1.215]) glassS.push(box(0.02, 0.6, 1.2, tintGlass, x, 2.45, 2.6, g));
+    rbox(2.46, 0.12, 1.86, 0.05, orangeD, 0, 2.9, 2.6, g);
+    box(2.4, 0.08, 0.22, std({ color: 0x1a1a1a, roughness: 0.5 }), 0, 2.9, 3.6, g);
+    for (const sd of [-1, 1]) { tube([[sd * 1.15, 2.7, 3.3], [sd * 1.5, 2.72, 3.4], [sd * 1.52, 2.25, 3.4]], 0.016, ironMat, g); rbox(0.05, 0.42, 0.24, 0.02, std({ color: 0x111111, roughness: 0.4 }), sd * 1.53, 2.45, 3.4, g); }
+    // hood, grille, bumper, lights
+    rbox(2.26, 0.98, 1.12, 0.2, orange, 0, 1.6, 3.98, g);
+    box(1.4, 0.66, 0.02, grilleMat, 0, 1.6, 4.545, g);
+    rbox(2.54, 0.32, 0.28, 0.06, frame, 0, 0.95, 4.6, g);
+    const tl = new T.MeshBasicMaterial({ color: new T.Color(0xfff4d8).multiplyScalar(4) });
+    for (const sx of [-0.88, 0.88]) { rbox(0.36, 0.22, 0.06, 0.03, ironMat, sx, 1.55, 4.53, g); box(0.3, 0.16, 0.02, tl, sx, 1.55, 4.565, g); }
+    const stackS = cyl(0.08, 1.5, chromeMat, g); stackS.position.set(1.32, 2.8, 1.65);
+    const tankS = cyl(0.28, 1.0, chromeMat, g, 'z', 20); tankS.position.set(-1.0, 1.05, 1.0);
+    for (let k = 0; k < 2; k++) rbox(0.34, 0.04, 0.3, 0.015, ironMat, 1.08, 0.78 + k * 0.42, 2.0, g);
+    // V-box spreader body: sloped sides down to the conveyor, ribbed, with a top rail; salt level inside
+    // open-topped: a U-shaped wall section along the body plus a V-shaped plate at each end
+    const vOut = [[-1.175, 2.62], [-1.175, 2.2], [-0.42, 1.38], [0.42, 1.38], [1.175, 2.2], [1.175, 2.62]];
+    const vIn = [[1.115, 2.62], [1.115, 2.22], [0.395, 1.44], [-0.395, 1.44], [-1.115, 2.22], [-1.115, 2.62]];
+    const ext = (pts, depth) => { const sh = new T.Shape(); sh.moveTo(...pts[0]); for (const q of pts.slice(1)) sh.lineTo(...q); sh.closePath(); return new T.ExtrudeGeometry(sh, { depth, bevelEnabled: false }); };
+    const vG = cached('vbox', () => { const vg = ext([...vOut, ...vIn], 4.2); vg.translate(0, 0, -3.3); return vg; });
+    const vbox = new T.Mesh(vG, galv); vbox.material.side = T.DoubleSide; vbox.castShadow = true; vbox.receiveShadow = true; g.add(vbox);
+    for (const z of [-3.32, 0.88]) { const e = new T.Mesh(cached('vend', () => ext(vOut, 0.05)), galv); e.position.z = z; e.castShadow = true; g.add(e); }
+    for (const x of [-1.2, 1.2]) { rbox(0.08, 0.16, 4.26, 0.03, orange, x, 2.64, -1.2, g); for (let k = 0; k < 6; k++) rbox(0.05, 0.42, 0.08, 0.015, galv, x * 1.01, 2.4, -3.1 + k * 0.76, g); }
     const saltTop = box(2.2, 0.12, 4.0, saltMat, 0, 2.55, -1.2, g);
-    box(0.5, 0.35, 0.9, grey, 0, 1.25, -3.55, g);
+    rbox(0.52, 0.36, 0.92, 0.05, galv, 0, 1.25, -3.55, g);                       // chain chute
+    for (let k = 0; k < 5; k++) rbox(0.5, 0.04, 0.05, 0.01, ironMat, 0, 1.6 + k * 0.22, -3.36, g).position.x = 0.95;    // rear ladder
     const spinner = new T.Group(); spinner.position.set(0, 0.95, -3.95); g.add(spinner);
-    const disc = new T.Mesh(new T.CylinderGeometry(0.42, 0.42, 0.04, 14), mats.steel); spinner.add(disc);
-    for (let k = 0; k < 4; k++) { const f = box(0.06, 0.1, 0.8, mats.dark, 0, 0.06, 0, spinner); f.rotation.y = k * Math.PI / 4; }
-    for (const x of [-0.8, 0.8]) box(0.2, 0.12, 0.06, new T.MeshBasicMaterial({ color: 0xa3201b }), x, 1.3, -3.52, g);
+    const disc = cyl(0.42, 0.04, std({ color: 0x9a9890, roughness: 0.35, metalness: 0.8 }), spinner, 'y', 24);
+    for (let k = 0; k < 4; k++) { const f = rbox(0.06, 0.1, 0.8, 0.02, ironMat, 0, 0.06, 0, spinner); f.rotation.y = k * Math.PI / 4; }
+    for (const x of [-0.8, 0.8]) rbox(0.22, 0.13, 0.05, 0.02, redLensMat, x, 1.3, -3.52, g);
+    box(2.0, 0.12, 0.02, hazardMat, 0, 1.08, -3.36, g);
+    const rim = paint(0xc9ccd0, { wear: 2, extra: { metalness: 0.6 } });
     const front = [], rear = [];
-    for (const x of [-1.1, 1.1]) { const piv = new T.Group(); piv.position.set(x, 0.55, 3.6); g.add(piv); front.push({ piv, w: wheel(0.55, 0.45, mats.steel, piv, 0, 0, 0) }); }
-    for (const z of [-1.3, -2.55]) for (const x of [-1.12, 1.12]) rear.push(wheel(0.55, 0.45, mats.steel, g, x, 0.55, z));
+    for (const x of [-1.1, 1.1]) { const piv = new T.Group(); piv.position.set(x, 0.55, 3.6); g.add(piv); front.push({ piv, w: bigWheel(0.55, 0.42, rim, piv, Math.sign(x) * 0.001, 0, 0, true) }); }
+    for (const z of [-1.3, -2.55]) for (const x of [-1.12, 1.12]) rear.push(bigWheel(0.55, 0.42, rim, g, x, 0.55, z, true));
     addBeacon(g, 0, 2.98, 2.6, 0.8);
     addHeadlight(g, 0, 1.5, 4.6, 18);
     const cabS = buildInterior(g, { eye: [0.5, 2.55, 2.45], cab: { cx: 0, half: 1.2, zF: 3.5, zB: 1.72, floor: 1.25, roof: 2.85 }, wheel: true, wheelR: 0.23, shifter: [0.05, 1.95, 2.6], spreaderLamp: true });
-    const ex = new T.Mesh(new T.CylinderGeometry(0.07, 0.07, 1.4, 8), mats.dark); ex.position.set(1.05, 2.8, 1.65); g.add(ex);
     scene.add(g);
     saltTruck = { g, spinner, saltTop, front, rear, cab: cabS, operator: [], glass: glassS, x: SALT_HOME.x, z: SALT_HOME.z, y: 0, yaw: SALT_HOME.yaw, pitch: 0, roll: 0, v: 0, steer: 0, spin: 0, spinA: 0, tank: 1, on: true, width: 6, load: 0, spots: [] };
     saltTruck.y = sampleAt(gnd, saltTruck.x, saltTruck.z);
@@ -1618,7 +2065,7 @@ function boot(SCN, bootData) {
     for (const f of S.front) { f.piv.rotation.y = S.steer; f.w.rotation.x = S.spin; }
     for (const w of S.rear) w.rotation.x = S.spin;
     S.spinner.rotation.y = S.spinA;
-    S.saltTop.position.y = 1.55 + 1.0 * S.tank; S.saltTop.visible = S.tank > 0.02;
+    S.saltTop.position.y = 1.55 + 1.0 * S.tank; S.saltTop.visible = S.tank > 0.02; S.saltTop.scale.x = 0.42 + 0.58 * S.tank; // narrower as it sinks into the V
     S.g.updateMatrixWorld(true);
     S.spots = [[S.x - c * 1.12 - s * 1.9, S.z + s * 1.12 - c * 1.9, S.yaw], [S.x + c * 1.12 - s * 1.9, S.z - s * 1.12 - c * 1.9, S.yaw]];
     // throw salt off the spinner in a fan behind the truck
@@ -1691,6 +2138,7 @@ function boot(SCN, bootData) {
 
   // trackbed, rails and platforms go into the ground grid
   function rasterRail() {
+    railBed = new Uint8Array(NV); trainT = null; trainSoil = null;
     for (const pa of [RAIL.t1, RAIL.t2]) {
       for (let q = 0; q < pa.P.length - 1; q++) {
         const [x0, z0] = pa.P[q], [x1, z1] = pa.P[q + 1];
@@ -1698,7 +2146,7 @@ function boot(SCN, bootData) {
           for (let i = Math.max(0, Math.floor((Math.min(x0, x1) - 2 + HALF) / CS)); i <= Math.min(N, Math.ceil((Math.max(x0, x1) + 2 + HALF) / CS)); i++) {
             const k = idx(i, j); if (kind[k] >= 7) continue;
             const d = distSeg(wx(i), wz(j), x0, z0, x1, z1);
-            if (d < 1.7) { kind[k] = 1; gnd[k] = 0; if (Math.abs(d - 0.72) < 0.18) mark[k] = 2; }
+            if (d < 1.7) { if (kind[k] !== 1) railBed[k] = 1; kind[k] = 1; gnd[k] = 0; if (Math.abs(d - 0.72) < 0.18) mark[k] = 2; }
           }
       }
     }
@@ -1724,13 +2172,13 @@ function boot(SCN, bootData) {
   const boxHit = (o, px, pz, r) => { const dx = px - o.x, dz = pz - o.z, c = Math.cos(o.yaw), sn = Math.sin(o.yaw), lx = dx * c - dz * sn, lz = dx * sn + dz * c; return Math.abs(lx) < o.hw + r && Math.abs(lz) < o.hl + r; };
 
   function buildRail() {
-    const concrete = new T.MeshLambertMaterial({ color: 0x9a9ea3 }), snowTop = new T.MeshLambertMaterial({ color: 0xf1f4f7 });
-    const njtBlue = new T.MeshLambertMaterial({ color: 0x1f4e9c }), steelD = new T.MeshLambertMaterial({ color: 0x3a3f44 });
+    const concrete = std({ color: 0x9a9ea3 }), snowTop = std({ color: 0xf1f4f7 });
+    const njtBlue = std({ color: 0x1f4e9c }), steelD = std({ color: 0x3a3f44 });
     for (const pl of platforms) {
       const g = new T.Group(); g.position.set(pl.x, 0, pl.z); g.rotation.y = pl.yaw; scene.add(g);
       box(pl.hw * 2, 0.35, pl.hl * 2, concrete, 0, 0.175, 0, g);
       box(pl.hw * 2 - 0.1, 0.06, pl.hl * 2 - 0.2, snowTop, 0, 0.38, 0, g);
-      box(pl.hw * 2 + 0.04, 0.06, pl.hl * 2, new T.MeshLambertMaterial({ color: 0xe8c547 }), 0, 0.36, 0, g).scale.set(0.12, 1, 1);
+      box(pl.hw * 2 + 0.04, 0.06, pl.hl * 2, std({ color: 0xe8c547 }), 0, 0.36, 0, g).scale.set(0.12, 1, 1);
       for (const z of [-8, 0, 8]) {
         for (const x of [-0.9, 0.9]) box(0.08, 2.6, 0.08, steelD, x, 1.65, z - 2, g), box(0.08, 2.6, 0.08, steelD, x, 1.65, z + 2, g);
         box(2.4, 0.12, 4.6, njtBlue, 0, 3.0, z, g); box(2.42, 0.08, 4.5, snowTop, 0, 3.1, z, g);
@@ -1738,7 +2186,7 @@ function boot(SCN, bootData) {
       box(0.1, 0.9, 1.6, njtBlue, 0, 2.2, -14, g);
     }
     // overhead wire: poles beside track 1, one contact wire above each track
-    const s1 = RAIL.t1, poleMat = new T.MeshLambertMaterial({ color: 0x4a4f53 }), wireMat = new T.MeshBasicMaterial({ color: 0x1b1d1f });
+    const s1 = RAIL.t1, poleMat = std({ color: 0x4a4f53 }), wireMat = new T.MeshBasicMaterial({ color: 0x1b1d1f });
     const poleS = []; for (let s = 6; s < s1.L; s += 30) poleS.push(s);
     for (const s of poleS) {
       const [x, z, yaw] = pathAt(s1, s), ox = -Math.cos(yaw), oz = Math.sin(yaw);
@@ -1757,8 +2205,8 @@ function boot(SCN, bootData) {
       const w = new T.Mesh(new T.BoxGeometry(0.03, 0.03, len), wireMat); w.position.set((x0 + x1) / 2, 5.75, (z0 + z1) / 2); w.rotation.y = Math.atan2(x1 - x0, z1 - z0); scene.add(w);
     }
     // the train: three articulated sections in NJ Transit white, blue and orange
-    const white = new T.MeshLambertMaterial({ color: 0xe4e7ea }), glassD = new T.MeshLambertMaterial({ color: 0x24303a }), orangeS = new T.MeshLambertMaterial({ color: 0xf08a24 });
-    const roofG = new T.MeshLambertMaterial({ color: 0x9aa1a7 }), headL = new T.MeshBasicMaterial({ color: 0xfff2cf }), tailL = new T.MeshBasicMaterial({ color: 0xb0241d });
+    const white = std({ color: 0xe4e7ea }), glassD = std({ color: 0x24303a }), orangeS = std({ color: 0xf08a24 });
+    const roofG = std({ color: 0x9aa1a7 }), headL = new T.MeshBasicMaterial({ color: new T.Color(0xfff2cf).multiplyScalar(4) }), tailL = new T.MeshBasicMaterial({ color: new T.Color(0xb0241d).multiplyScalar(2.5) });
     const secs = [];
     for (let i = 0; i < 3; i++) {
       const g = new T.Group(); scene.add(g); g.visible = false;
@@ -1784,21 +2232,40 @@ function boot(SCN, bootData) {
     const sStop = { t1: nearestS(RAIL.t1, OSM.rail.station[0], OSM.rail.station[1]), t2: nearestS(RAIL.t2, OSM.rail.station[0], OSM.rail.station[1]) };
     train = { secs, trip: 't1', s: 0, v: 0, state: 'run', dwell: 0, wait: 0, served: false, sStop, bellT: 0, pos: [] };
   }
-  // the train's nose clears its own track: snow on the trackbed is thrown off to both sides
+  // A train doesn't leave its track clean. The pilot and the wheels pack the snow between and beside the rails
+  // into an uneven, dirty layer and only the railheads come through; what's pushed aside lands in low, lumpy
+  // ridges past the ends of the ties, with a spray of powder. Each pass packs it a little further.
   function trainPlow(pa, sFront) {
+    if (!trainT) { trainT = new Float32Array(NV).fill(-1e9); trainSoil = new Float32Array(NV); }
+    if (!pack) pack = new Float32Array(NV).fill(0.5);
     let thrown = 0;
-    for (let a = 0; a <= 1.8; a += 0.6) {
-      const [x, z, yaw] = pathAt(pa, sFront + a), rx = -Math.cos(yaw), rz = Math.sin(yaw);
-      for (let l = -1.6; l <= 1.6; l += 0.45) {
+    for (let a = 0; a <= 1.8; a += 0.3) {
+      const [x, z, yaw] = pathAt(pa, sFront + a), rx = -Math.cos(yaw), rz = Math.sin(yaw), fx = Math.sin(yaw), fz = Math.cos(yaw);
+      for (let l = -2.0; l <= 2.001; l += 0.3) {
         const px = x + rx * l, pz = z + rz * l;
         if (Math.abs(px) > HALF - 4 || Math.abs(pz) > HALF - 4) continue;
-        const k = idx(Math.round((px + HALF) / CS), Math.round((pz + HALF) / CS));
-        if (kind[k] !== 1) continue;
-        const ex = h[k] - gnd[k]; if (ex < 0.02) continue;
-        h[k] = gnd[k]; disturb(k);
-        const side = l < 0 ? -1 : 1, dx = x + rx * side * 2.8, dz = z + rz * side * 2.8;
-        if (thrown++ % 3 === 0 && parts.length < MAXP - 2) parts.push({ x: px, y: gnd[k] + 0.6, z: pz, vx: rx * side * (2.5 + Math.random() * 2) + Math.sin(yaw) * train.v * 0.5, vy: 1.6 + Math.random(), vz: rz * side * (2.5 + Math.random() * 2) + Math.cos(yaw) * train.v * 0.5, vol: ex * A, r: Math.random() * 6, quiet: true });
-        else depositAt(dx, dz, ex * A);
+        const ci = Math.round((px + HALF) / CS), cj = Math.round((pz + HALF) / CS), k = idx(ci, cj);
+        if (kind[k] !== 1 || time - trainT[k] < 15) continue;   // once per pass
+        trainT[k] = time;
+        // how far this cell's centre is from the middle of the track decides what the train does to it
+        // smooth noise along the track (not per cell) so the groove and ridges undulate instead of looking jagged
+        const cx = wx(ci), cz = wz(cj), sl = (cx - x) * rx + (cz - z) * rz, al = Math.abs(sl), ex = h[k] - gnd[k];
+        const j = clamp(0.5 + 0.35 * Math.sin(cx * 0.37 + cz * 0.23) + 0.15 * Math.sin(cx * 0.11 - cz * 0.17 + 1.3), 0, 1);
+        trainSoil[k] = Math.min(1, trainSoil[k] + (al < 1.7 ? 0.5 : 0.15) + 0.3 * j); dirtyRow(k);
+        if (ex < 0.02) continue;
+        // railheads: the wheels cut them down to a dusting, so the rails show as two dark lines;
+        // between them the pilot packs a groove; outside them the snow is stirred and partly blown off
+        const rail = mark[k] === 2;
+        const keep = rail ? 0.12 + 0.08 * j : al < 0.6 ? 0.35 + 0.15 * j : al < 1.7 ? 0.65 + 0.2 * j : 0.88 + 0.1 * j;
+        const floor = rail ? 0.035 + 0.015 * j : al < 0.6 ? 0.06 + 0.04 * j : 0.09 + 0.04 * j;
+        const nd = Math.max(Math.min(ex, floor), ex * keep), rem = ex - nd;
+        pack[k] = 1;                                   // packed snow holds its edges instead of slumping back in
+        if (rem < 0.005) continue;
+        h[k] = gnd[k] + nd; disturb(k);
+        // the pushed snow rolls into a fairly even windrow just past the ends of the ties
+        const side = sl < 0 ? -1 : 1, off = 2.1 + 0.5 * j + Math.random() * 0.25, back = -0.3 - Math.random() * 0.4;
+        if (thrown++ % 8 === 0 && parts.length < MAXP - 2) parts.push({ x: x + rx * side * 1.8, y: gnd[k] + 0.5, z: z + rz * side * 1.8, vx: rx * side * (1.5 + Math.random() * 2) + fx * train.v * 0.4, vy: 1.0 + Math.random(), vz: rz * side * (1.5 + Math.random() * 2) + fz * train.v * 0.4, vol: rem * A, r: Math.random() * 6, quiet: true, pack: 0.2 });
+        else depositAt(x + rx * side * off + fx * back, z + rz * side * off + fz * back, rem * A, 0.6);
       }
     }
     pa.hint = 0;
@@ -1825,7 +2292,7 @@ function boot(SCN, bootData) {
       if (blocked) { vt = 0; tr.bellT -= dt; if (tr.bellT <= 0) { trainBell(); tr.bellT = 2.5; } }
       tr.v += clamp(vt - tr.v, -2.8 * dt, 1.1 * dt);
       tr.s += tr.v * dt;
-      if (tr.v > 0.8) trainPlow(pa, tr.s);
+      if (tr.v > 0.05) trainPlow(pa, tr.s);   // even crawling out of the station it packs the snow down
       if (!tr.served && tr.v < 0.3 && tr.s > tr.sStop[tr.trip] + 6) { tr.state = 'dwell'; tr.dwell = 12; trainBell(); }
       if (tr.s - 24 > pa.L) { tr.state = 'wait'; tr.wait = 10; }
     }
@@ -1843,17 +2310,11 @@ function boot(SCN, bootData) {
 
   // moving cars: follow whole streets, slow down in deep snow, stop for anything in the lane
   function makeCar(col, tall, snowy) {
-    const glass = new T.MeshLambertMaterial({ color: 0x2c3a46 }), cap = new T.MeshLambertMaterial({ color: 0xf3f6f9 }), tire = new T.MeshLambertMaterial({ color: 0x1b1b1b });
-    const lightF = new T.MeshBasicMaterial({ color: 0xfff1cf }), lightR = new T.MeshBasicMaterial({ color: 0xc2271f });
-    const g = new T.Group(), mat = new T.MeshLambertMaterial({ color: col });
-    const hb = tall ? 0.95 : 0.7, hc = tall ? 0.75 : 0.55;
-    box(1.8, hb, 4.4, mat, 0, 0.3 + hb / 2, 0, g);
-    box(1.62, hc, tall ? 3.0 : 2.2, glass, 0, 0.3 + hb + hc / 2, tall ? -0.4 : -0.25, g);
-    if (snowy) { box(1.66, 0.16, tall ? 2.9 : 2.1, cap, 0, 0.3 + hb + hc + 0.06, tall ? -0.4 : -0.25, g); box(1.7, 0.1, 1.1, cap, 0, 0.3 + hb + 0.04, 1.6, g); box(1.7, 0.08, 0.7, cap, 0, 0.3 + hb + 0.03, -2.0, g); }
-    else box(1.5, 0.06, 1.6, cap, 0, 0.3 + hb + hc + 0.02, -0.6, g);
-    for (const x of [-0.6, 0.6]) { box(0.35, 0.14, 0.05, lightF, x, 0.3 + hb * 0.7, 2.21, g); box(0.35, 0.14, 0.05, lightR, x, 0.3 + hb * 0.7, -2.21, g); }
-    for (const x of [-0.9, 0.9]) for (const z of [-1.35, 1.35]) { const w = new T.Mesh(new T.CylinderGeometry(0.33, 0.33, 0.24, 10), tire); w.rotation.z = Math.PI / 2; w.position.set(x, 0.33, z); g.add(w); }
-    g.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    // the body is always the first child: the map reads its colour
+    const g = new T.Group(), kit = carKit(tall, snowy), parts = kit.parts;
+    const body = new T.Mesh(parts[kit.body], kit.mat(kit.body, col, true)); body.name = 'body'; g.add(body);
+    for (const key in parts) if (key !== kit.body) { const m = new T.Mesh(parts[key], kit.mat(key, null, true)); m.name = key; g.add(m); }
+    g.traverse(o => { if (o.isMesh) { o.castShadow = o.name !== kit.glass; o.receiveShadow = true; } });
     return g;
   }
   // Traffic runs on a street network: cars follow a street, may turn at each intersection, wait their
@@ -2067,7 +2528,7 @@ function boot(SCN, bootData) {
     }
   }
   function buildStreetTrees() {
-    const bark = new T.MeshLambertMaterial({ color: 0x3e342c }), snowy = new T.MeshLambertMaterial({ color: 0xeef2f6 });
+    const bark = std({ color: 0x3e342c }), snowy = std({ color: 0xeef2f6 });
     const trunkG = new T.CylinderGeometry(0.1, 0.17, 3.2, 6); trunkG.translate(0, 1.6, 0);
     const limbG = new T.CylinderGeometry(0.03, 0.07, 2.2, 5); limbG.translate(0, 1.1, 0);
     const tipG = new T.DodecahedronGeometry(0.22, 0);
@@ -2090,7 +2551,7 @@ function boot(SCN, bootData) {
 
   // the rest of the city beyond the mapped blocks: plain low-poly blocks, taller toward Exchange Place and Newport
   function buildBackdrop() {
-    const roof = new T.MeshLambertMaterial({ color: 0xf1f4f7 });
+    const roof = std({ color: 0xf1f4f7 });
     const styles = [[windowTexture('#8a4c39', '#353c44', '#e4ddd2'), 0.2], [windowTexture('#b7aa93', '#46525d', '#d8cfbf'), 0.25], [windowTexture('#6d8292', '#3e5466'), 0.35], [windowTexture('#9a8f84', '#3d464f'), 0.2]]
       .map(([t, f]) => { const gl = windowGlow(f, true); t.repeat.set(1, 1); gl.tex.repeat.set(1, 1); return windowMaterial(t, gl); });
     let seed = 5; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
@@ -2123,12 +2584,18 @@ function boot(SCN, bootData) {
   const _v = new T.Vector3(), _n = new T.Vector3(), _p0 = new T.Vector3(), _inv = new T.Matrix4(), _l = new T.Vector3();
   let prevEdge = new T.Vector3();
 
-  function depositAt(x, z, vol) {
+  function depositAt(x, z, vol, packing) {
     const fx = clamp((x + HALF) / CS, 3, N - 4), fz = clamp((z + HALF) / CS, 3, N - 4);
     const i = fx | 0, j = fz | 0, tx = fx - i, tz = fz - j, k = j * ROW + i, dh = vol / A;
     if (SNOW && (kind[k] === 8 || kind[k + 1] === 8)) { riverVol += vol; return; } // into the Hudson
+    if (SNOW && !pack) pack = new Float32Array(NV).fill(0.5);
     const w = [(1 - tx) * (1 - tz), tx * (1 - tz), (1 - tx) * tz, tx * tz], ks = [k, k + 1, k + ROW, k + ROW + 1];
-    for (let q = 0; q < 4; q++) { h[ks[q]] += dh * w[q]; disturb(ks[q]); }
+    for (let q = 0; q < 4; q++) {
+      const c = ks[q], add = dh * w[q];
+      // the cell's packing becomes a mix of what was there and what landed, weighted by depth
+      if (pack && packing !== undefined) { const depth = Math.max(0.001, h[c] - (gnd ? gnd[c] : 0)); pack[c] += (packing - pack[c]) * clamp(add / (depth + add), 0, 1); }
+      h[c] += add; disturb(c);
+    }
   }
 
   function setArm() { const L = loader; L.arm.rotation.x = -L.a; L.bucket.rotation.x = L.a - L.b; L.plow.rotation.set(L.a, L.plowAng, 0); L.fg.updateMatrixWorld(true); }
@@ -2142,14 +2609,14 @@ function boot(SCN, bootData) {
     const rearBase = SNOW ? 0 : (heightAt(L.spots[2][0], L.spots[2][1]) + heightAt(L.spots[3][0], L.spots[3][1])) / 2;
     const restDepth = L.plowRest ? 0.04 : 0.12;
     const floorAt = (x, z) => SNOW ? sampleAt(gnd, x, z) : rearBase - restDepth;
-    const edgeGap = () => { let u = -9; for (const lx of [-1.72, 0, 1.72]) { _v.set(lx, -0.35, 0.5).applyMatrix4(mw); u = Math.max(u, floorAt(_v.x, _v.z) - _v.y); } return u; };
+    const edgeGap = () => { let u = -9; for (const lx of [-1.72, 0, 1.72]) { _v.set(lx, -0.35, PLOW_Z).applyMatrix4(mw); u = Math.max(u, floorAt(_v.x, _v.z) - _v.y); } return u; };
     for (let it = 0, u = edgeGap(); u > 0.015 && it < 60 && L.a < 0.95; it++) { L.a = Math.min(0.95, L.a + 0.01); setArm(); u = edgeGap(); }
     L.plowRest = edgeGap() > -0.03;
     if (L.v <= 0.05) return;
     const floating = SNOW && L.plowRest; // resting on the pavement: scrape it clean
     // in dirt, cut at most a skim below where the rear wheels stand, so the loader can't dive into its own cut
     const rearGround = SNOW ? -99 : rearBase - restDepth;
-    _e1.set(-1.72, -0.35, 0.5).applyMatrix4(mw); _e2.set(1.72, -0.35, 0.5).applyMatrix4(mw);
+    _e1.set(-1.72, -0.35, PLOW_Z).applyMatrix4(mw); _e2.set(1.72, -0.35, PLOW_Z).applyMatrix4(mw);
     _pf.set(0, 0, 1).transformDirection(mw); _pf.y = 0; _pf.normalize();
     const ux = _e2.x - _e1.x, uz = _e2.z - _e1.z, len = Math.hypot(ux, uz), dx = ux / len, dz = uz / len;
     const hx = Math.sin(L.yaw), hz = Math.cos(L.yaw);
@@ -2159,6 +2626,8 @@ function boot(SCN, bootData) {
     const i0 = clamp(Math.floor((x0 + HALF) / CS), 3, N - 3), i1 = clamp(Math.ceil((x1 + HALF) / CS), 3, N - 3);
     const j0 = clamp(Math.floor((z0 + HALF) / CS), 3, N - 3), j1 = clamp(Math.ceil((z1 + HALF) / CS), 3, N - 3);
     let pushed = 0;
+    // speed decides what the snow does: fling 0 at a crawl, 1 at about 6 m/s and up
+    const fling = clamp((Math.abs(L.v) - 0.8) / 5.2, 0, 1), packed = lerp(1, 0.1, fling);
     for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
       const k = j * ROW + i; if (kind[k] >= 7) continue;
       const x = wx(i), z = wz(j), rx = x - _e1.x, rz = z - _e1.z;
@@ -2167,17 +2636,26 @@ function boot(SCN, bootData) {
       const floor = floating ? hMin[k] : Math.max(lerp(_e1.y, _e2.y, t), hMin[k], rearGround), ex = h[k] - floor;
       if (ex <= 0.004) continue;
       h[k] -= ex; disturb(k);
-      if (sx === 0 && sz === 0) depositAt(x + _pf.x * 0.75, z + _pf.z * 0.75, ex * A);
+      if (sx === 0 && sz === 0) depositAt(x + _pf.x * 0.75, z + _pf.z * 0.75, ex * A, packed);
       else {
         const tx = x + sx * 0.8 + _pf.x * 0.3, tz = z + sz * 0.8 + _pf.z * 0.3;
         const td = ((tx - _e1.x) * dx + (tz - _e1.z) * dz) / len;
-        if ((td < -0.02 || td > 1.02) && parts.length < MAXP - 4) {
-          // rolls off the end of the blade and is thrown clear
-          for (let q = 0; q < 3; q++) {
-            const sp = 2.0 + Math.random() * 2.0;
-            parts.push({ x: tx, y: h[k] + 0.3 + Math.random() * 0.3, z: tz, vx: sx * sp + _pf.x * 1.2 + hx * L.v * 0.6, vy: 1.2 + Math.random() * 1.8, vz: sz * sp + _pf.z * 1.2 + hz * L.v * 0.6, vol: ex * A / 3, r: Math.random() * 6 });
+        if (td < -0.02 || td > 1.02) {
+          if (fling < 0.12 || parts.length >= MAXP - 4) {
+            // slow: it rolls off the end and drops right there, so the windrow stays narrow and tall
+            depositAt(tx + sx * 0.3 + (Math.random() - 0.5) * 0.12, tz + sz * 0.3 + (Math.random() - 0.5) * 0.12, ex * A, packed);
+          } else {
+            // faster: thrown out further, higher and more scattered, so it lands in a wider, lower band
+            for (let q = 0; q < 3; q++) {
+              // a wide spread of throw speeds fills one broad band from the blade end out to about 3 m
+              const sp = lerp(1.0, 3.6, fling) * (0.3 + Math.random() * 1.1), fwd = lerp(0.3, 1.4, fling) * (0.5 + Math.random());
+              const jit = (Math.random() - 0.5) * lerp(0.3, 1.2, fling);
+              parts.push({ x: tx, y: h[k] + 0.25 + Math.random() * 0.25, z: tz,
+                vx: sx * sp + _pf.x * fwd - sz * jit + hx * L.v * 0.6, vy: lerp(0.6, 1.8, fling) * (0.6 + Math.random() * 0.8),
+                vz: sz * sp + _pf.z * fwd + sx * jit + hz * L.v * 0.6, vol: ex * A / 3, r: Math.random() * 6, pack: packed });
+            }
           }
-        } else depositAt(tx, tz, ex * A);
+        } else depositAt(tx, tz, ex * A, packed);
       }
       pushed += ex * A;
     }
@@ -2286,7 +2764,7 @@ function boot(SCN, bootData) {
         }
       }
       const gy = heightAt(P.x, P.z);
-      if (P.y <= gy) { depositAt(P.x, P.z, P.vol); if (!P.quiet) { moved += P.vol; sfx.ground += P.vol; } parts.splice(i, 1); continue; }
+      if (P.y <= gy) { depositAt(P.x, P.z, P.vol, P.pack); if (!P.quiet) { moved += P.vol; sfx.ground += P.vol; } parts.splice(i, 1); continue; }
     }
     for (const P of parts) { m.compose(p.set(P.x, P.y, P.z), q.setFromEuler(e.set(P.r, P.r * 0.7, 0)), s); pMesh.setMatrixAt(c++, m); }
     pMesh.count = c; pMesh.instanceMatrix.needsUpdate = true;
@@ -2373,27 +2851,17 @@ function boot(SCN, bootData) {
     L.g.position.set(L.x, L.y, L.z); L.g.rotation.set(-L.pitch, L.tR, L.rollR);
     L.fg.position.set(L.x, L.y, L.z); L.fg.rotation.set(-L.pitch, L.tF, L.rollF);
     L.arm.rotation.x = -L.a; L.bucket.rotation.x = L.a - L.b;
-    L.plow.rotation.set(L.a, L.plowAng, 0); L.bucket.visible = !plowing; L.plow.visible = plowing;
+    L.plow.rotation.set(L.a, L.plowAng, 0); L.bucket.visible = !plowing; L.plow.visible = plowing; L.coupler.visible = plowing;
     for (const wg of L.wheels) wg.rotation.x = L.spin;
-    for (const r of L.rams) {
-      const a0 = new T.Vector3(r.x, 0.95, 1.45);
-      const b0 = new T.Vector3(r.x, ARM_PIVOT.y + Math.sin(L.a) * 1.25, ARM_PIVOT.z + Math.cos(L.a) * 1.25);
-      const d = b0.clone().sub(a0), len = d.length();
-      r.m.position.copy(a0).addScaledVector(d, 0.5); r.m.scale.set(1, len, 1);
-      r.m.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), d.normalize());
-    }
     const f = L.load / BUCKET_CAP;
     L.fill.visible = L.heap.visible = f > 0.01;
     L.fill.scale.y = Math.max(0.001, f * 0.75); L.heap.position.y = -0.52 + f * 0.75; L.heap.scale.set(1.1, 0.35 * f + 0.02, 0.55);
     L.g.updateMatrixWorld(true); L.fg.updateMatrixWorld(true);
     // steering rams span the joint: rear-frame anchor to front-frame anchor, in world space
-    for (const r of L.steerRams) {
-      const a0 = new T.Vector3(r.x, 1.0, -0.55).applyMatrix4(L.g.matrixWorld);
-      const b0 = new T.Vector3(r.x, 1.0, 0.45).applyMatrix4(L.fg.matrixWorld);
-      const d = b0.clone().sub(a0), len = d.length();
-      r.m.position.copy(a0).addScaledVector(d, 0.5); r.m.scale.set(1, len, 1);
-      r.m.quaternion.setFromUnitVectors(new T.Vector3(0, 1, 0), d.normalize());
-    }
+    for (const r of L.steerRams) r.ram.set(_ra.set(r.x, 1.0, -0.55).applyMatrix4(L.g.matrixWorld), _rb.set(r.x, 1.0, 0.45).applyMatrix4(L.fg.matrixWorld));
+    // lift rams: low on the front frame up to the underside of each arm; tilt ram: frame to the bellcrank top
+    for (const r of L.rams) r.ram.set(_ra.set(r.x, 0.95, 1.5).applyMatrix4(L.fg.matrixWorld), _rb.set(r.x, -0.12, 1.25).applyMatrix4(L.arm.matrixWorld));
+    L.tiltRam.set(_ra.set(0, 1.55, 1.05).applyMatrix4(L.fg.matrixWorld), _rb.set(0, 0.5, ARM_L * 0.52 + 0.1).applyMatrix4(L.arm.matrixWorld));
     return Math.abs(thr);
   }
 
@@ -2408,10 +2876,10 @@ function boot(SCN, bootData) {
       const y = k * 16;
       for (const [o, d] of [[3, 1], [29, -1]]) { x.beginPath(); x.moveTo(o, y + 1); x.lineTo(o + d * 11, y + 7); x.lineTo(o + d * 11, y + 12); x.lineTo(o, y + 6); x.closePath(); x.fill(); }
     }
-    const t = new T.CanvasTexture(c); t.wrapS = T.ClampToEdgeWrapping; t.wrapT = T.RepeatWrapping; t.anisotropy = 4;
+    const t = srgbTex(new T.CanvasTexture(c)); t.wrapS = T.ClampToEdgeWrapping; t.wrapT = T.RepeatWrapping; t.anisotropy = 4;
     return t;
   })();
-  const trackMat = new T.MeshLambertMaterial({ map: trackTex, color: SNOW ? 0xb7c6d8 : 0xffffff, opacity: SNOW ? 0.6 : 1, transparent: true, depthWrite: false, side: T.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  const trackMat = std({ map: trackTex, color: SNOW ? 0xb7c6d8 : 0xffffff, opacity: SNOW ? 0.6 : 1, transparent: true, depthWrite: false, side: T.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   const trails = [0, 1, 2, 3, 4, 5].map(() => {
     const geo = new T.BufferGeometry();
     const pos = new T.BufferAttribute(new Float32Array(TRACK_MAX * 6), 3), uv = new T.BufferAttribute(new Float32Array(TRACK_MAX * 4), 2);
@@ -2539,7 +3007,7 @@ function boot(SCN, bootData) {
   }
 
   // Side mirrors: each renders the view behind the cab into a texture, then draws it flipped like real glass.
-  const mirrorRT = new T.WebGLRenderTarget(384, 240);
+  const mirrorRT = new T.WebGLRenderTarget(384, 240, { type: T.HalfFloatType });
   const mirrorCam = new T.PerspectiveCamera(38, 1.6, 0.3, 320);
   const quadScene = new T.Scene(), quadCam = new T.OrthographicCamera(0, 1, 1, 0, -1, 1);
   {
@@ -2591,9 +3059,10 @@ function boot(SCN, bootData) {
   }, { passive: false });
 
   function resize() {
-    const r = screen.getBoundingClientRect();
-    renderer.setSize(Math.max(1, r.width), Math.max(1, r.height), false);
-    camera.aspect = r.width / Math.max(1, r.height); camera.updateProjectionMatrix();
+    const r = screen.getBoundingClientRect(), w = Math.max(1, r.width), hh = Math.max(1, r.height);
+    renderer.setSize(w, hh, false);
+    if (composer) { composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(w, hh); }
+    camera.aspect = w / hh; camera.updateProjectionMatrix();
   }
   new ResizeObserver(resize).observe(screen);
 
@@ -2837,8 +3306,7 @@ function boot(SCN, bootData) {
   }
 
   // ---------------- audio ----------------
-  // All synthesized. The loader is a six-cylinder diesel: a pulse-shaped core wave at the firing
-  // rate, exhaust rasp gated by the firings, a sub rumble and a turbo that spools under load.
+  // All synthesized, nothing recorded. The engines are described at enginePulses below.
   const sfx = { scoop: 0, ground: 0, truck: 0, push: 0, hopper: 0 };
   let ac = null, AU = null, muted = false;
   const filt = (type, f, q = 0.7) => { const b = ac.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q; return b; };
@@ -2851,44 +3319,67 @@ function boot(SCN, bootData) {
     return b;
   }
   function loopSrc(buf) { const s = ac.createBufferSource(); s.buffer = buf; s.loop = true; s.start(0, Math.random() * buf.duration); return s; }
-  function dieselWave() {
-    const n = 48, re = new Float32Array(n), im = new Float32Array(n);
-    for (let k = 1; k < n; k++) { im[k] = (k % 3 === 0 ? 2.2 : 0.55) / Math.pow(k, 0.85) * (k % 2 ? 1 : 0.8); re[k] = k % 5 === 0 ? 0.3 / k : 0; }
-    return ac.createPeriodicWave(re, im);
+  // The diesel is built from its combustion strokes rather than a steady tone: a buffer holds 12 engine
+  // cycles of a six-cylinder four-stroke at 900 rpm, every firing a short damped thump plus a burst of
+  // exhaust noise and a little injector clatter, each cylinder slightly different and each stroke slightly
+  // off in timing and strength. It loops, and playback speed follows rpm (pitch and firing rate together).
+  // A second, harsher buffer (sharper attack, more rasp) is crossfaded in under load. An exhaust filter
+  // with a body resonance and a muffler dip shapes the result; the turbo whistle and intake rush stay on top.
+  const ENG_R0 = 900;
+  function enginePulses(heavy) {
+    const sr = ac.sampleRate, cyc = 120 / ENG_R0, nCyc = 12, len = Math.floor(sr * cyc * nCyc);
+    const b = ac.createBuffer(1, len, sr), d = b.getChannelData(0), at = i => ((i % len) + len) % len;
+    const cylAmp = [0, 1, 2, 3, 4, 5].map(() => 0.8 + Math.random() * 0.32), cylTone = [0, 1, 2, 3, 4, 5].map(() => 0.88 + Math.random() * 0.24);
+    const n = Math.floor(sr * 0.07);
+    for (let c = 0; c < nCyc; c++) for (let k = 0; k < 6; k++) {
+      const i0 = Math.floor((c + k / 6 + (Math.random() - 0.5) * 0.014) * cyc * sr);
+      const amp = cylAmp[k] * (0.88 + Math.random() * 0.24), f = (heavy ? 96 : 74) * cylTone[k];
+      const dec = heavy ? 0.017 : 0.024, nDec = heavy ? 0.011 : 0.006, nAmp = heavy ? 0.95 : 0.4, sm = heavy ? 0.55 : 0.28;
+      const tick = Math.floor(sr * (0.0016 + Math.random() * 0.0008));
+      let lp = 0;
+      for (let j = 0; j < n; j++) {
+        const t = j / sr, env = Math.exp(-t / dec) * (1 - Math.exp(-t / (heavy ? 0.0008 : 0.0014)));
+        lp += (Math.random() * 2 - 1 - lp) * sm;
+        let v = env * Math.sin(2 * Math.PI * f * t + 0.6 * Math.sin(2 * Math.PI * f * 0.5 * t)) + nAmp * Math.exp(-t / nDec) * lp;
+        if (j >= tick && j < tick + sr * 0.0006) v += (Math.random() * 2 - 1) * (heavy ? 0.3 : 0.22);   // injector / valve clatter
+        d[at(i0 + j)] += amp * v;
+      }
+    }
+    let m = 0; for (let i = 0; i < len; i++) m = Math.max(m, Math.abs(d[i]));
+    for (let i = 0; i < len; i++) d[i] /= m || 1;
+    return b;
   }
   function makeEngine(dest) {
-    const core = ac.createOscillator(); core.setPeriodicWave(dieselWave());
+    if (!AU.pulseL) { AU.pulseL = enginePulses(false); AU.pulseH = enginePulses(true); }
+    const off = Math.random() * AU.pulseL.duration, t0 = ac.currentTime + 0.02;
+    const src = buf => { const s = ac.createBufferSource(); s.buffer = buf; s.loop = true; s.start(t0, off); return s; };
+    const srcL = src(AU.pulseL), srcH = src(AU.pulseH), gL = gainN(0), gH = gainN(0), mix = gainN(1);
+    srcL.connect(gL); srcH.connect(gH); gL.connect(mix); gH.connect(mix);
     const shaper = ac.createWaveShaper(), curve = new Float32Array(1024);
-    for (let i = 0; i < 1024; i++) curve[i] = Math.tanh(2.2 * (i / 511.5 - 1));
+    for (let i = 0; i < 1024; i++) curve[i] = Math.tanh(1.7 * (i / 511.5 - 1)) / Math.tanh(1.7);
     shaper.curve = curve;
-    const coreLP = filt('lowpass', 300, 0.9), coreG = gainN(0);
-    chain(core, shaper, coreLP, coreG, dest);
-    const raspBP = filt('bandpass', 500, 0.9), raspG = gainN(0);
-    chain(loopSrc(AU.noise), raspBP, raspG, dest);
-    const gate = ac.createOscillator(); gate.type = 'square';
-    const gateDepth = gainN(0); gate.connect(gateDepth); gateDepth.connect(raspG.gain);
-    const sub = ac.createOscillator(), subG = gainN(0); chain(sub, subG, dest);
-    const turbo = ac.createOscillator(), turboG = gainN(0); chain(turbo, turboG, dest);
+    const body = filt('peaking', 115, 1.1); body.gain.value = 6;     // the stack's low resonance
+    const muff = filt('peaking', 460, 1.6); muff.gain.value = -5;    // muffler takes the honk out
+    const lp = filt('lowpass', 900, 0.6);
+    chain(mix, shaper, body, muff, lp, dest);
+    const sub = ac.createOscillator(), subG = gainN(0); chain(sub, filt('lowpass', 90, 0.7), subG, dest); sub.start();
+    const turbo = ac.createOscillator(), turboG = gainN(0); chain(turbo, turboG, dest); turbo.start();
     const whooshBP = filt('bandpass', 2500, 1.5), whooshG = gainN(0); chain(loopSrc(AU.noise), whooshBP, whooshG, dest);
-    [core, gate, sub, turbo].forEach(o => o.start());
-    return { core, coreLP, coreG, raspBP, raspG, gate, gateDepth, sub, subG, turbo, turboG, whooshBP, whooshG };
+    return { srcL, srcH, gL, gH, lp, sub, subG, turbo, turboG, whooshBP, whooshG };
   }
   function driveEngine(e, rpm, load, vol, now) {
-    const fire = rpm / 60 * 3; // six cylinders, four-stroke: three firings per revolution
-    e.core.frequency.setTargetAtTime(fire / 3, now, 0.05);
-    e.gate.frequency.setTargetAtTime(fire, now, 0.05);
-    e.sub.frequency.setTargetAtTime(fire / 2, now, 0.05);
-    e.coreLP.frequency.setTargetAtTime(170 + load * 850 + rpm * 0.15, now, 0.1);
-    e.coreG.gain.setTargetAtTime(vol * (0.5 + 0.35 * load), now, 0.08);
-    e.raspBP.frequency.setTargetAtTime(320 + rpm * 0.25 + load * 450, now, 0.1);
-    const r = vol * (0.15 + 0.6 * load);
-    e.raspG.gain.setTargetAtTime(r * 0.5, now, 0.08); e.gateDepth.gain.setTargetAtTime(r * 0.5, now, 0.08);
-    e.subG.gain.setTargetAtTime(vol * 0.45, now, 0.1);
+    const rate = clamp(rpm / ENG_R0, 0.12, 3);
+    e.srcL.playbackRate.setTargetAtTime(rate, now, 0.06); e.srcH.playbackRate.setTargetAtTime(rate, now, 0.06);
+    e.gL.gain.setTargetAtTime(vol * 1.1 * (1 - 0.75 * load), now, 0.08);
+    e.gH.gain.setTargetAtTime(vol * (0.15 + 1.05 * load), now, 0.08);
+    e.lp.frequency.setTargetAtTime(420 + load * 1500 + rpm * 0.35, now, 0.1);
+    e.sub.frequency.setTargetAtTime(rpm / 60 * 1.5, now, 0.05);       // half the firing rate: the block shaking
+    e.subG.gain.setTargetAtTime(vol * 0.3, now, 0.1);
     const boost = clamp((rpm - 950) / 1000, 0, 1) * (0.3 + 0.7 * load);
     e.turbo.frequency.setTargetAtTime(1700 + boost * 2800, now, 0.5);
-    e.turboG.gain.setTargetAtTime(vol * 0.03 * boost, now, 0.5);
+    e.turboG.gain.setTargetAtTime(vol * 0.018 * boost, now, 0.5);
     e.whooshBP.frequency.setTargetAtTime(1400 + boost * 2400, now, 0.5);
-    e.whooshG.gain.setTargetAtTime(vol * 0.12 * boost, now, 0.4);
+    e.whooshG.gain.setTargetAtTime(vol * 0.1 * boost, now, 0.4);
   }
 
   function initAudio() {
@@ -3113,11 +3604,12 @@ function boot(SCN, bootData) {
 
   // ---------------- input ----------------
   const keys = new Set();
-  const GAME = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyI', 'KeyJ', 'KeyK', 'KeyL', 'KeyC', 'KeyG', 'KeyM', 'KeyN', 'KeyQ', 'KeyE', 'KeyR', 'KeyF', 'KeyX', 'KeyB', 'KeyT', 'KeyZ', 'KeyV', 'KeyP', 'Escape', 'Digit1', 'Digit2', 'Digit3', 'Digit4']);
+  const GAME = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyI', 'KeyJ', 'KeyK', 'KeyL', 'KeyC', 'KeyG', 'KeyM', 'KeyN', 'KeyQ', 'KeyE', 'KeyR', 'KeyF', 'KeyX', 'KeyB', 'KeyT', 'KeyZ', 'KeyV', 'KeyP', 'Escape', 'Digit1', 'Digit2', 'Digit3', 'Digit4', 'KeyO']);
   let lastN = 0;
   function press(code) {
     initAudio();
     if (code === 'KeyP') toggleBigMap();
+    if (code === 'KeyO') { quality = quality === 'high' ? 'low' : 'high'; try { localStorage.setItem(QKEY, quality); } catch (_) {} buildComposer(); toast(quality === 'high' ? 'Graphics: high (shadows, ambient occlusion, bloom)' : 'Graphics: low (faster)', 1600); }
     if (code === 'Gear' || /^Digit[1-4]$/.test(code)) {
       const g = code === 'Gear' ? gearOf[active] % 4 + 1 : +code.slice(5);
       if (g !== gearOf[active]) { gearOf[active] = g; toast(`Gear ${g}`, 800); }
@@ -3169,7 +3661,7 @@ function boot(SCN, bootData) {
   const NOINPUT = { fwd: 0, back: 0, left: 0, right: 0, up: 0, down: 0, curl: 0, dump: 0, swingL: 0, swingR: 0, stickOut: 0, stickIn: 0, lookL: 0, lookR: 0 };
 
   function newSite() {
-    gen(); dj0 = 0; dj1 = N;
+    gen(); dj0 = 0; dj1 = N; pack = null;
     if (tufts) { scene.remove(tufts); tufts.dispose(); buildTufts(); }
     parts.length = 0; moved = 0; celebrated = false;
     Object.assign(loader, { x: LOADER_HOME.x, z: LOADER_HOME.z, yaw: LOADER_HOME.yaw, tF: LOADER_HOME.yaw, tR: LOADER_HOME.yaw, phi: 0, v: 0, a: LOADER_HOME.a, b: 0.15, load: 0 });
@@ -3186,7 +3678,7 @@ function boot(SCN, bootData) {
   // ---------------- loop ----------------
   let frame = 0, last = 0, time = 0, smokeAcc = 0;
   const smoke = [];
-  const smokeMesh = new T.InstancedMesh(new T.IcosahedronGeometry(0.18, 0), new T.MeshLambertMaterial({ color: 0x5f5a52, transparent: true, opacity: 0.45, flatShading: true }), 60);
+  const smokeMesh = new T.InstancedMesh(new T.IcosahedronGeometry(0.18, 0), std({ color: 0x5f5a52, transparent: true, opacity: 0.45, flatShading: true }), 60);
   smokeMesh.count = 0; scene.add(smokeMesh);
   function updateSmoke(dt, thr) {
     smokeAcc += dt * (2 + thr * 10);
@@ -3252,7 +3744,7 @@ function boot(SCN, bootData) {
     updateBeacons(time);
     updateCamera(dt);
     updateInterior(dt);
-    renderer.render(scene, camera);
+    if (composer) composer.render(); else renderer.render(scene, camera);
     renderMirrors();
     placeTag();
     updateMaps();
@@ -3272,6 +3764,283 @@ function boot(SCN, bootData) {
     exc: { x: exc.x, z: exc.z, y: exc.y, yaw: exc.yaw, sw: exc.sw, bA: exc.bA, sR: exc.sR, bR: exc.bR, load: exc.load },
   }));
 
+  // ---------------- imported vehicle models (assets/models/*.glb, see docs/MODELS.md) ----------------
+  // A model's named parts are attached to the game's own joints (so every existing animation, collision and
+  // physics rule keeps working) and the code-built meshes they replace are hidden. Parts the file doesn't
+  // have stay code-built. Hydraulic rams, beacons, cab interiors, operators and loads stay code-built.
+  const MODELS = window.__models || {};
+  const INVISIBLE = new T.MeshBasicMaterial({ visible: false });
+  const baseName = n => (n || '').toLowerCase().replace(/\.\d+$/, '').trim();
+  function restMatrix(obj, roots) { // obj's transform in the vehicle's own frame, joints at rest
+    const m = new T.Matrix4(), l = new T.Matrix4(); let o = obj;
+    while (o && !roots.includes(o)) { l.compose(o.position, o.quaternion, o.scale); m.premultiply(l); o = o.parent; }
+    return m;
+  }
+  function rigs() {
+    const R = {};
+    if (loader) R.loader = { v: loader, roots: [loader.g, loader.fg], parts: { frame_rear: loader.g, frame_front: loader.fg, arm: loader.arm, bucket: loader.bucket, plow: loader.plow }, wheels: loader.wheels, keep: [loader.fill, loader.heap] };
+    // the excavator is modelled in its parked pose: boom raised, stick and bucket tucked down
+    if (exc) R.excavator = { v: exc, roots: [exc.g], parts: { undercarriage: exc.g, house: exc.house, boom: exc.boomG, stick: exc.stickG, bucket: exc.bucketG }, wheels: exc.sprockets.map(s => s.sp), prefix: 'sprocket', keep: [exc.fill, exc.dome],
+      pose: { boom: [-0.55, 0, 0], stick: [1.7, 0, 0], bucket: [1.4, 0, 0] } };
+    if (truck) R.dumptruck = { v: truck, roots: [truck.g], parts: { body: truck.g }, wheels: truck.wheels, keep: [truck.fill, truck.heap] };
+    if (saltTruck) R.salttruck = { v: saltTruck, roots: [saltTruck.g], parts: { body: saltTruck.g, spinner: saltTruck.spinner, salt: saltTruck.saltTop }, wheels: [...saltTruck.front.map(f => f.w), ...saltTruck.rear], keep: [] };
+    return R;
+  }
+  // run fn with every joint of the rig in its modelling pose (all zero unless rig.pose says otherwise)
+  function posed(rig, fn) {
+    const joints = [...Object.entries(rig.parts).filter(([, o]) => !rig.roots.includes(o)), ...rig.wheels.map((w, i) => ['w' + i, w]), ...(rig.v.front || []).map((f, i) => ['p' + i, f.piv])];
+    const saved = joints.map(([, o]) => o.rotation.clone());
+    for (const [n, o] of joints) o.rotation.set(...((rig.pose && rig.pose[n]) || [0, 0, 0]));
+    try { return fn(); } finally { joints.forEach(([, o], i) => o.rotation.copy(saved[i])); }
+  }
+  const _vp = new T.Vector3();
+  const restPos = (o, roots) => new T.Vector3().setFromMatrixPosition(restMatrix(o, roots));
+  // human-readable names for wheels: axle 1 is the front one; left is the driver's left (+x)
+  function wheelNames(rig) {
+    const pre = rig.prefix || 'wheel', zs = [...new Set(rig.wheels.map(w => restPos(w, rig.roots).z.toFixed(2)))].map(Number).sort((a, b) => b - a);
+    return rig.wheels.map(w => { const p = restPos(w, rig.roots); return `${pre}_${zs.length > 2 ? zs.indexOf(+p.z.toFixed(2)) + 1 : p.z > 0 ? 'front' : 'rear'}_${p.x > 0 ? 'left' : 'right'}`; });
+  }
+  function tuneModelMaterials(root, glassList) {
+    root.traverse(o => {
+      if (!o.isMesh) return;
+      o.castShadow = o.receiveShadow = true;
+      for (const mt of Array.isArray(o.material) ? o.material : [o.material]) {
+        const n = (mt.name || '').toLowerCase();
+        if (n.includes('glass')) { mt.transparent = true; if (mt.opacity > 0.9) mt.opacity = 0.45; mt.depthWrite = false; o.castShadow = false; glassList && glassList.push(o); }
+        if (n.startsWith('light') || n.includes('beacon')) { mt.emissive = (mt.color || new T.Color(1, 1, 1)).clone(); mt.emissiveIntensity = n.includes('rear') ? 1.5 : 3; }
+      }
+    });
+  }
+  function applyModel(key, gltf) {
+    const rig = rigs()[key]; if (!rig) return null;
+    return posed(rig, () => attachModel(rig, gltf));
+  }
+  function attachModel(rig, gltf) {
+    const root = gltf.scene; root.updateMatrixWorld(true);
+    const rep = { found: [], missing: [], warn: [], tris: 0, size: new T.Box3().setFromObject(root).getSize(new T.Vector3()) };
+    const nodes = []; root.traverse(o => nodes.push(o));
+    const byName = new Map(); for (const o of nodes) { const b = baseName(o.name); if (b && !byName.has(b)) byName.set(b, o); }
+    const targets = new Set([...Object.values(rig.parts), ...rig.wheels]);
+    const assign = new Map();
+    for (const [n, obj] of Object.entries(rig.parts)) { const node = byName.get(n); if (node) assign.set(node, obj); else rep.missing.push(n); }
+    const pre = rig.prefix || 'wheel', free = [...rig.wheels];
+    // a wheel is the outermost object with a wheel name; the meshes inside it can be named anything
+    const isW = o => baseName(o.name).startsWith(pre);
+    const wn = nodes.filter(o => { if (!isW(o) || assign.has(o)) return false; for (let q = o.parent; q; q = q.parent) if (isW(q)) return false; return true; });
+    for (const node of wn) {
+      const p = _vp.setFromMatrixPosition(node.matrixWorld); let best = null, bd = 1e9;
+      for (const w of free) { const d = p.distanceTo(restPos(w, rig.roots)); if (d < bd) { bd = d; best = w; } }
+      if (best && bd < 0.6) { assign.set(node, best); free.splice(free.indexOf(best), 1); } else rep.warn.push(`${node.name}: no ${pre} of the game within 0.6 m of it`);
+    }
+    if (free.length) rep.missing.push(`${free.length} × ${pre}`);
+    if (!assign.size) { rep.warn.push('none of the expected part names found, so the model is not used'); return rep; }
+    // hide the code-built meshes that the model replaces
+    const skip = new Set(), mark = o => o && o.traverse(c => skip.add(c));
+    rig.keep.forEach(mark); if (rig.v.cab) mark(rig.v.cab.g); (rig.v.operator || []).forEach(mark);
+    for (const b of beacons) b.lamps.forEach(mark);
+    const replaced = new Set(assign.values()), proc = [];
+    for (const r of rig.roots) r.traverse(o => { if (o.isMesh && !skip.has(o) && !targets.has(o)) proc.push(o); });
+    for (const m of proc) { let o = m.parent; while (o && !targets.has(o)) o = o.parent; if (o && replaced.has(o)) m.visible = false; }
+    if (rig.v.glass) rig.v.glass = rig.v.glass.filter(gm => gm.visible);
+    // the game shows its own plow coupler while plowing; a model brings its own
+    if (rig.v === loader && (replaced.has(loader.arm) || replaced.has(loader.plow))) loader.coupler = new T.Object3D();
+    // move each part onto its joint, keeping where it sits relative to the vehicle
+    const W = new Map([...assign.keys()].map(n => [n, n.matrixWorld.clone()]));
+    const mounts = nodes.filter(o => baseName(o.name).startsWith('mount_beacon')).map(o => new T.Vector3().setFromMatrixPosition(o.matrixWorld));
+    const glass = [];
+    for (const [node, tgt] of assign) {
+      node.removeFromParent();
+      const rel = restMatrix(tgt, rig.roots).invert().multiply(W.get(node));
+      rel.decompose(node.position, node.quaternion, node.scale); tgt.add(node);
+      const ang = 2 * Math.acos(Math.min(1, Math.abs(node.quaternion.w))) * 57.3;
+      if (node.position.length() > 0.05 || ang > 3) rep.warn.push(`${baseName(node.name)}: origin is ${node.position.length().toFixed(2)} m and ${ang.toFixed(0)}° off the game's pivot (it will swing around the wrong point)`);
+      if (Math.abs(node.scale.x - 1) > 0.02 || Math.abs(node.scale.y - 1) > 0.02 || Math.abs(node.scale.z - 1) > 0.02) rep.warn.push(`${baseName(node.name)}: scale is not applied (Ctrl+A in Blender)`);
+      rep.found.push(baseName(node.name));
+      if (tgt.isMesh) tgt.material = INVISIBLE; // e.g. the salt load: the model rides on the moving code-built one
+    }
+    for (const node of assign.keys()) { tuneModelMaterials(node, glass); node.traverse(o => { if (o.isMesh) rep.tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3; }); }
+    if (rig.v.glass) rig.v.glass.push(...glass);
+    if (rig.v.cab) attachCockpit(rig, byName, nodes, rep);
+    let left = 0; root.traverse(o => { if (o.isMesh) left++; }); if (left) rep.warn.push(`${left} mesh(es) are not under any named part and were ignored`);
+    // beacons follow mount_beacon empties (one per beacon bar), in the order they were found
+    const mine = beacons.filter(b => rig.roots.includes(b.lamps[0].parent));
+    if (mine.length && replaced.has(rig.roots[0])) {
+      if (mounts.length) mine.forEach((b, i) => { const m = mounts[Math.min(i, mounts.length - 1)], c = b.lamps.reduce((a, l) => a.add(l.position), new T.Vector3()).multiplyScalar(1 / b.lamps.length);
+        const d = m.clone().sub(c.clone().setY(c.y - 0.12)); b.lamps.forEach(l => l.position.add(d)); b.light.position.add(d); });
+      else rep.warn.push('no mount_beacon empty, so the beacons stay where the code-built cab had them');
+    }
+    return rep;
+  }
+  // A model can bring its own cockpit: `cab_interior` (shown only in cab view, replacing the code-built one),
+  // `steering_wheel` and `joystick` / `joystick_2` (moved by the game like the code-built ones), needles named
+  // `needle_rpm`, `needle_speed`, `needle_fuel`, `needle_temp` (turned clockwise about the axis toward the
+  // driver's eye, modelled pointing at zero) and a material named `screen` that the game draws a display on.
+  function attachCockpit(rig, byName, nodes, rep) {
+    const cab = rig.v.cab, interior = byName.get('cab_interior');
+    if (!interior) return;
+    const W = new Map(nodes.map(n => [n, n.matrixWorld.clone()]));
+    const keep = new Set(); const mark = o => o && o.traverse(c => keep.add(c));
+    mark(cab.wiper); mark(cab.flakes); mark(cab.spreadLamp);
+    const swap = [['steering_wheel', cab.wheel && cab.wheel.userData.spin, cab.wheel], ['joystick', cab.stick, cab.stick && cab.stick.parent], ['joystick_2', cab.stick2, cab.stick2 && cab.stick2.parent]];
+    for (const [name, , whole] of swap) if (!byName.get(name)) mark(whole);   // keep the game's own if the model has none
+    cab.g.traverse(o => { if (o.isMesh && !keep.has(o)) o.visible = false; });
+    const put = (node, tgt) => {
+      node.removeFromParent();
+      const rel = restMatrix(tgt, rig.roots).invert().multiply(W.get(node));
+      rel.decompose(node.position, node.quaternion, node.scale); tgt.add(node);
+      return node.position.length();
+    };
+    put(interior, cab.g);
+    tuneModelMaterials(interior);
+    const used = ['cab_interior'];
+    for (const [name, tgt] of swap) {
+      const node = byName.get(name); if (!node || !tgt) continue;
+      const off = put(node, tgt); used.push(name);
+      if (off > 0.05) rep.warn.push(`${name}: origin is ${off.toFixed(2)} m off the game's pivot for it`);
+    }
+    // needles turn about the line from the needle to the driver's eye
+    const eyeV = new T.Vector3(...cab.eye).applyMatrix4(restMatrix(cab.g.parent, rig.roots));
+    cab.needles = [];
+    for (const node of nodes) {
+      const n = baseName(node.name); if (!n.startsWith('needle_')) continue;
+      let inner = false; for (let q = node.parent; q; q = q.parent) if (baseName(q.name).startsWith('needle_')) inner = true;
+      if (inner) continue; // the meshes inside a needle turn with it
+      const kind = n.slice(7), m = restMatrix(node, rig.roots), p = new T.Vector3().setFromMatrixPosition(m);
+      const axis = eyeV.clone().sub(p).normalize().transformDirection(m.clone().invert()).normalize();
+      cab.needles.push({ node, kind, rest: node.quaternion.clone(), axis, sweep: /fuel|temp/.test(kind) ? Math.PI / 2 : Math.PI * 1.5, val: 0 });
+      used.push(n);
+    }
+    // the display: a canvas the game redraws while you're in the cab
+    const scr = [];
+    interior.traverse(o => { if (o.isMesh && baseName(o.material && o.material.name) === 'screen') scr.push(o); });
+    if (scr.length) {
+      const cv = document.createElement('canvas'); cv.width = 512; cv.height = 320;
+      const tex = new T.CanvasTexture(cv); tex.colorSpace = T.SRGBColorSpace; tex.flipY = false;
+      const m = new T.MeshBasicMaterial({ map: tex, color: new T.Color(1.6, 1.6, 1.6) });
+      scr.forEach(o => { o.material = m; });
+      cab.screen = { cv, ctx: cv.getContext('2d'), tex, next: 0 };
+      used.push('screen');
+    }
+    rep.found.push(...used);
+  }
+  function drawCabScreen(S, name) {
+    const x = S.ctx, W = S.cv.width, H = S.cv.height, M0 = M(), kmh = Math.abs(M0.v || 0) * 3.6;
+    const g = x.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#0d2238'); g.addColorStop(1, '#06121f');
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    x.fillStyle = '#1c3d5e'; x.fillRect(0, 0, W, 46);
+    x.font = '600 26px "Barlow Condensed", sans-serif'; x.textBaseline = 'middle'; x.fillStyle = '#cfe6ff';
+    x.textAlign = 'left'; x.fillText(name.toUpperCase(), 18, 24);
+    x.textAlign = 'right'; x.fillText(TIMES[timeIdx].name.toUpperCase(), W - 18, 24);
+    x.textAlign = 'left'; x.fillStyle = '#7fa8cc'; x.font = '600 22px "Barlow Condensed", sans-serif'; x.fillText('GEAR', 26, 82);
+    x.fillStyle = '#ffffff'; x.font = '700 150px "Barlow Condensed", sans-serif'; x.fillText(String(gearOf[active]), 22, 175);
+    x.textAlign = 'right'; x.fillStyle = '#7fa8cc'; x.font = '600 22px "Barlow Condensed", sans-serif'; x.fillText('KM/H', W - 26, 82);
+    x.fillStyle = '#ffffff'; x.font = '700 110px "Barlow Condensed", sans-serif'; x.fillText(kmh.toFixed(0), W - 22, 165);
+    x.fillStyle = (M0.v || 0) < -0.05 ? '#ffb347' : '#4fd889'; x.font = '700 30px "Barlow Condensed", sans-serif';
+    x.fillText((M0.v || 0) < -0.05 ? 'R' : 'F', W - 26, 230);
+    let line = '', frac = null;
+    if (active === 'loader' && loader.tool === 'plow') { const deg = Math.round(loader.plowAng * 57.3); line = `PLOW ${loader.plowRest || loader.a <= -0.6 ? 'DOWN' : 'RAISED'} · ${Math.abs(deg) < 3 ? 'STRAIGHT' : `${Math.abs(deg)}° ${deg > 0 ? 'LEFT' : 'RIGHT'}`}`; }
+    else if (active === 'salt' && saltTruck) { line = `SPREADER ${saltTruck.on ? 'ON' : 'OFF'} · ${saltTruck.width.toFixed(0)} M`; frac = saltTruck.tank; }
+    else { const cap = active === 'loader' ? BUCKET_CAP : EXC_CAP; frac = M0.load / cap; line = `BUCKET ${(M0.load || 0).toFixed(2)} M³`; }
+    x.textAlign = 'left'; x.fillStyle = '#cfe6ff'; x.font = '600 28px "Barlow Condensed", sans-serif'; x.fillText(line, 26, 262);
+    if (frac !== null) { x.fillStyle = '#16304d'; x.fillRect(26, 284, W - 52, 14); x.fillStyle = '#4fd889'; x.fillRect(26, 284, (W - 52) * clamp(frac, 0, 1), 14); }
+    S.tex.needsUpdate = true;
+  }
+  function updateCabInstruments(cab, dt) {
+    const M0 = M(), v = Math.abs(M0.v || 0);
+    if (cab.needles) for (const nd of cab.needles) {
+      const want = nd.kind === 'speed' ? v * 3.6 / 40 : nd.kind === 'rpm' ? (AU && AU.rpm ? AU.rpm : 750 + v / gearTop(active) * 1300) / 2500
+        : nd.kind === 'fuel' ? clamp(0.74 - time * 0.0004, 0.12, 1) : nd.kind === 'temp' ? clamp(0.22 + time / 120, 0.22, 0.56) : 0;
+      nd.val += (clamp(want, 0, 1) - nd.val) * Math.min(1, dt * 6);
+      nd.node.quaternion.copy(nd.rest).multiply(_nq.setFromAxisAngle(nd.axis, -nd.val * nd.sweep));
+    }
+    if (cab.screen && time >= cab.screen.next) { cab.screen.next = time + 0.25; drawCabScreen(cab.screen, active === 'loader' ? 'Wheel loader' : active === 'salt' ? 'Salt spreader' : 'Excavator'); }
+  }
+  const _nq = new T.Quaternion();
+  // a car model becomes one merged geometry per material, so the parked cars can be instanced
+  const carKits = {};
+  function carKit(tall, snowy) {
+    const gl = MODELS[tall ? 'car_suv' : 'car_sedan'];
+    if (!gl) {
+      const parts = carParts(tall, snowy);
+      return { parts, body: 'body', glass: 'glass', mat: (k, col, lit) => k === 'body' ? carBodyMat(col ?? 0xffffff) : lit && k === 'lensF' ? CARM.litF : lit && k === 'lensR' ? CARM.litR : CARM[k] };
+    }
+    const id = tall ? 'suv' : 'sedan', ck = id + (snowy ? '_snowy' : '');
+    if (carKits[ck]) return carKits[ck];
+    const root = gl.scene; root.updateMatrixWorld(true);
+    const groups = new Map();
+    root.traverse(o => {
+      if (!o.isMesh) return;
+      const src = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone(); src.applyMatrix4(o.matrixWorld);
+      const g = new T.BufferGeometry(); g.setAttribute('position', src.attributes.position);
+      if (src.attributes.normal) g.setAttribute('normal', src.attributes.normal); else g.computeVertexNormals();
+      g.setAttribute('uv', src.attributes.uv || new T.Float32BufferAttribute(new Float32Array(src.attributes.position.count * 2), 2));
+      const mt = Array.isArray(o.material) ? o.material[0] : o.material;
+      if (!groups.has(mt)) groups.set(mt, []); groups.get(mt).push(g);
+    });
+    const parts = {}, mats = {}; let body = null, glass = null, most = 0;
+    let i = 0; for (const [mt, list] of groups) {
+      const k = `${baseName(mt.name) || 'part'}#${i++}`; parts[k] = mergeAll(list); parts[k].computeBoundingSphere(); mats[k] = mt;
+      const n = baseName(mt.name), tris = parts[k].attributes.position.count / 3;
+      if (n.includes('body') || n.includes('paint')) body = k; else if (!body && tris > most && !n.includes('glass') && !n.includes('tyre') && !n.includes('tire')) { most = tris; body = body || null; mats.__guess = k; }
+      if (n.includes('glass')) { glass = k; mt.transparent = true; if (mt.opacity > 0.9) mt.opacity = 0.45; mt.depthWrite = false; }
+    }
+    body = body || mats.__guess; delete mats.__guess;
+    const litF = new T.MeshBasicMaterial({ color: new T.Color(0xfff1cf).multiplyScalar(4) }), litR = new T.MeshBasicMaterial({ color: new T.Color(0xc2271f).multiplyScalar(2.5) });
+    const kit = { parts, body, glass, mat: (k, col, lit) => {
+      const n = baseName(mats[k].name);
+      if (k === body) { const m = mats[k].clone(); m.color.set(col ?? 0xffffff); return m; }
+      if (lit && n.startsWith('light') && n.includes('front')) return litF;
+      if (lit && n.startsWith('light') && n.includes('rear')) return litR;
+      return mats[k];
+    } };
+    // parked cars in the snow keep the code-built snow caps, which sit on a car of the standard size
+    if (snowy) { const sn = carParts(tall, true).snow; if (sn) { parts.snow = sn; mats.snow = CARM.snow; } }
+    const size = new T.Box3().setFromObject(root).getSize(new T.Vector3());
+    if (!snowy) console.info(`Models: car_${id} loaded, ${Object.keys(parts).length} materials, body = ${body}, size ${size.x.toFixed(2)} × ${size.y.toFixed(2)} × ${size.z.toFixed(2)} m (the game expects about 1.8 wide × 4.5 long)`);
+    return (carKits[ck] = kit);
+  }
+  function applyModels() {
+    const names = { loader: 'wheel loader', excavator: 'excavator', dumptruck: 'dump truck', salttruck: 'salt truck' }, summary = [];
+    for (const key of Object.keys(names)) {
+      if (!MODELS[key]) continue;
+      const r = applyModel(key, MODELS[key]); if (!r) continue;
+      console.groupCollapsed(`Models: ${key}.glb, ${r.found.length} parts used, ${r.warn.length} warning(s)`);
+      console.info('used:', r.found.join(', ') || 'none');
+      if (r.missing.length) console.info('not in the file (kept code-built):', r.missing.join(', '));
+      r.warn.forEach(w => console.warn(w));
+      console.info(`${Math.round(r.tris)} triangles, ${r.size.x.toFixed(2)} × ${r.size.y.toFixed(2)} × ${r.size.z.toFixed(2)} m (width × height × length)`);
+      console.groupEnd();
+      summary.push(`${names[key]}${r.warn.length ? ` (${r.warn.length} warning${r.warn.length > 1 ? 's' : ''})` : ''}`);
+    }
+    if (summary.length) setTimeout(() => toast(`Models loaded: ${summary.join(', ')}. Details in the browser console`, 4200), 900);
+  }
+  // reference mode (?reference): the code-built vehicles at rest, with every joint named as the model files
+  // need it, exported as .glb to model on top of in Blender (assets/reference/)
+  if (T.GLTFExporter) window.__exportReference = key => new Promise((resolve, reject) => {
+    let objs, rig;
+    if (key.startsWith('car_')) { const c = makeCar(0x8c9196, key === 'car_suv', false); c.name = key; objs = [c]; }
+    else {
+      rig = rigs()[key]; if (!rig) return reject(new Error('no such vehicle in this job: ' + key));
+      for (const r of rig.roots) { r.position.set(0, 0, 0); r.rotation.set(0, 0, 0); }
+      for (const [n, o] of Object.entries(rig.parts)) { if (!rig.roots.includes(o)) o.rotation.set(...((rig.pose && rig.pose[n]) || [0, 0, 0])); o.name = n; o.visible = true; if (o === saltTruck?.saltTop) { o.position.y = 2.55; o.scale.set(1, 1, 1); } }
+      const wn = wheelNames(rig); rig.wheels.forEach((w, i) => { w.rotation.set(0, 0, 0); w.name = wn[i]; });
+      if (rig.v.front) rig.v.front.forEach(f => f.piv.rotation.set(0, 0, 0));
+      if (rig.v.cab) rig.v.cab.g.visible = false;
+      for (const r of rig.roots) r.traverse(o => { if (o.isLight) o.visible = false; });
+      beacons.filter(b => rig.roots.includes(b.lamps[0].parent)).forEach((b, i) => {
+        const e = new T.Object3D(); e.name = 'mount_beacon' + (i ? '_' + (i + 1) : ''); const c = b.lamps.reduce((a, l) => a.add(l.position), new T.Vector3()).multiplyScalar(1 / b.lamps.length);
+        e.position.set(c.x, c.y - 0.12, c.z); b.lamps[0].parent.add(e); });
+      // export a frozen copy: the exporter yields before it reads the scene, and the game loop would re-pose the originals
+      objs = rig.roots.map(r => { r.updateMatrixWorld(true); return r.clone(); });
+    }
+    new T.GLTFExporter().parse(objs, res => {
+      const fr = new FileReader(); fr.onload = () => resolve(fr.result.split(',')[1]); fr.readAsDataURL(new Blob([res]));
+    }, reject, { binary: true, onlyVisible: true });
+  });
+  if (T.GLTFExporter) window.__rigInfo = () => Object.fromEntries(Object.entries(rigs()).map(([k, rig]) => [k, posed(rig, () => ({
+    parts: Object.fromEntries(Object.entries(rig.parts).map(([n, o]) => [n, restPos(o, rig.roots).toArray().map(v => +v.toFixed(3))])),
+    wheels: Object.fromEntries(wheelNames(rig).map((n, i) => [n, restPos(rig.wheels[i], rig.roots).toArray().map(v => +v.toFixed(3))])) }))]));
+
   function start(data) {
     let restored = false;
     if (data && data.v === 2 && data.h) {
@@ -3288,6 +4057,7 @@ function boot(SCN, bootData) {
     if (SNOW) { buildCity(); buildCars(); buildStreetlights(); buildRail(); buildStreetTrees(); buildTraffic(); buildBackdrop(); buildSnowfall(); } else { buildTufts(); buildMeadow(); buildTrees(); buildStakes(); buildRocks(); }
     buildHopper(); buildTrench(); buildLoader(); buildTruck(); buildExcavator();
     if (SNOW) buildSaltTruck();
+    applyModels();
     if (!restored) Object.assign(loader, { x: LOADER_HOME.x, z: LOADER_HOME.z, yaw: LOADER_HOME.yaw, tF: LOADER_HOME.yaw, tR: LOADER_HOME.yaw, a: LOADER_HOME.a });
     if (SNOW && !restored) setTimeout(() => toast('Blade is down. W to plow, J / L to angle it', 3600), 400);
     if (SNOW) {
@@ -3311,7 +4081,7 @@ function boot(SCN, bootData) {
     }
     scene.traverse(o => { if (o.isInstancedMesh) o.frustumCulled = false; });
     loader.y = heightAt(loader.x, loader.z);
-    resize();
+    buildComposer();
     updateLoader({ fwd: 0, back: 0, left: 0, right: 0, up: 0, down: 0, curl: 0, dump: 0 }, 0.016);
     prevEdge.set(0, -0.57, 1.2).applyMatrix4(loader.bucket.matrixWorld);
     updateExcavator(NOINPUT, 0.016, false);
@@ -3323,6 +4093,22 @@ function boot(SCN, bootData) {
   start(bootData || {});
 }
 
+// Optional vehicle models (docs/MODELS.md). Each file is looked for in assets/models/; a missing file just
+// means that vehicle keeps its code-built look. Browsers won't load files from a page opened as file://,
+// so models only load when the game is served (python3 -m http.server).
+const MODEL_FILES = ['loader', 'excavator', 'dumptruck', 'salttruck', 'car_sedan', 'car_suv'];
+function loadModels() {
+  window.__models = {};
+  if (location.protocol === 'file:') { console.info('Models: page opened as a file, so assets/models/ is not read. Serve the folder to use them (python3 -m http.server).'); return Promise.resolve(); }
+  if (!THREE.GLTFLoader) return Promise.resolve();
+  const gl = new THREE.GLTFLoader();
+  if (THREE.DRACOLoader) { const d = new THREE.DRACOLoader(); d.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/'); gl.setDRACOLoader(d); }
+  return Promise.all(MODEL_FILES.map(n => {
+    const url = `assets/models/${n}.glb`;
+    return fetch(url, { method: 'HEAD' }).then(r => r.ok ? gl.loadAsync(url).then(g => { window.__models[n] = g; }) : null)
+      .catch(e => console.warn(`Models: ${url} could not be loaded`, e));
+  }));
+}
 // pick a job, or resume straight into the one that was running before a live update
 function showMenu() {
   const menu = document.getElementById('menu');
@@ -3331,12 +4117,29 @@ function showMenu() {
     menu.hidden = true;
     const ld = document.getElementById('loading'); ld.hidden = false;
     ld.textContent = b.dataset.scn === 'snow' ? 'Plowing in the city…' : 'Warming up the engine…';
-    setTimeout(() => boot(b.dataset.scn, {}), 30);
+    loadModels().then(() => setTimeout(() => boot(b.dataset.scn, {}), 30));
   });
 }
 function entry(data) {
   if (!window.THREE) { const ld = document.getElementById('loading'); ld.hidden = false; ld.textContent = 'Could not load the 3D engine. Reload to try again.'; return; }
-  if (data && data.scn) boot(data.scn, data); else showMenu();
+  if (data && data.scn) loadModels().then(() => boot(data.scn, data)); else showMenu();
 }
-window.claude?.hot?.ready ? window.claude.hot.ready(entry) : entry(window.claude?.hot?.data ?? {});
+// three.js loads as an ES module (below), which runs after this script; it calls this once THREE is ready
+window.__startGame = () => { window.claude?.hot?.ready ? window.claude.hot.ready(entry) : entry(window.claude?.hot?.data ?? {}); };
+</script>
+<script type="module">
+// three.js r160 plus the post-processing passes. The game script uses the global THREE, so put it there.
+try {
+  const THREE = await import('three');
+  const add = async (path, name) => { try { return (await import('three/addons/' + path))[name]; } catch (e) { console.warn('three addon failed', path, e); return null; } };
+  const refMode = new URLSearchParams(location.search).has('reference');
+  const [EffectComposer, RenderPass, UnrealBloomPass, OutputPass, GTAOPass, RoundedBoxGeometry, mergeGeometries, ShaderPass, GLTFLoader, DRACOLoader, GLTFExporter] = await Promise.all([
+    add('postprocessing/EffectComposer.js', 'EffectComposer'), add('postprocessing/RenderPass.js', 'RenderPass'),
+    add('postprocessing/UnrealBloomPass.js', 'UnrealBloomPass'), add('postprocessing/OutputPass.js', 'OutputPass'), add('postprocessing/GTAOPass.js', 'GTAOPass'),
+    add('geometries/RoundedBoxGeometry.js', 'RoundedBoxGeometry'), add('utils/BufferGeometryUtils.js', 'mergeGeometries'), add('postprocessing/ShaderPass.js', 'ShaderPass'),
+    add('loaders/GLTFLoader.js', 'GLTFLoader'), add('loaders/DRACOLoader.js', 'DRACOLoader'), refMode ? add('exporters/GLTFExporter.js', 'GLTFExporter') : null,
+  ]);
+  window.THREE = Object.assign({}, THREE, { EffectComposer, RenderPass, UnrealBloomPass, OutputPass, GTAOPass, RoundedBoxGeometry, mergeGeometries, ShaderPass, GLTFLoader, DRACOLoader, GLTFExporter });
+} catch (e) { console.error('three.js failed to load', e); }
+window.__startGame();
 </script>
