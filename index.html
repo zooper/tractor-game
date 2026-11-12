@@ -113,6 +113,13 @@ document.addEventListener('touchmove', e => { if (e.touches.length > 1 || (e.tar
   html.app body.in-menu .screen { min-height: 0; }
   @media (max-width: 640px) { .card { padding: 10px 14px; flex-basis: 100%; } .card b { font-size: 19px; } .card span { font-size: 13px; } .splash { gap: 10px; } }
   @media (max-height: 460px) { .card span { font-size: 12.5px; } .splash .sub { display: none; } .splash { gap: 8px; } }
+  .wallet { margin: 0; font-family: "Barlow Condensed", sans-serif; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+  .upgrades { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+  .upg { display: flex; align-items: center; gap: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 5px; padding: 8px 12px; text-align: left; }
+  .upg div { flex: 1; } .upg b { display: block; font-family: "Barlow Condensed", sans-serif; font-size: 17px; letter-spacing: .04em; } .upg small { color: var(--muted); font-size: 13px; }
+  .upg button { font: 700 14px "Barlow Condensed", sans-serif; letter-spacing: .05em; text-transform: uppercase; padding: 7px 12px; border-radius: 4px; border: 1px solid var(--line); background: var(--accent); color: #241a08; cursor: pointer; min-width: 96px; }
+  .upg button:disabled { background: transparent; color: var(--muted); cursor: default; }
+  .upg.owned button { background: transparent; color: var(--good); border-color: var(--good); }
   .opt button[aria-pressed="true"] { background: var(--accent); color: #241a08; border-color: var(--accent); }
   .mirror { position: absolute; left: 0; top: 0; border: 4px solid #141414; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.15); }
   .toast { position: absolute; left: 50%; top: 22%; transform: translateX(-50%); background: rgba(20,18,14,.85); color: #fff; text-shadow: none; font-size: 18px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 8px 14px; border-radius: 3px; white-space: nowrap; }
@@ -132,7 +139,19 @@ document.addEventListener('touchmove', e => { if (e.touches.length > 1 || (e.tar
     background: radial-gradient(circle, rgba(20,18,14,.18), rgba(20,18,14,.42)); border: 2px solid rgba(255,255,255,.5); box-shadow: 0 2px 10px rgba(0,0,0,.35); }
   .stick.l { left: 16px; } .stick.r { right: 16px; }
   .fps { position: absolute; left: 50%; top: 2px; transform: translateX(-50%); font-size: 12px; font-weight: 700; letter-spacing: .05em; background: rgba(20,18,14,.6); padding: 2px 6px; border-radius: 3px; }
-  .menu:not([hidden]) ~ .hud { display: none; } /* nothing of the HUD (sticks, Change job) over the job menu */
+  .menu:not([hidden]) ~ .hud { display: none; }
+  /* tips for new players: one short line at a time, low on the screen */
+  .coach { position: absolute; left: 50%; bottom: 54px; transform: translateX(-50%); max-width: min(560px, 80%); text-align: center; background: rgba(20,18,14,.78); color: #fff; text-shadow: none;
+    font-size: 16px; font-weight: 600; letter-spacing: .04em; padding: 7px 14px; border-radius: 4px; border-left: 3px solid var(--accent); transition: opacity .3s; }
+  .coach.done { border-left-color: var(--good); opacity: 0; transition: opacity .8s .3s; }
+  .coach.done::before { content: '✓ '; color: var(--good); }
+  @media (pointer: coarse) { .coach { bottom: calc(min(136px, 34vw) + 30px); font-size: 14px; } }
+  /* end of a snow shift */
+  .summary { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: auto; background: rgba(20,18,14,.94); color: #fff; text-shadow: none; padding: 18px 24px;
+    border-radius: 6px; min-width: 280px; font-size: 15px; line-height: 1.6; letter-spacing: .03em; z-index: 4; }
+  .summary h3 { margin: 0 0 8px; font-size: 21px; letter-spacing: .05em; }
+  .summary .row { display: flex; justify-content: space-between; gap: 24px; }
+  .summary button { margin-top: 14px; width: 100%; padding: 9px; font: inherit; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; background: var(--accent); color: #241a08; border: 0; border-radius: 4px; cursor: pointer; } /* nothing of the HUD (sticks, Change job) over the job menu */
   .menu { overflow-y: auto; justify-content: safe center; background: radial-gradient(ellipse at 50% 25%, #3b4b5e, #16181b 75%); z-index: 6; }
   .stick i { position: absolute; left: 50%; top: 50%; width: 44%; aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%); background: rgba(255,255,255,.62); box-shadow: 0 2px 6px rgba(0,0,0,.45); }
   .stick.on i { background: var(--accent); }
@@ -176,8 +195,9 @@ document.addEventListener('touchmove', e => { if (e.touches.length > 1 || (e.tar
           <button class="big" id="newBtn" type="button">New game</button>
         </div>
         <div class="actions small">
-          <button id="settingsBtn" type="button">Settings</button><button id="helpBtn" type="button">Controls</button>
+          <button id="garageBtn" type="button">Garage</button><button id="settingsBtn" type="button">Settings</button><button id="helpBtn" type="button">Controls</button>
         </div>
+        <p class="wallet" id="walletTxt"></p>
         <p class="note" id="saveNote">Progress saves automatically on this device.</p>
       </div>
       <div class="panel" id="settingsPanel" hidden>
@@ -185,9 +205,18 @@ document.addEventListener('touchmove', e => { if (e.touches.length > 1 || (e.tar
         <div class="opt" data-set="quality"><span>Graphics</span><button data-v="auto">Auto</button><button data-v="high">High</button><button data-v="low">Low</button></div>
         <div class="opt" data-set="perf"><span>Performance mode</span><button data-v="auto">Auto</button><button data-v="on">Lighter</button><button data-v="off">Full</button></div>
         <div class="opt" data-set="sound"><span>Sound</span><button data-v="on">On</button><button data-v="off">Off</button></div>
-        <div class="opt" data-set="time"><span>Snow days start at</span><button data-v="0">Day</button><button data-v="1">Dusk</button><button data-v="2">Night</button></div>
-        <p class="note">Performance mode uses a coarser snow grid, fewer trees and lights. Auto turns it on for phones and tablets; it applies to new games (a saved game keeps its grid).</p>
-        <div class="actions small"><button id="clearSaves" type="button">Delete saved games</button><button class="primary" data-close type="button">Done</button></div>
+        <div class="opt" data-set="mode"><span>Snow maps</span><button data-v="shift">Shifts</button><button data-v="free">Free plow</button></div>
+        <div class="opt" data-set="time"><span>Free plow starts at</span><button data-v="0">Day</button><button data-v="1">Dusk</button><button data-v="2">Night</button></div>
+        <div class="opt" data-set="tips"><span>Tips for new players</span><button data-v="on">On</button><button data-v="off">Off</button><button data-act="tipsAgain">Show again</button></div>
+        <p class="note">Shifts: snow keeps falling from 22:00 to 06:00 and you're paid for keeping the main streets open. Free plow: no new snow, no clock. Performance mode uses a coarser snow grid, fewer trees and lights; Auto turns it on for phones and tablets. Both apply when a map starts.</p>
+        <div class="actions small"><button id="clearSaves" type="button">Delete saves and progress</button><button class="primary" data-close type="button">Done</button></div>
+      </div>
+      <div class="panel" id="garagePanel" hidden>
+        <h3>Garage</h3>
+        <p class="wallet" id="garageWallet"></p>
+        <div class="upgrades" id="upgradeList"></div>
+        <p class="note">Earn money with the gravel pit's day takings and the snow shifts' pay. Upgrades fit every machine on every map, from the next time a map starts.</p>
+        <div class="actions small"><button class="primary" data-close type="button">Done</button></div>
       </div>
       <div class="panel" id="helpPanel" hidden>
         <h3>Controls</h3>
@@ -489,6 +518,8 @@ function villageData() {
 function boot(SCN, bootData, opts = {}) {
   // opts.settings: the start screen's settings; opts.save: a saved game to continue (see makeSave)
   const SET = opts.settings || loadSettings(), SAVE = opts.save && opts.save.v === 3 && opts.save.scn === SCN ? opts.save : null;
+  // money and garage upgrades, shared by every map (see UPGRADES)
+  const PROF = loadProfile(), UP = id => !!PROF.owned[id];
   const T = THREE;
   // two snow jobs share everything: Paulus Hook (real streets from OpenStreetMap) and Kvarnby (a made-up village)
   const VILLAGE = SCN === 'village', SNOW = SCN === 'snow' || VILLAGE;
@@ -505,7 +536,7 @@ function boot(SCN, bootData, opts = {}) {
   const PILE = { x: -9, z: 2 };
   const PAD = { x: 6, z: -7, w: 12, d: 9, y: 0.0 };
   const ROAD_Z = SNOW ? 14 + OFF : 1e4; // the gravel pit has no east-west road; its trucks come in from the south
-  const BUCKET_CAP = 1.6, TRUCK_CAP = SNOW ? 9.0 : 8.5;
+  const BUCKET_K = UP('bucket') ? 1.33 : 1, BUCKET_CAP = 1.6 * BUCKET_K, TRUCK_CAP = SNOW ? 9.0 * (UP('truck') ? 1.4 : 1) : 8.5;
   // Snow job: every machine starts on the quiet service loop across Essex Street from the Goldman Sachs
   // tower (30 Hudson Street), out of the traffic lanes. The loop is one-way eastbound, so they all face east:
   // the loader and salt truck past the loop's short cut-through, the dump truck behind them.
@@ -1292,12 +1323,12 @@ function boot(SCN, bootData, opts = {}) {
     box(0.6, 0.7, 0.12, std({ color: 0x2b2d30, roughness: 0.5, metalness: 0.5 }), 0, 0.05, 0.05, couplerG);
     const df = new T.Mesh(new T.BoxGeometry(0.01, 0.01, 0.01), bm), dh = df.clone(); df.visible = dh.visible = false; couplerG.add(df, dh);
     tools = {
-      bucket: { g: b0, cap: 1.6, fill: L.fill, heap: L.heap, name: 'Bucket', tool: 'bucket' },
-      big: { g: big, cap: 2.8, fill: bf, heap: bh, name: 'Big bucket', tool: 'bucket' },
+      bucket: { g: b0, cap: BUCKET_CAP, fill: L.fill, heap: L.heap, name: 'Bucket', tool: 'bucket' },
+      big: { g: big, cap: 2.8 * BUCKET_K, fill: bf, heap: bh, name: 'Big bucket', tool: 'bucket' },
       forks: { g: buildForks(), cap: 0.001, fill: df, heap: dh, name: 'Pallet forks', tool: 'forks' },
       none: { g: couplerG, cap: 0.001, fill: df, heap: dh, name: 'No tool', tool: 'none' },
     };
-    L.toolKey = 'bucket'; L.cap = 1.6;
+    L.toolKey = 'bucket'; L.cap = BUCKET_CAP;
     parkTool('big', RACK.x - 4, RACK.z + 1, Math.PI); parkTool('forks', RACK.x + 4, RACK.z + 1, Math.PI); // coupler side toward the yard
   }
   // set a tool down level on the ground where it is, its coupler side toward where the loader was
@@ -1433,12 +1464,16 @@ function boot(SCN, bootData, opts = {}) {
     pit.summaryShown = true;
     const D = pit.dayStats, acc = D.nAcc ? `${(100 - D.err / D.nAcc * 100).toFixed(1)}%` : '—';
     const box0 = document.createElement('div');
-    box0.style.cssText = 'position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(20,18,14,.92);color:#fff;padding:20px 26px;border-radius:6px;min-width:280px;font-size:15px;line-height:1.55;letter-spacing:.03em;text-shadow:none;z-index:5;pointer-events:auto';
+    box0.style.cssText = 'pointer-events:auto;z-index:4;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(20,18,14,.92);color:#fff;padding:20px 26px;border-radius:6px;min-width:280px;font-size:15px;line-height:1.55;letter-spacing:.03em;text-shadow:none;z-index:5;pointer-events:auto';
     const row = (a, b) => `<div style="display:flex;justify-content:space-between;gap:24px"><span>${a}</span><b>${b}</b></div>`;
     box0.innerHTML = `<div style="font-size:20px;font-weight:700;margin-bottom:8px">Day ${pit.day} · Björkåsens grustag</div>`
       + row('Customers served', D.served) + row('Gravel sold', `${D.tonnes.toFixed(1)} t`) + row('Boulders and bags', D.items)
       + row('Load accuracy', acc) + row('Loads refused', D.refused) + row('Tips', `${D.tips.toLocaleString('sv-SE')} kr`)
       + row('Earned today', `${D.earned.toLocaleString('sv-SE')} kr`) + row('Earned in all', `${pit.earned.toLocaleString('sv-SE')} kr`);
+    // the pit keeps most of the takings for wages and diesel; the profit goes to the account for the garage
+    const profit = Math.round(D.earned * 0.3);
+    if (pit.paidDay !== pit.day) { pit.paidDay = pit.day; addMoney(profit); autosave(true); }
+    box0.innerHTML += row('Profit to your account', kr(profit)) + row('Account', kr(PROF.wallet));
     const btn = document.createElement('button'); btn.type = 'button'; btn.id = 'nextDayBtn'; btn.textContent = 'Next day (A)';
     btn.style.cssText = 'margin-top:14px;width:100%;padding:8px;font:inherit;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:#d8b55c;border:0;border-radius:4px;cursor:pointer';
     btn.addEventListener('click', () => { box0.remove(); nextDay(); });
@@ -1944,9 +1979,22 @@ function boot(SCN, bootData, opts = {}) {
   }
   const GRASS_A = [0.78, 0.62, 0.35], GRASS_B = [0.87, 0.72, 0.44], ROAD = [0.61, 0.55, 0.45];
   const DIRT = [0.47, 0.3, 0.18], CUT = [0.3, 0.17, 0.1], FILL = [0.53, 0.35, 0.21];
+  // Recompute and upload the dirty rows, plus the band of rows the falling snow just topped up (snowBand), as
+  // separate ranges so a plow at one end of the map and the snowfall sweep at the other don't drag in everything between.
+  let snowBand = null;
   function updateTerrain(force) {
-    if (dj1 < dj0) return;
-    const j0 = Math.max(0, dj0 - 2), j1 = Math.min(N, dj1 + 2);
+    const runs = [];
+    if (dj1 >= dj0) runs.push([Math.max(0, dj0 - 2), Math.min(N, dj1 + 2)]);
+    if (snowBand) { runs.push([Math.max(0, snowBand[0] - 1), Math.min(N, snowBand[1] + 1)]); snowBand = null; }
+    if (!runs.length) return;
+    runs.sort((a, b) => a[0] - b[0]);
+    for (let q = 1; q < runs.length; q++) if (runs[q][0] <= runs[q - 1][1] + 1) { runs[q - 1][1] = Math.max(runs[q - 1][1], runs[q][1]); runs.splice(q--, 1); }
+    for (const a of [posAttr, colAttr, nrmAttr]) a.clearUpdateRanges();
+    for (const [j0, j1] of runs) terrainRows(j0, j1);
+    for (const a of [posAttr, colAttr, nrmAttr]) a.needsUpdate = true;
+    dj0 = 1e9; dj1 = -1;
+  }
+  function terrainRows(j0, j1) {
     const pos = posAttr.array, col = colAttr.array, nrm = nrmAttr.array;
     for (let j = j0; j <= j1; j++) for (let i = 0; i <= N; i++) {
       const k = j * ROW + i, k3 = k * 3;
@@ -2013,8 +2061,7 @@ function boot(SCN, bootData, opts = {}) {
       col[k3] = lin(r); col[k3 + 1] = lin(g); col[k3 + 2] = lin(b);
     }
     const off = j0 * ROW * 3, cnt = (j1 - j0 + 1) * ROW * 3;
-    for (const a of [posAttr, colAttr, nrmAttr]) { a.clearUpdateRanges(); a.addUpdateRange(off, cnt); a.needsUpdate = true; }
-    dj0 = 1e9; dj1 = -1;
+    for (const a of [posAttr, colAttr, nrmAttr]) a.addUpdateRange(off, cnt);
   }
 
   // grass tufts
@@ -2720,11 +2767,11 @@ function boot(SCN, bootData, opts = {}) {
     vCheckT -= dt; if (vCheckT > 0) return; vCheckT = 0.8;
     for (const d of vill.drives) {
       let sum = 0, mx = 0;
-      for (const k of d.mouth) { const e = h[k] - gnd[k]; sum += e; mx = Math.max(mx, h[k] - orig[k]); }
+      for (const k of d.mouth) { const e = h[k] - gnd[k]; sum += e; mx = Math.max(mx, h[k] - orig[k] - shift.added); } // new snow from the sky isn't your windrow
       const avg = d.mouth.length ? sum / d.mouth.length : 0;
       d.open = avg < 0.08 && mx < 0.2;
       const walled = mx > 0.28;
-      if (walled && !d.walled && !d.told) { d.told = true; vill.plog++; toast(`Plogvall! The ${d.fam}s at ${d.addr} are snowed in`, 3400); }
+      if (walled && !d.walled && !d.told) { d.told = true; vill.plog++; haptic('medium'); toast(`Plogvall! The ${d.fam}s at ${d.addr} are snowed in`, 3400); }
       d.walled = walled;
     }
     if (vill.rinkCells && !vill.rinkDone && vill.rinkCells.length) {
@@ -3295,6 +3342,7 @@ function boot(SCN, bootData, opts = {}) {
   }
   // a forward work light that follows the machine; aimed down the road ahead
   function addHeadlight(parent, x, y, z, reach) {
+    if (UP('lights')) reach *= 1.45; // LED work lights
     // candela with a gentler-than-square falloff, so the machine's own bucket and arms aren't blown out
     const sl = new T.SpotLight(0xfff1d6, 0, reach * 3, 0.62, 0.55, 1.5); sl.userData.base = 3.8 * Math.pow(reach, 1.5); headlights.push(sl);
     sl.position.set(x, y, z); parent.add(sl);
@@ -4338,7 +4386,7 @@ function boot(SCN, bootData, opts = {}) {
       if (S.tank >= 1) toast('Salt tank full', 1300);
     }
     const spreading = S.on && S.tank > 0 && S.v > 0.8;
-    if (spreading) S.tank = Math.max(0, S.tank - dt * 0.011 * (S.width / 6));
+    if (spreading) S.tank = Math.max(0, S.tank - dt * 0.011 * (S.width / 6) * (UP('tank') ? 0.625 : 1));
     S.spinA += (spreading ? 40 : 0) * dt;
     S.g.position.set(S.x, S.y, S.z); S.g.rotation.set(-S.pitch, S.yaw, S.roll);
     for (const f of S.front) { f.piv.rotation.y = S.steer; f.w.rotation.x = S.spin; }
@@ -5392,7 +5440,7 @@ function boot(SCN, bootData, opts = {}) {
   function updateTruck(dt) {
     const t = truck;
     if (!SNOW) { updateFleet(dt); return; }
-    if (t.state === 'parked' && t.load >= TRUCK_CAP) { t.state = 'leaving'; t.loads++; toast('Truck full. Hauling it out'); horn(0.45); setTimeout(() => horn(0.7), 600); }
+    if (t.state === 'parked' && t.load >= TRUCK_CAP) { t.state = 'leaving'; t.loads++; haptic('medium'); toast('Truck full. Hauling it out'); horn(0.45); setTimeout(() => horn(0.7), 600); }
     if (t.state === 'leaving') {
       if (!t.path) { t.path = TRUCK_ROUTE.leave; t.seg = 0; }
       t.v = Math.min(t.speed || 9, t.v + 2.2 * dt);
@@ -5430,6 +5478,7 @@ function boot(SCN, bootData, opts = {}) {
   let active = 'loader';
   // gears: each machine keeps its own; gear 3 is the original top speed, 4 is a bit quicker
   const GEARS = { loader: [1.8, 3.2, 5.5, 7.5], exc: [0.6, 1.1, 1.8, 2.4], salt: [3.5, 6.5, 10, 14], blower: [1.0, 1.8, 2.8, 4.2] };
+  if (UP('turbo')) for (const m of ['loader', 'salt', 'blower']) GEARS[m] = GEARS[m].map(v => v * 1.2); // the engine tune
   const gearOf = { loader: 3, exc: 3, salt: 3, blower: 2 };
   const gearTop = m => GEARS[m][gearOf[m] - 1];
   // over the gear's top speed (after a downshift) the engine brakes you down instead of snapping
@@ -5504,6 +5553,7 @@ function boot(SCN, bootData, opts = {}) {
   const touchPts = new Map();
   const pinchDist = () => { const [a, b] = [...touchPts.values()]; return Math.hypot(a.x - b.x, a.y - b.y) || 1; };
   renderer.domElement.addEventListener('pointerdown', e => {
+    lastInputKind = e.pointerType === 'touch' ? 'touch' : 'key';
     touchPts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (touchPts.size === 2) { drag = null; pinch = pinchDist(); } else drag = { x: e.clientX, y: e.clientY, id: e.pointerId };
     try { renderer.domElement.setPointerCapture(e.pointerId); } catch (_) {} initAudio();
@@ -5549,9 +5599,148 @@ function boot(SCN, bootData, opts = {}) {
     offStreets = off * A;
     return ok / roadCells.length * 100;
   }
+  // ---------------- snow shifts ----------------
+  // A shift runs from 22:00 to 06:00 (16 real minutes) while snow keeps falling, harder and lighter in turns.
+  // Cleared streets fill in again, so the job is keeping the main streets open rather than clearing everything
+  // once. Every five seconds the shift notes how much of the main streets and of all streets is passable; at
+  // 06:00 that, the truckloads and any plogvallar decide the pay, which goes to the shared account. Free plow
+  // (a setting) turns all this off: no new snow, no clock.
+  const SHIFT_ON = SNOW && SET.mode !== 'free';
+  const SHIFT_LEN = 480, SHIFT_RATE = 0.5, SNOW_RATE = 0.00016;  // game minutes; game minutes per real second; metres of snow a second at intensity 1
+  const PRIORITY = VILLAGE ? ['Storgatan', 'Kyrkvägen', 'Stationsvägen'] : ['Hudson Street', 'Grand Street', 'Montgomery Street', 'Greene Street', 'Christopher Columbus Drive'];
+  const shift = { n: 1, clock: 0, intensity: 0.7, target: 0.9, wxT: 50, pri: 0, all: 0, samples: 0, sampleT: 0, plog0: 0, loads0: 0, added: 0, done: false, paid: false, manualLight: false, toldStart: false };
+  let priCells = null, rowT = null, sweepJ = 0, $shiftRow = null, $priRow = null, priNow = 0;
+  function buildPriority() {
+    const segs = [];
+    for (const r of OSM.roads) if (PRIORITY.includes(r.n) && !r.walk) for (let i = 0; i + 3 < r.p.length; i += 2) segs.push([r.p[i], r.p[i + 1], r.p[i + 2], r.p[i + 3], r.w / 2]);
+    const out = [];
+    for (const k of roadCells) { const x = wx(k % ROW), z = wz((k / ROW) | 0); for (const sg of segs) if (distSeg(x, z, sg[0], sg[1], sg[2], sg[3]) <= sg[4]) { out.push(k); break; } }
+    priCells = Int32Array.from(out);
+  }
+  const shiftClock = () => { const m = (22 * 60 + shift.clock) % 1440; return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(Math.floor(m % 60)).padStart(2, '0')}`; };
+  const snowName = () => shift.intensity < 0.15 ? 'snow easing' : shift.intensity < 0.5 ? 'light snow' : shift.intensity < 1.1 ? 'snowing' : 'heavy snow';
+  function priOpen() { let ok = 0; for (const k of priCells) if (h[k] - gnd[k] < 0.06) ok++; return priCells.length ? ok / priCells.length * 100 : 100; }
+  function updateShift(dt) {
+    if (!SHIFT_ON || shift.done) return;
+    if (!priCells) buildPriority();
+    if (!shift.toldStart) { shift.toldStart = true; shift.plog0 = VILLAGE ? vill.plog : 0; shift.loads0 = truck.loads; }
+    shift.clock += dt * SHIFT_RATE;
+    // the storm: drift toward a new strength every minute or two
+    shift.wxT -= dt; if (shift.wxT <= 0) { shift.wxT = 60 + Math.random() * 90; shift.target = [0.1, 0.4, 0.8, 1.1, 1.6][Math.floor(Math.random() * 5)]; }
+    shift.intensity += (shift.target - shift.intensity) * Math.min(1, dt * 0.05);
+    const rate = SNOW_RATE * shift.intensity;
+    shift.added += rate * dt;
+    // the new snow goes down a band of rows each frame, a full sweep about every second and a half
+    if (!rowT) { rowT = new Float32Array(ROW).fill(time); sweepJ = 0; }
+    const R = Math.ceil(ROW / 90), j0 = sweepJ, j1 = Math.min(N, sweepJ + R - 1);
+    for (let j = j0; j <= j1; j++) {
+      const add = (time - rowT[j]) * rate; rowT[j] = time; if (add <= 0) continue;
+      for (let i = 0, k = j * ROW; i <= N; i++, k++) {
+        const kd = kind[k]; if (kd >= 7) continue;
+        h[k] += add * (0.8 + 0.4 * nz[k]);
+        if (dist[k] > 0) dist[k] = Math.max(0, dist[k] - add * 6); // a dusting of fresh powder brightens worked snow
+      }
+    }
+    snowBand = [j0, j1]; sweepJ = j1 >= N ? 0 : j1 + 1;
+    if (snowfall) snowfall.pts.geometry.setDrawRange(0, Math.round(snowfall.n * clamp(0.2 + 0.55 * shift.intensity, 0.15, 1)));
+    // night until 04:00, then the grey of dawn, unless T has been pressed
+    if (!shift.manualLight) { const want = shift.clock < 360 ? 2 : 1; if (want !== timeIdx) { timeIdx = want; applyTime(want); } }
+    shift.sampleT -= dt;
+    if (shift.sampleT <= 0) { shift.sampleT = 5; priNow = priOpen(); shift.pri += priNow; shift.all += streetsCleared(); shift.samples++; }
+    if (shift.clock >= SHIFT_LEN) showShiftSummary();
+  }
+  function shiftPay() {
+    const n = Math.max(1, shift.samples), pri = shift.pri / n, all = shift.all / n, loads = truck.loads - shift.loads0, plog = VILLAGE ? vill.plog - shift.plog0 : 0;
+    const pay = Math.max(300, Math.round((500 + 40 * pri + 12 * all + 300 * loads - 400 * plog) / 10) * 10);
+    return { pri, all, loads, plog, pay, stars: pri >= 85 ? 3 : pri >= 60 ? 2 : 1 };
+  }
+  function addMoney(n) { const p = loadProfile(); p.wallet += n; p.earned += n; saveProfile(p); Object.assign(PROF, p); }
+  function showShiftSummary() {
+    shift.done = true;
+    const R = shiftPay();
+    if (!shift.paid) { shift.paid = true; addMoney(R.pay); }
+    haptic('heavy');
+    const box0 = document.createElement('div'); box0.className = 'summary';
+    const row = (a, b) => `<div class="row"><span>${a}</span><b>${b}</b></div>`;
+    box0.innerHTML = `<h3>Shift ${shift.n} done · ${'★'.repeat(R.stars)}${'☆'.repeat(3 - R.stars)}</h3>`
+      + row('Main streets open', `${Math.round(R.pri)}%`) + row('All streets open', `${Math.round(R.all)}%`) + row('Truckloads hauled', R.loads)
+      + (VILLAGE ? row('Plogvallar', R.plog) : '') + row('Pay', kr(R.pay)) + row('Account', kr(PROF.wallet));
+    const btn = document.createElement('button'); btn.type = 'button'; btn.id = 'nextDayBtn'; btn.textContent = 'Next shift';
+    btn.addEventListener('click', () => { box0.remove(); nextShift(); });
+    box0.appendChild(btn); screen.querySelector('.hud').appendChild(box0);
+    autosave(true);
+  }
+  function nextShift() {
+    Object.assign(shift, { n: shift.n + 1, clock: 0, pri: 0, all: 0, samples: 0, sampleT: 0, done: false, paid: false, manualLight: false, toldStart: false, target: 1.2, wxT: 40 });
+    toast(`Shift ${shift.n}. More snow on the way`, 2200);
+  }
+  function shiftHud() {
+    if (!SHIFT_ON) return;
+    if (!$shiftRow) {
+      const side = $grade.parentNode.parentNode;
+      $priRow = document.createElement('div'); $priRow.innerHTML = '<span>Main streets</span><b>—</b>'; side.prepend($priRow);
+      $shiftRow = document.createElement('div'); $shiftRow.innerHTML = '<span>Shift 1</span><b>22:00</b>'; side.prepend($shiftRow);
+    }
+    $shiftRow.firstChild.textContent = `Shift ${shift.n}`; $shiftRow.lastChild.textContent = `${shiftClock()} · ${snowName()}`;
+    const b = $priRow.lastChild; b.textContent = shift.samples ? `${Math.round(priNow)}%` : '—'; b.classList.toggle('ok', priNow >= 85); b.classList.toggle('warn', shift.samples > 0 && priNow < 50);
+  }
+
+  // ---------------- tips for new players ----------------
+  // One short prompt at a time at the bottom of the screen, worded for how you are playing (keys, touch or a
+  // controller). Each goes away for good once you have done what it says. Off in Settings, or reset there.
+  const COACH_ON = SET.tips !== 'off';
+  let coachCur = null, coachT = 1.5, coachShown = 0, coachBase = null, $coach = null, lastInputKind = null;
+  const inputKind = () => lastInputKind || (matchMedia('(pointer: coarse)').matches ? 'touch' : 'key');
+  const TIPS = [
+    { id: 'drive', text: { key: 'W / S to drive, A / D to steer', touch: 'Left stick: drive and steer', pad: 'RT to drive, LT to brake and reverse, left stick to steer' },
+      done: b => Math.hypot(M().x - b.x, M().z - b.z) > 6 },
+    { id: 'angle', when: () => SNOW && active === 'loader' && loader.tool === 'plow', text: { key: 'J / L angle the blade to roll the snow off to one side', touch: 'Right stick left / right angles the blade', pad: 'Hold LB, right stick left / right angles the blade' },
+      done: b => Math.abs(loader.plowAng - b.plow) > 0.2 },
+    { id: 'boom', when: () => !SNOW && active === 'loader', text: { key: 'I / K raise and lower the boom, J / L curl and dump the bucket', touch: 'Right stick: up / down for the boom, left / right for the bucket', pad: 'Hold LB and use the right stick for the boom and bucket' },
+      done: b => Math.abs(loader.a - b.a) > 0.3 },
+    { id: 'shift', when: () => SHIFT_ON, text: { all: 'Snow keeps falling until 06:00. Keep the main streets open: ' + PRIORITY.slice(0, 3).join(', ') }, done: b => time - b.t > 8 },
+    { id: 'plogvall', when: () => VILLAGE, text: { all: 'Mind the driveways: a windrow across one gets the family complaining' }, done: b => time - b.t > 7 },
+    { id: 'customer', when: () => !SNOW, text: { all: 'Each customer waits at the pile they want: look for the green ring on the map' }, done: b => time - b.t > 8 },
+    { id: 'look', text: { key: 'Drag the picture to look around, scroll to zoom', touch: 'Drag the picture to look around, pinch to zoom', pad: 'Right stick looks around' },
+      done: b => Math.abs(camOff - b.camOff) + Math.abs(camPitch - b.camPitch) > 0.4 || Math.abs(camDist - b.camDist) > 3 || camMode !== 'chase' },
+    { id: 'map', text: { key: 'P opens the map', touch: 'MAP opens the map', pad: 'View opens the map' }, done: () => bigMapOpen },
+    { id: 'switch', when: () => SNOW, text: { key: 'X switches to the salt truck and the sidewalk blower', touch: 'SWITCH changes machine: salt truck, sidewalk blower', pad: 'Y changes machine: salt truck, sidewalk blower' }, done: () => active !== 'loader' },
+    { id: 'excavator', when: () => !SNOW, text: { key: 'X switches to the excavator', touch: 'SWITCH takes you to the excavator', pad: 'Y switches to the excavator' }, done: () => active !== 'loader' },
+  ];
+  function updateCoach(dt) {
+    if (!COACH_ON) return;
+    if (!$coach) { $coach = document.createElement('div'); $coach.className = 'coach'; $coach.hidden = true; screen.querySelector('.hud').appendChild($coach); }
+    if (document.querySelector('.summary') || (bigMapOpen && !(coachCur && coachCur.id === 'map'))) { $coach.hidden = true; return; }
+    coachT -= dt;
+    if (coachCur) {
+      if (coachCur.done(coachBase)) finishTip();
+      else { const t = coachCur.text, kind0 = inputKind(); $coach.textContent = t.all || t[kind0] || t.key; $coach.hidden = false; }
+      return;
+    }
+    if (coachT > 0) return;
+    coachCur = TIPS.find(t => !PROF.coach[t.id] && (!t.when || t.when())) || null;
+    if (!coachCur) { $coach.hidden = true; coachT = 2; return; }
+    coachBase = { x: M().x, z: M().z, plow: loader.plowAng, a: loader.a, camOff, camPitch, camDist, t: time };
+    $coach.classList.remove('done');
+  }
+  function finishTip() {
+    const p = loadProfile(); p.coach[coachCur.id] = true; saveProfile(p); PROF.coach = p.coach;
+    $coach.classList.add('done'); coachCur = null; coachT = 1.6;
+    setTimeout(() => { if (!coachCur && $coach) { $coach.hidden = true; $coach.classList.remove('done'); } }, 900);
+  }
+  // a short buzz: the iOS app turns it into a native haptic; elsewhere the vibration API where there is one
+  let hapticT = 0;
+  function haptic(kind = 'light') {
+    const now = performance.now(); if (now - hapticT < 120) return; hapticT = now;
+    try {
+      const wk = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.haptic;
+      if (wk) wk.postMessage(kind); else if (navigator.vibrate && matchMedia('(pointer: coarse)').matches) navigator.vibrate(kind === 'heavy' ? 40 : kind === 'medium' ? 22 : 12);
+    } catch (_) {}
+  }
+
   const $gearSpans = document.querySelectorAll('#gearTxt span');
   function hud() {
-    stickLabels();
+    stickLabels(); shiftHud();
     $gearSpans.forEach((e, i) => e.classList.toggle('on', i + 1 === gearOf[active]));
     const L = M(), f = L.load / (active === 'loader' ? (loader.cap || BUCKET_CAP) : EXC_CAP);
     const plowing = active === 'loader' && loader.tool === 'plow';
@@ -6184,7 +6373,7 @@ function boot(SCN, bootData, opts = {}) {
       if (g !== gearOf[active]) { gearOf[active] = g; toast(`Gear ${g}`, 800); }
     }
     if (code === 'Escape' && bigMapOpen) toggleBigMap(false);
-    if (code === 'KeyT') { if (!SNOW) pit.manualLight = true; timeIdx = (timeIdx + 1) % TIMES.length; applyTime(timeIdx); toast(TIMES[timeIdx].name, 1100); }
+    if (code === 'KeyT') { if (!SNOW) pit.manualLight = true; else shift.manualLight = true; timeIdx = (timeIdx + 1) % TIMES.length; applyTime(timeIdx); toast(TIMES[timeIdx].name, 1100); }
     if (code === 'KeyC') { camMode = camMode === 'chase' ? 'cab' : 'chase'; lookYaw = lookPitch = 0; camYaw = null; }
     if (code === 'KeyB' && active === 'salt') { saltTruck.on = !saltTruck.on; toast(saltTruck.on ? 'Spreader on' : 'Spreader off', 1100); }
     if (code === 'KeyB' && active === 'blower') { blower.on = !blower.on; toast(blower.on ? 'Blower on' : 'Blower off', 1100); }
@@ -6222,7 +6411,7 @@ function boot(SCN, bootData, opts = {}) {
       else { lastN = now; toast('Press N again for a new site', 1800); }
     }
   }
-  addEventListener('keydown', e => { if (!GAME.has(e.code)) return; e.preventDefault(); if (!keys.has(e.code)) press(e.code); keys.add(e.code); });
+  addEventListener('keydown', e => { if (!GAME.has(e.code)) return; lastInputKind = 'key'; e.preventDefault(); if (!keys.has(e.code)) press(e.code); keys.add(e.code); });
   addEventListener('keyup', e => keys.delete(e.code));
   addEventListener('blur', () => keys.clear());
   for (const b of document.querySelectorAll('#touch button')) {
@@ -6252,7 +6441,7 @@ function boot(SCN, bootData, opts = {}) {
       S.x = dzs(dx / R); S.y = dzs(dy / R);
     };
     const end = e => { if (e.pointerId !== pid) return; pid = null; S.x = S.y = 0; knob.style.transform = ''; el.classList.remove('on'); };
-    el.addEventListener('pointerdown', e => { e.preventDefault(); if (pid !== null) return; pid = e.pointerId; initAudio(); el.classList.add('on'); try { el.setPointerCapture(pid); } catch (_) {} move(e); });
+    el.addEventListener('pointerdown', e => { e.preventDefault(); if (pid !== null) return; pid = e.pointerId; lastInputKind = 'touch'; initAudio(); el.classList.add('on'); try { el.setPointerCapture(pid); } catch (_) {} move(e); });
     el.addEventListener('pointermove', e => { if (e.pointerId === pid) move(e); });
     el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end); el.addEventListener('lostpointercapture', end);
     el.addEventListener('contextmenu', e => e.preventDefault());
@@ -6276,7 +6465,9 @@ function boot(SCN, bootData, opts = {}) {
     };
     const g = padInput();
     if (g) for (const f in g) k[f] = Math.max(k[f], g[f]);
-    const L = stick.L, R = stick.R, dig = digMode && active === 'exc';
+    // a gentle curve on the sticks: small pushes for fine control, a full push still gives full speed
+    const cv = v => Math.sign(v) * Math.pow(Math.abs(v), 1.5);
+    const L = { x: cv(stick.L.x), y: cv(stick.L.y) }, R = { x: cv(stick.R.x), y: cv(stick.R.y) }, dig = digMode && active === 'exc';
     const t = {
       fwd: dig ? 0 : Math.max(0, -L.y), back: dig ? 0 : Math.max(0, L.y), left: dig ? 0 : Math.max(0, -L.x), right: dig ? 0 : Math.max(0, L.x),
       swingL: dig ? Math.max(0, -L.x) : 0, swingR: dig ? Math.max(0, L.x) : 0, stickOut: dig ? Math.max(0, -L.y) : 0, stickIn: dig ? Math.max(0, L.y) : 0,
@@ -6321,6 +6512,7 @@ function boot(SCN, bootData, opts = {}) {
     // loader: up / down moves the arm (pull back to raise), left / right tilts the bucket (left curls back, right dumps);
     // excavator: LB boom and bucket, RB stick (up / down) and swing (left / right)
     const lx = ax(0), rx = ax(2), ry = ax(3), exc0 = active === 'exc', lb = on(4), rb = on(5);
+    if (lx || rx || ry || ax(1) || btn(6) > 0.1 || btn(7) > 0.1 || p.buttons.some(q => q && q.pressed)) lastInputKind = 'pad';
     const hyd = lb || (rb && !exc0), arm2 = rb && exc0;
     if (!hyd && !arm2) {
       // right stick: the camera (orbit in the chase view, head in the cab); d-pad left / right zooms
@@ -6338,6 +6530,7 @@ function boot(SCN, bootData, opts = {}) {
     };
   }
   function rumble(strong, ms = 120) {
+    if (strong > 0.15) haptic(strong > 0.7 ? 'heavy' : strong > 0.35 ? 'medium' : 'light');
     const p = gamepad(), a = p && p.vibrationActuator;
     if (a && a.playEffect) a.playEffect('dual-rumble', { duration: ms, strongMagnitude: clamp(strong, 0, 1), weakMagnitude: clamp(strong * 0.6, 0, 1) }).catch(() => {});
   }
@@ -6408,8 +6601,9 @@ function boot(SCN, bootData, opts = {}) {
     }
     updateTracks(loader.spots);
     if (SNOW && saltTruck) updateTracks(saltTruck.spots, 4, 0.3); else updateTracks(exc.spots, 4, 0.31);
-    if (SNOW) { updateSalt(dt); updateTrain(dt); updateTraffic(dt); updateWindows(dt); updateClock(); if (VILLAGE) { updateVillage(dt); updateVillageClock(); } }
+    if (SNOW) { updateSalt(dt); updateTrain(dt); updateTraffic(dt); updateWindows(dt); updateClock(); updateShift(dt); if (VILLAGE) { updateVillage(dt); updateVillageClock(); } }
     else { updateCrusher(dt); updateDay(dt); updateWeather(dt); }
+    updateCoach(dt);
     updateParticles(dt);
     updateHopper(dt);
     updateTrench(dt);
@@ -6468,6 +6662,7 @@ function boot(SCN, bootData, opts = {}) {
     blower: blower ? { x: blower.x, z: blower.z, yaw: blower.yaw, on: blower.on, chuteA: blower.chuteA } : null,
     exc: { x: exc.x, z: exc.z, y: exc.y, yaw: exc.yaw, sw: exc.sw, bA: exc.bA, sR: exc.sR, bR: exc.bR, load: exc.load },
     village: VILLAGE ? { told: vill.drives.map(d => d.told), plog: vill.plog, rinkDone: vill.rinkDone, pondToast: vill.pondToast } : null,
+    shift: SHIFT_ON ? { ...shift } : null,
   });
   window.claude?.hot?.snapshot?.(() => ({
     ...stateCore(), v: 2, h: enc(h), orig: enc(orig), dist: enc(dist), kind: enc(kind), nz: enc(nz),
@@ -6483,14 +6678,14 @@ function boot(SCN, bootData, opts = {}) {
   // the line under the map's card on the start screen
   function saveSummary() {
     if (!SNOW) return `Day ${pit.day} · ${pit.earned.toLocaleString('sv-SE')} kr`;
-    const g = streetsCleared(); return `${g < 10 ? g.toFixed(1) : Math.round(g)}% cleared`;
+    const g = streetsCleared(); return (SHIFT_ON ? `Shift ${shift.n}, ${shiftClock()} · ` : '') + `${g < 10 ? g.toFixed(1) : Math.round(g)}% cleared`;
   }
   // Autosave: every 45 s of play, when the page is hidden or closed, and on the way back to the menu. Only on
   // this device; skipped while nothing has happened since the last save.
   let lastSaveMoved = -1, lastSaveT = 0, saving = null, saveFailed = false;
   function autosave(force) {
     if (saving || saveFailed) return saving || Promise.resolve();
-    const P = M(), sig = moved + P.x + P.z + loader.x + loader.z + truck.loads + (SNOW ? 0 : pit.earned + pit.clock);
+    const P = M(), sig = moved + P.x + P.z + loader.x + loader.z + truck.loads + (SNOW ? (SHIFT_ON ? shift.clock : 0) : pit.earned + pit.clock);
     if (!force && sig === lastSaveMoved) return Promise.resolve();
     lastSaveMoved = sig; lastSaveT = time;
     const data = makeSave();
@@ -6808,6 +7003,8 @@ function boot(SCN, bootData, opts = {}) {
     else { loader.mix = new Float32Array(MATS.length); exc.mix = new Float32Array(MATS.length); }
     applyModels();
     if (SNOW) buildLoaderBlower(); // after the models: a custom loader model hides whatever hangs on the code-built arm
+    // plow wings: the whole blade (model or not) is 25% wider; the plow's cutting edge is read through its matrix, so it cuts wider too
+    if (UP('wings') && loader.plow) loader.plow.scale.x = 1.25;
     if (!restored) Object.assign(loader, { x: LOADER_HOME.x, z: LOADER_HOME.z, yaw: LOADER_HOME.yaw, tF: LOADER_HOME.yaw, tR: LOADER_HOME.yaw, a: LOADER_HOME.a });
     if (!SNOW) {
       $('gradeLbl').textContent = 'Order'; $('loadsLbl').textContent = 'Trucks served'; $('trenchLbl').textContent = 'In the truck'; $('movedLbl').textContent = 'Earned';
@@ -6842,6 +7039,7 @@ function boot(SCN, bootData, opts = {}) {
         const V = data.village; (V.told || []).forEach((t, i) => { if (vill.drives[i]) vill.drives[i].told = !!t; });
         vill.plog = V.plog || 0; vill.rinkDone = !!V.rinkDone; vill.pondToast = !!V.pondToast;
       }
+      if (SHIFT_ON && data.shift) { Object.assign(shift, data.shift); if (shift.done) setTimeout(showShiftSummary, 800); }
       if (data.v === 3) setTimeout(() => toast(`Welcome back · ${saveSummary()}`, 2600), 600);
       lastSaveMoved = -1;
     }
@@ -6883,7 +7081,7 @@ function loadModels() {
 }
 // ---- settings, stored on this device (localStorage) ----
 const SETTINGS_KEY = 'backlot.settings';
-const SETTINGS_DEFAULT = { quality: 'auto', perf: 'auto', sound: 'on', time: '1' };
+const SETTINGS_DEFAULT = { quality: 'auto', perf: 'auto', sound: 'on', time: '1', mode: 'shift', tips: 'on' };
 function loadSettings() {
   let st = {};
   try { st = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') || {}; } catch (_) {}
@@ -6892,6 +7090,24 @@ function loadSettings() {
   return Object.assign({}, SETTINGS_DEFAULT, st);
 }
 function saveSettings(st) { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(st)); } catch (_) {} }
+
+// ---- progression, shared by all maps and kept on this device: money, garage upgrades, tips already shown ----
+// Money comes from the gravel pit's day takings and the snow shifts' pay; it buys upgrades in the garage.
+const PROFILE_KEY = 'backlot.profile';
+function loadProfile() {
+  let p = {}; try { p = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}') || {}; } catch (_) {}
+  return Object.assign({ wallet: 0, earned: 0, owned: {}, coach: {} }, p);
+}
+function saveProfile(p) { try { localStorage.setItem(PROFILE_KEY, JSON.stringify(p)); } catch (_) {} }
+const kr = n => `${Math.round(n).toLocaleString('sv-SE')} kr`;
+const UPGRADES = [
+  { id: 'wings', n: 'Plow wings', d: 'Fold-out wings widen the blade from 3.4 to 4.3 m', price: 6000 },
+  { id: 'bucket', n: 'High-volume bucket', d: 'A third more in every bucket, snow or gravel', price: 5000 },
+  { id: 'turbo', n: 'Engine tune', d: 'A fifth more top speed for the loader, salt truck and blower', price: 4000 },
+  { id: 'tank', n: 'Big salt tank', d: 'The spreader runs 60% longer between refills', price: 3000 },
+  { id: 'truck', n: 'Bigger dump body', d: 'The snow truck takes 40% more per trip', price: 4500 },
+  { id: 'lights', n: 'LED work lights', d: 'Brighter lights that reach further at night', price: 2000 },
+];
 
 // ---- saved games: one per map, kept in this browser's IndexedDB (never sent anywhere) ----
 // Two stores: 'meta' holds a few fields for the start screen, 'saves' the whole state (the snow or dirt grid
@@ -6961,18 +7177,35 @@ function showMenu() {
   $('continueBtn').addEventListener('click', () => sel && metas[sel] && go(sel, true));
   $('newBtn').addEventListener('click', () => { if (!sel) return; if (metas[sel] && !confirmNew) { confirmNew = true; render(); return; } go(sel, false); });
   // settings: each row is a set of toggle buttons
-  const panels = { settings: $('settingsPanel'), help: $('helpPanel') };
+  const panels = { settings: $('settingsPanel'), help: $('helpPanel'), garage: $('garagePanel') };
+  // the garage: buy upgrades with what the pit and the shifts have paid
+  function renderGarage() {
+    const P = loadProfile();
+    $('walletTxt').textContent = P.wallet || P.earned ? `Account · ${kr(P.wallet)}` : '';
+    $('garageWallet').textContent = `Account · ${kr(P.wallet)}`;
+    const list = $('upgradeList'); list.innerHTML = '';
+    for (const U of UPGRADES) {
+      const own = !!P.owned[U.id], el = document.createElement('div'); el.className = 'upg' + (own ? ' owned' : '');
+      el.innerHTML = `<div><b>${U.n}</b><small>${U.d}</small></div>`;
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = own ? 'Fitted' : kr(U.price); b.disabled = own || P.wallet < U.price;
+      b.addEventListener('click', () => { const Q = loadProfile(); if (Q.owned[U.id] || Q.wallet < U.price) return; Q.wallet -= U.price; Q.owned[U.id] = true; saveProfile(Q); renderGarage(); b.focus(); });
+      el.appendChild(b); list.appendChild(el);
+    }
+  }
+  $('garageBtn').addEventListener('click', () => { renderGarage(); openPanel('garage'); });
   const openPanel = k => { splash.hidden = !!k; for (const [n, el] of Object.entries(panels)) el.hidden = n !== k; const f = k ? panels[k].querySelector('[data-close], .opt button') : $('newBtn'); f && f.focus({ preventScroll: true }); if (k) panels[k].scrollTop = 0; menu.scrollTop = 0; };
   $('settingsBtn').addEventListener('click', () => openPanel('settings'));
   $('helpBtn').addEventListener('click', () => openPanel('help'));
   for (const b of menu.querySelectorAll('[data-close]')) b.addEventListener('click', () => openPanel(null));
   const showOpts = () => { for (const row of menu.querySelectorAll('.opt')) for (const b of row.querySelectorAll('button')) b.setAttribute('aria-pressed', String(settings[row.dataset.set]) === b.dataset.v ? 'true' : 'false'); };
-  for (const row of menu.querySelectorAll('.opt')) for (const b of row.querySelectorAll('button')) b.addEventListener('click', () => { settings[row.dataset.set] = b.dataset.v; saveSettings(settings); try { localStorage.removeItem('backlot.quality'); } catch (_) {} showOpts(); });
+  for (const row of menu.querySelectorAll('.opt')) for (const b of row.querySelectorAll('button')) b.addEventListener('click', () => {
+    if (b.dataset.act === 'tipsAgain') { const P = loadProfile(); P.coach = {}; saveProfile(P); b.textContent = 'Will show'; settings.tips = 'on'; saveSettings(settings); showOpts(); return; }
+    settings[row.dataset.set] = b.dataset.v; saveSettings(settings); try { localStorage.removeItem('backlot.quality'); } catch (_) {} showOpts(); });
   showOpts();
   let clearArm = false;
   $('clearSaves').addEventListener('click', () => {
     if (!clearArm) { clearArm = true; $('clearSaves').textContent = 'Tap again to delete'; return; }
-    SaveStore.clear().catch(() => {}).then(() => { metas = {}; clearArm = false; $('clearSaves').textContent = 'Deleted'; render(); });
+    SaveStore.clear().catch(() => {}).then(() => { saveProfile({}); metas = {}; clearArm = false; $('clearSaves').textContent = 'Deleted'; render(); renderGarage(); });
   });
   // a controller works the menu too: d-pad / left stick moves between buttons, A presses, B goes back
   const focusables = () => [...menu.querySelectorAll('button')].filter(b => b.offsetParent !== null);
@@ -6989,7 +7222,7 @@ function showMenu() {
     if (now[5] && !prev[5]) openPanel(null);
     prev = now;
   }, 50);
-  render();
+  render(); renderGarage();
   SaveStore.available().then(ok => { canSave = ok; return ok ? SaveStore.metas() : {}; }).catch(() => ({})).then(m => {
     metas = m || {}; sel = lastScn() || sel || 'village'; render();
     ($('continueBtn').hidden ? $('newBtn') : $('continueBtn')).focus({ preventScroll: true });
