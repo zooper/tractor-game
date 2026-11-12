@@ -146,6 +146,9 @@ document.addEventListener('touchmove', e => { if (e.touches.length > 1 || (e.tar
   .coach.done { border-left-color: var(--good); opacity: 0; transition: opacity .8s .3s; }
   .coach.done::before { content: '✓ '; color: var(--good); }
   @media (pointer: coarse) { .coach { bottom: calc(min(136px, 34vw) + 30px); font-size: 14px; } }
+  .endday { position: absolute; left: 50%; top: 62px; transform: translateX(-50%); pointer-events: auto; font-family: "Barlow Condensed", sans-serif; font-weight: 700; font-size: 16px; letter-spacing: .06em;
+    text-transform: uppercase; color: #241a08; background: var(--accent); border: 0; border-radius: 4px; padding: 7px 16px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.4); }
+  @media (pointer: coarse) and (max-width: 640px) { .endday { top: 44px; } }
   /* end of a snow shift */
   .summary { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: auto; background: rgba(20,18,14,.94); color: #fff; text-shadow: none; padding: 18px 24px;
     border-radius: 6px; min-width: 280px; font-size: 15px; line-height: 1.6; letter-spacing: .03em; z-index: 4; }
@@ -231,7 +234,7 @@ document.addEventListener('touchmove', e => { if (e.touches.length > 1 || (e.tar
           <div><kbd>X</kbd> switch machine</div>
           <div><kbd>C</kbd> cab view · <kbd>Z</kbd><kbd>V</kbd> look left / right</div>
           <div><kbd>P</kbd> map · <kbd>G</kbd> unplowed snow / ordered gravel</div>
-          <div><kbd>H</kbd> send the truck off (gravel pit)</div>
+          <div><kbd>H</kbd> send the truck off · end the day once the yard is empty (gravel pit)</div>
           <div><kbd>T</kbd> time of day · <kbd>M</kbd> sound · <kbd>O</kbd> graphics</div>
           <div><kbd>N</kbd><kbd>N</kbd> start the map over</div>
           <div>Mouse: drag to orbit, scroll to zoom</div>
@@ -1447,7 +1450,7 @@ function boot(SCN, bootData, opts = {}) {
   function updateDay(dt) {
     pit.clock += dt * DAY_RATE;
     if (!pit.manualLight) {
-      const c = pit.clock, idx = c < 8 * 60 ? 1 : c < 15 * 60 + 15 ? 0 : c < 16 * 60 + 20 ? 1 : 2;
+      const c = pit.clock, idx = c < 8 * 60 ? 1 : c < 15 * 60 + 15 ? 0 : c < 17 * 60 + 30 ? 1 : 2;
       if (idx !== timeIdx) { timeIdx = idx; applyTime(idx); }
     }
     const c = pit.clock, open = c < 15 * 60 + 30;
@@ -1458,10 +1461,16 @@ function boot(SCN, bootData, opts = {}) {
         pit.spawnT = fleet.length < 3 && spawnVehicle() ? gap : 6;
       }
     } else if (!pit.closedToast) { pit.closedToast = true; toast('15:30: the gate is closed to new customers. Finish the ones in the yard', 3600); }
-    if (!open && !fleet.length && c >= 16 * 60 && !pit.summaryShown) showSummary();
+    // After the last customer has gone the evening is the player's: tidy the yard, scrape the haul roads,
+    // feed the crusher. The day ends with End day (or H), or by itself at 22:00.
+    const evening = !open && !fleet.length && c >= 16 * 60 && !pit.summaryShown;
+    if (evening && !pit.eveningToast) { pit.eveningToast = true; toast('The yard is empty. The evening is yours: tidy up, run the crusher, then End day', 4200); }
+    if ($endDay) $endDay.hidden = !evening;
+    if (evening && c >= 22 * 60) showSummary();
   }
+  let $endDay = null;
   function showSummary() {
-    pit.summaryShown = true;
+    pit.summaryShown = true; if ($endDay) $endDay.hidden = true;
     const D = pit.dayStats, acc = D.nAcc ? `${(100 - D.err / D.nAcc * 100).toFixed(1)}%` : '—';
     const box0 = document.createElement('div');
     box0.style.cssText = 'pointer-events:auto;z-index:4;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(20,18,14,.92);color:#fff;padding:20px 26px;border-radius:6px;min-width:280px;font-size:15px;line-height:1.55;letter-spacing:.03em;text-shadow:none;z-index:5;pointer-events:auto';
@@ -1480,7 +1489,7 @@ function boot(SCN, bootData, opts = {}) {
     box0.appendChild(btn); (tagHost || document.body).appendChild(box0);
   }
   function nextDay() {
-    Object.assign(pit, { day: pit.day + 1, clock: 7 * 60, dayStats: newDayStats(), spawnT: 2, summaryShown: false, manualLight: false, closedToast: false });
+    Object.assign(pit, { day: pit.day + 1, clock: 7 * 60, dayStats: newDayStats(), spawnT: 2, summaryShown: false, manualLight: false, closedToast: false, eveningToast: false });
     toast(`Day ${pit.day}. The gate is open`, 2400);
   }
 
@@ -6399,7 +6408,8 @@ function boot(SCN, bootData, opts = {}) {
       toast(active === 'loader' ? 'Wheel loader' : 'Excavator', 1200);
     }
     if (code === 'KeyG') { gradeView = !gradeView; dj0 = 0; dj1 = N; toast(gradeView ? (SNOW ? 'Showing what is left to plow' : 'Green = what the truck wants, red = mixed material') : 'Normal view', 2200); }
-    if (code === 'KeyH' && !SNOW) {
+    if (code === 'KeyH' && !SNOW && $endDay && !$endDay.hidden) showSummary(); // in the evening H ends the day
+    else if (code === 'KeyH' && !SNOW) {
       const V = pitFocus();
       if (!V || V.state !== 'parked') toast('Nobody is waiting yet', 1600);
       else { V.sendOff = true; horn(0.25); }
@@ -7047,6 +7057,8 @@ function boot(SCN, bootData, opts = {}) {
       tagHost = $tag.parentNode;
       const row = document.createElement('div'); row.innerHTML = `<span>Day ${pit.day}</span><b id="pitClock">07:00</b>`; $grade.parentNode.parentNode.prepend(row);
       $pitClock = document.getElementById('pitClock'); $pitDay = row.firstChild;
+      $endDay = document.createElement('button'); $endDay.type = 'button'; $endDay.className = 'endday'; $endDay.textContent = 'End day'; $endDay.hidden = true;
+      $endDay.addEventListener('click', () => showSummary()); $grade.closest('.hud').appendChild($endDay);
       setupPitTools(); applyTime(timeIdx = 1);
     }
     scene.traverse(o => { if (o.isInstancedMesh && !o.userData.cull) o.frustumCulled = false; });
