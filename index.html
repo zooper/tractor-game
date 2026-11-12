@@ -1,10 +1,21 @@
 <!doctype html>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Backlot Loader</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500&display=swap">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<link rel="stylesheet" href="vendor/fonts/fonts.css">
+<script>
+// App mode: full screen, just the game and its controls. On in the iOS app (it sets window.__nativeApp before
+// the page loads), when the page runs from the home screen, or with ?app.
+if (window.__nativeApp || navigator.standalone || matchMedia('(display-mode: standalone)').matches || new URLSearchParams(location.search).has('app')) document.documentElement.classList.add('app');
+// Keep iOS from zooming the page: pinch gestures, double taps, and a second finger landing while you steer.
+// The game does its own pinch zoom on the screen through pointer events, which still come through.
+for (const ev of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(ev, e => e.preventDefault(), { passive: false });
+document.addEventListener('dblclick', e => e.preventDefault(), { passive: false });
+document.addEventListener('touchmove', e => { if (e.touches.length > 1 || (e.target.closest && e.target.closest('.screen, .touch'))) e.preventDefault(); }, { passive: false });
+</script>
 <style>
   :root {
     color-scheme: dark;
@@ -17,7 +28,17 @@
     --good: #9fd36a;
     --hud-shadow: 0 1px 2px rgba(0,0,0,.75), 0 0 6px rgba(0,0,0,.35);
   }
-  html, body { height: 100%; }
+  html, body { height: 100%; touch-action: manipulation; -webkit-text-size-adjust: 100%; overscroll-behavior: none; }
+  .touch, .touch button, .stickmode, .stick { touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  /* app mode (iOS app, home-screen web app, ?app): the game fills the screen, controls in a strip under it */
+  html.app, html.app body { overflow: hidden; background: #000; }
+  html.app body { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); -webkit-user-select: none; user-select: none; }
+  html.app .wrap { max-width: none; height: 100%; gap: 0; }
+  html.app header { display: none; }
+  body.in-menu .touch { display: none !important; }
+  html.app .screen { flex: 1; min-height: 0; aspect-ratio: auto; border-radius: 0; }
+  html.app .touch { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 6px; padding: 6px; background: var(--ground); }
+  html.app .touch button { height: 40px; font-size: 13px; }
   body {
     margin: 0; background: var(--ground); color: var(--ink);
     font-family: "Barlow", system-ui, sans-serif; font-size: 15px;
@@ -61,43 +82,134 @@
   .job:focus-visible, .card:focus-visible { outline: 3px solid var(--good); outline-offset: 2px; }
   .menu { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 16px; background: radial-gradient(ellipse at center, rgba(27,25,20,.55), rgba(27,25,20,.88)); }
   .menu h2 { margin: 0; font-family: "Barlow Condensed", sans-serif; font-weight: 700; font-size: 26px; letter-spacing: .08em; text-transform: uppercase; color: #fff; }
-  .cards { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; max-width: 720px; }
+  .cards { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; max-width: 1060px; }
   .card { flex: 1 1 240px; max-width: 330px; display: flex; flex-direction: column; gap: 6px; text-align: left; cursor: pointer; padding: 16px 18px; border-radius: 6px; border: 1px solid #5a503d; border-bottom-width: 4px; background: #2b261d; color: var(--ink); font-family: "Barlow", sans-serif; font-size: 14px; line-height: 1.4; }
   .card b { font-family: "Barlow Condensed", sans-serif; font-size: 21px; letter-spacing: .04em; text-transform: uppercase; color: var(--accent); }
   .card.snow { background: #26303a; border-color: #4f6070; }
   .card.snow b { color: #cfe3f5; }
   .card:hover { filter: brightness(1.12); }
+  /* start screen: map cards, Continue / New game, settings and controls panels */
+  .splash, .panel { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; max-width: 1060px; }
+  .splash .title { font-size: clamp(30px, 6vw, 46px); color: var(--accent); }
+  .splash .sub { margin: -10px 0 4px; color: var(--muted); font-size: 14px; letter-spacing: .08em; text-transform: uppercase; }
+  .card { position: relative; }
+  .card[aria-checked="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+  .card .saved { font-style: normal; font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--good); min-height: 1em; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .actions button { font-family: "Barlow Condensed", sans-serif; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; color: var(--ink);
+    background: var(--panel); border: 1px solid var(--line); border-bottom-width: 3px; border-radius: 5px; padding: 8px 16px; font-size: 15px; }
+  .actions button.big { font-size: 20px; padding: 10px 28px; min-width: 170px; }
+  .actions button.primary { background: var(--accent); color: #241a08; border-color: #a9823a; }
+  .actions button:focus-visible, .opt button:focus-visible { outline: 3px solid var(--good); outline-offset: 2px; }
+  .note { margin: 0; color: var(--muted); font-size: 13px; max-width: 60ch; text-align: center; }
+  .panel { max-height: 100%; overflow-y: auto; box-sizing: border-box; }
+  #helpPanel { max-width: 860px; }
+  .panel { max-width: 620px; background: rgba(27,25,20,.92); border: 1px solid var(--line); border-radius: 8px; padding: 18px 20px; }
+  .panel h3 { margin: 0; font-family: "Barlow Condensed", sans-serif; font-size: 24px; letter-spacing: .08em; text-transform: uppercase; color: #fff; }
+  .opt { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; width: 100%; }
+  .opt span { flex: 1 1 150px; font-weight: 500; }
+  .opt button { font: 600 14px "Barlow", sans-serif; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 6px 12px; cursor: pointer; }
+  body.in-menu .screen { aspect-ratio: auto; min-height: min(640px, calc(100svh - 90px)); }
+  html.app body.in-menu .screen { min-height: 0; }
+  @media (max-width: 640px) { .card { padding: 10px 14px; flex-basis: 100%; } .card b { font-size: 19px; } .card span { font-size: 13px; } .splash { gap: 10px; } }
+  @media (max-height: 460px) { .card span { font-size: 12.5px; } .splash .sub { display: none; } .splash { gap: 8px; } }
+  .opt button[aria-pressed="true"] { background: var(--accent); color: #241a08; border-color: var(--accent); }
   .mirror { position: absolute; left: 0; top: 0; border: 4px solid #141414; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.15); }
-  .hint { position: absolute; left: 14px; bottom: 12px; font-size: 13px; letter-spacing: .05em; text-transform: uppercase; font-weight: 600; opacity: .9; }
   .toast { position: absolute; left: 50%; top: 22%; transform: translateX(-50%); background: rgba(20,18,14,.85); color: #fff; text-shadow: none; font-size: 18px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 8px 14px; border-radius: 3px; white-space: nowrap; }
   .loading { position: absolute; inset: 0; display: grid; place-items: center; font-family: "Barlow Condensed", sans-serif; font-size: 20px; letter-spacing: .08em; color: #3b2f1f; text-transform: uppercase; }
 
-  .keys { display: flex; flex-wrap: wrap; gap: 8px 22px; color: var(--muted); font-size: 14px; }
-  .keys div { display: flex; align-items: center; gap: 5px; }
+  .keys { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 6px 20px; color: var(--muted); font-size: 14px; text-align: left; width: 100%; }
+  .keys div { line-height: 1.75; }
+  .keys .wide { grid-column: 1 / -1; }
   kbd { font-family: "Barlow Condensed", sans-serif; font-weight: 600; font-size: 13px; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-bottom-width: 3px; border-radius: 3px; padding: 1px 6px; min-width: 12px; text-align: center; }
 
-  .touch { display: none; justify-content: space-between; gap: 12px; flex-wrap: wrap; user-select: none; -webkit-user-select: none; }
-  .pad { display: grid; grid-template-columns: repeat(3, 60px); gap: 8px; }
+  .touch { display: none; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px; user-select: none; -webkit-user-select: none; }
   .touch button { font-family: "Barlow Condensed", sans-serif; font-weight: 700; font-size: 14px; letter-spacing: .04em; height: 54px; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-bottom-width: 4px; border-radius: 6px; touch-action: none; }
   .touch button.on { background: var(--accent); color: #241a08; }
   .touch button:focus-visible { outline: 3px solid var(--good); outline-offset: 2px; }
-  .touch .blank { visibility: hidden; }
-  @media (pointer: coarse) { .touch { display: flex; } .keys { display: none; } }
+  /* virtual joysticks on the game screen (touch screens only): left drives, right works the hydraulics */
+  .stick { display: none; position: absolute; bottom: 16px; width: min(136px, 34vw); aspect-ratio: 1; border-radius: 50%; pointer-events: auto; touch-action: none;
+    background: radial-gradient(circle, rgba(20,18,14,.18), rgba(20,18,14,.42)); border: 2px solid rgba(255,255,255,.5); box-shadow: 0 2px 10px rgba(0,0,0,.35); }
+  .stick.l { left: 16px; } .stick.r { right: 16px; }
+  .fps { position: absolute; left: 50%; top: 2px; transform: translateX(-50%); font-size: 12px; font-weight: 700; letter-spacing: .05em; background: rgba(20,18,14,.6); padding: 2px 6px; border-radius: 3px; }
+  .menu:not([hidden]) ~ .hud { display: none; } /* nothing of the HUD (sticks, Change job) over the job menu */
+  .menu { overflow-y: auto; justify-content: safe center; background: radial-gradient(ellipse at 50% 25%, #3b4b5e, #16181b 75%); z-index: 6; }
+  .stick i { position: absolute; left: 50%; top: 50%; width: 44%; aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%); background: rgba(255,255,255,.62); box-shadow: 0 2px 6px rgba(0,0,0,.45); }
+  .stick.on i { background: var(--accent); }
+  .stick span { position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, -4px); white-space: nowrap; font-size: 12px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+  .stickmode { position: absolute; left: calc(min(136px, 34vw) + 28px); bottom: 22px; pointer-events: auto; font-family: "Barlow Condensed", sans-serif; font-weight: 700; font-size: 14px; letter-spacing: .06em; text-transform: uppercase;
+    color: #fff; background: rgba(20,18,14,.6); border: 1px solid rgba(255,255,255,.6); border-radius: 4px; padding: 8px 12px; touch-action: none; }
+  .stickmode.on { background: var(--accent); color: #241a08; }
+  @media (pointer: coarse) {
+    .touch { display: grid; }
+    .stick { display: block; }
+    .screen .minimap { top: 40px; left: 14px; right: auto; bottom: auto; width: 100px; height: 100px; }
+    .gear { top: 150px; bottom: auto; }
+    .job { right: auto; left: 50%; transform: translateX(-50%); bottom: 12px; }
+  }
+  @media (pointer: coarse) and (max-height: 460px) { .gear { top: 44px; left: 124px; } } /* phone in landscape: gear beside the minimap */
+  @media (pointer: coarse) and (max-width: 640px) {
+    .stickmode { left: 50%; transform: translateX(-50%); bottom: 54px; }
+    .fill { top: auto; bottom: calc(min(136px, 34vw) + 44px); width: 62%; }
+    .toast { white-space: normal; width: max-content; max-width: 88%; text-align: center; font-size: 16px; }
+  }
 </style>
 
 <div class="wrap">
   <header>
     <h1>Backlot Loader</h1>
-    <p id="intro">Welcome to <b>Björkåsens grustag</b>, open 07:00 to 16:00. Trucks, and cars with trailers, come in over the weighbridge, up to three at a time, and each waits at the pile it wants: <b>so many tonnes of one gravel</b>, or a few boulders or big bags from the north-east yard. They wait as long as it takes; loads within 3% of the order earn a tip, mixed loads are refused. <b>B</b> unhooks the tool at the rack; line up with another (big bucket, pallet forks) and press B to hook it on. Feed naturgrus to the <b>crusher</b> to refill bärlager and makadam. Rain makes wet gravel heavier.</p>
   </header>
 
   <div class="screen" id="screen">
     <div class="loading" id="loading" hidden>Warming up the engine…</div>
     <div class="menu" id="menu" hidden>
-      <h2>Pick a job</h2>
-      <div class="cards">
-        <button class="card" data-scn="dirt"><b>Gravel pit · Grustag</b><span>Trucks and cars with trailers drive to the pile they want: so many tonnes of sand, stone dust, road base or macadam. Load each with the right gravel and the right weight. Loader and excavator.</span></button>
-        <button class="card snow" data-scn="snow"><b>Snow day · Paulus Hook</b><span>Plow Hudson Street and the blocks around Liberty Towers in Jersey City, mapped from OpenStreetMap.</span></button>
+      <div class="splash" id="splash">
+        <h2 class="title">Backlot Loader</h2>
+        <p class="sub">Earthmoving and snow plowing</p>
+        <div class="cards" id="mapCards" role="radiogroup" aria-label="Map">
+          <button class="card" data-scn="dirt" role="radio"><b>Gravel pit</b><span>Björkåsens grustag. Load each customer's truck with the right gravel and the right weight.</span><em class="saved"></em></button>
+          <button class="card snow" data-scn="snow" role="radio"><b>Paulus Hook</b><span>Snow day in Jersey City. Plow the real streets around Liberty Towers.</span><em class="saved"></em></button>
+          <button class="card snow" data-scn="village" role="radio"><b>Kvarnby</b><span>Snow day in a Swedish village. Plow the lanes, not the driveways.</span><em class="saved"></em></button>
+        </div>
+        <div class="actions">
+          <button class="big primary" id="continueBtn" type="button" hidden>Continue</button>
+          <button class="big" id="newBtn" type="button">New game</button>
+        </div>
+        <div class="actions small">
+          <button id="settingsBtn" type="button">Settings</button><button id="helpBtn" type="button">Controls</button>
+        </div>
+        <p class="note" id="saveNote">Progress saves automatically on this device.</p>
+      </div>
+      <div class="panel" id="settingsPanel" hidden>
+        <h3>Settings</h3>
+        <div class="opt" data-set="quality"><span>Graphics</span><button data-v="auto">Auto</button><button data-v="high">High</button><button data-v="low">Low</button></div>
+        <div class="opt" data-set="perf"><span>Performance mode</span><button data-v="auto">Auto</button><button data-v="on">Lighter</button><button data-v="off">Full</button></div>
+        <div class="opt" data-set="sound"><span>Sound</span><button data-v="on">On</button><button data-v="off">Off</button></div>
+        <div class="opt" data-set="time"><span>Snow days start at</span><button data-v="0">Day</button><button data-v="1">Dusk</button><button data-v="2">Night</button></div>
+        <p class="note">Performance mode uses a coarser snow grid, fewer trees and lights. Auto turns it on for phones and tablets; it applies to new games (a saved game keeps its grid).</p>
+        <div class="actions small"><button id="clearSaves" type="button">Delete saved games</button><button class="primary" data-close type="button">Done</button></div>
+      </div>
+      <div class="panel" id="helpPanel" hidden>
+        <h3>Controls</h3>
+        <div class="keys">
+          <div><kbd>W</kbd><kbd>S</kbd> drive</div>
+          <div><kbd>A</kbd><kbd>D</kbd> steer / turn on tracks</div>
+          <div><kbd>1</kbd>–<kbd>4</kbd> gear</div>
+          <div><kbd>I</kbd><kbd>K</kbd> raise / lower boom</div>
+          <div><kbd>J</kbd><kbd>L</kbd> curl / dump bucket · angle the plow · chute · salt fan</div>
+          <div><kbd>Q</kbd><kbd>E</kbd> swing · <kbd>R</kbd><kbd>F</kbd> stick out / in (excavator)</div>
+          <div><kbd>B</kbd> blade / bucket / snow blower · spreader on / off · hook / unhook a tool at the rack</div>
+          <div><kbd>X</kbd> switch machine</div>
+          <div><kbd>C</kbd> cab view · <kbd>Z</kbd><kbd>V</kbd> look left / right</div>
+          <div><kbd>P</kbd> map · <kbd>G</kbd> unplowed snow / ordered gravel</div>
+          <div><kbd>H</kbd> send the truck off (gravel pit)</div>
+          <div><kbd>T</kbd> time of day · <kbd>M</kbd> sound · <kbd>O</kbd> graphics</div>
+          <div><kbd>N</kbd><kbd>N</kbd> start the map over</div>
+          <div>Mouse: drag to orbit, scroll to zoom</div>
+          <div class="wide">Touch: left stick drives, right stick works the boom and bucket, DIG on the excavator swaps the left stick to swing and stick; drag to orbit, pinch to zoom</div>
+          <div class="wide">Xbox controller: <kbd>RT</kbd><kbd>LT</kbd> drive · left stick steer · right stick camera · hold <kbd>LB</kbd> + right stick arm and bucket (excavator <kbd>RB</kbd>: stick and swing) · <kbd>A</kbd> tool · <kbd>Y</kbd> switch machine · <kbd>R3</kbd> camera · <kbd>X</kbd> send off · <kbd>B</kbd> material view · d-pad gear / zoom · View map</div>
+        </div>
+        <div class="actions small"><button class="primary" data-close type="button">Done</button></div>
       </div>
     </div>
     <div class="hud">
@@ -114,7 +226,7 @@
       <div class="tag" id="truckTag">Truck · 0.0 / 6.0 m³</div>
       <div class="tag" id="hopperTag">Hopper · 0.0 / 5.0 m³</div>
       <div class="tag place" id="placeTag" hidden>Liberty Towers</div>
-      <button class="job" id="changeJob" type="button">Change job</button>
+      <button class="job" id="changeJob" type="button">Menu</button>
       <canvas class="minimap" id="minimap" width="300" height="300" aria-label="Minimap"></canvas>
       <div class="bigmap" id="bigmap" hidden>
         <canvas id="bigmapC" width="900" height="900" aria-label="Map of the work area"></canvas>
@@ -123,66 +235,271 @@
       <div class="machine" id="machineTxt">Wheel loader</div>
       <div class="gear" id="gearTxt" aria-label="Gear">Gear <span>1</span><span>2</span><span>3</span><span>4</span></div>
       <div class="mirror" id="mirrorL" hidden></div><div class="mirror" id="mirrorR" hidden></div>
-      <div class="hint" id="hint">X switch machine · C cab view · T time · G grade view</div>
       <div class="toast" id="toast" hidden></div>
+      <div class="stick l" id="stickL" aria-label="Drive stick"><i></i><span>Drive</span></div>
+      <div class="stick r" id="stickR" aria-label="Hydraulics stick"><i></i><span>Boom · bucket</span></div>
+      <button class="stickmode" id="stickMode" type="button" hidden>Dig</button>
     </div>
   </div>
 
   <div class="touch" id="touch">
-    <div class="pad">
-      <span class="blank"></span><button data-k="KeyW">FWD</button><span class="blank"></span>
-      <button data-k="KeyA">◀</button><button data-k="KeyS">REV</button><button data-k="KeyD">▶</button>
-    </div>
-    <div class="pad">
-      <button data-k="ArrowUp">BOOM ▲</button><button data-k="ArrowLeft">CURL</button><button data-k="KeyC">CAB</button>
-      <button data-k="ArrowDown">BOOM ▼</button><button data-k="ArrowRight">DUMP</button><button data-k="KeyG">GRADE</button>
-    </div>
-    <div class="pad">
-      <button data-k="KeyQ">SWING ◀</button><button data-k="KeyR">STICK OUT</button><button data-k="KeyX">SWITCH</button>
-      <button data-k="KeyE">SWING ▶</button><button data-k="KeyF">STICK IN</button><button data-k="KeyB">BLADE</button>
-    </div>
-    <div class="pad">
-      <button data-k="KeyT">TIME</button><button data-k="KeyZ">LOOK ◀</button><button data-k="KeyV">LOOK ▶</button>
-      <button data-k="KeyP">MAP</button><button data-k="Gear">GEAR</button>
-    </div>
+    <button data-k="KeyX">SWITCH</button><button data-k="KeyB">BLADE</button><button data-k="Gear">GEAR</button>
+    <button data-k="KeyC">CAB</button><button data-k="KeyZ">LOOK ◀</button><button data-k="KeyV">LOOK ▶</button>
+    <button data-k="KeyG">GRADE</button><button data-k="KeyH" id="touchSend">SEND OFF</button>
+    <button data-k="KeyP">MAP</button><button data-k="KeyT">TIME</button><button data-k="KeyM">SOUND</button>
   </div>
 
-  <div class="keys">
-    <div><kbd>W</kbd><kbd>S</kbd> drive</div>
-    <div><kbd>A</kbd><kbd>D</kbd> steer / turn on tracks</div>
-    <div><kbd>I</kbd><kbd>K</kbd> raise / lower boom</div>
-    <div><kbd>J</kbd> curl bucket</div>
-    <div><kbd>L</kbd> dump bucket</div>
-    <div><kbd>X</kbd> switch machine (excavator · salt truck · snow blower)</div>
-    <div><kbd>B</kbd> plow blade / bucket / snow blower · spreader or blower on / off · unhook / hook a tool (gravel pit)</div>
-    <div><kbd>J</kbd><kbd>L</kbd> angle the plow (blade on)</div>
-    <div><kbd>Q</kbd><kbd>E</kbd> swing (excavator)</div>
-    <div><kbd>R</kbd><kbd>F</kbd> stick out / in (excavator)</div>
-    <div><kbd>C</kbd> cab view (with mirrors)</div>
-    <div><kbd>Z</kbd><kbd>V</kbd> look left / right (cab)</div>
-    <div><kbd>T</kbd> day / dusk / night</div>
-    <div><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>4</kbd> gear</div>
-    <div><kbd>P</kbd> map</div>
-    <div><kbd>G</kbd> show the ordered gravel · unplowed snow</div>
-    <div><kbd>H</kbd> send the truck off (gravel pit)</div>
-    <div><kbd>M</kbd> sound</div>
-    <div><kbd>O</kbd> graphics quality</div>
-    <div><kbd>N</kbd><kbd>N</kbd> new site</div>
-    <div>Xbox controller (Farming Simulator layout): <kbd>RT</kbd><kbd>LT</kbd> drive · left stick steer · right stick camera · hold <kbd>LB</kbd> + right stick arm and bucket (excavator <kbd>RB</kbd>: stick and swing) · <kbd>A</kbd> attach / detach · <kbd>Y</kbd> switch machine · <kbd>R3</kbd> camera · <kbd>X</kbd> send off · <kbd>B</kbd> material view · <kbd>L3</kbd> horn · d-pad gear / zoom · View map</div>
-  </div>
 </div>
 
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<!-- three.js r160 lives in vendor/three (MIT), so the game runs offline and inside the iOS app. A page opened
+     straight from the file system can't import local modules, so that one case still loads it from jsDelivr. -->
+<script>
+{
+  const base = location.protocol === 'file:' ? 'https://cdn.jsdelivr.net/npm/three@0.160.0/' : './vendor/three/';
+  const m = document.createElement('script'); m.type = 'importmap';
+  m.textContent = JSON.stringify({ imports: { three: base + 'build/three.module.js', 'three/addons/': base + 'examples/jsm/' } });
+  document.currentScript.after(m);
+}
+</script>
 <script>
 // Streets and building footprints: OpenStreetMap contributors (ODbL), converted to meters around Paulus Hook, Jersey City.
 const OSM_PAULUS_HOOK = {"roads":[{"n":"Hudson Street","w":11.0,"p":[34.4,-294.4,33.2,-286.8,22.3,-218.5,21.2,-212.0,20.0,-204.5,17.0,-185.1],"walk":false,"ow":1},{"n":"Sussex Street","w":9.0,"p":[93.4,-36.5,46.7,-43.1,42.7,-43.7,38.6,-44.3,14.0,-47.9,10.9,-48.3,7.0,-48.9,-4.2,-50.4],"walk":false},{"n":"Grand Street","w":9.0,"p":[102.4,-117.0,100.8,-117.3,26.6,-128.7,22.9,-129.3,19.3,-129.8,8.8,-131.4],"walk":false},{"n":"Hudson River Waterfront Walkway","w":5.0,"p":[160.6,-301.1,158.8,-288.4,156.0,-275.5,153.2,-255.7,145.2,-205.6,145.5,-204.7,144.6,-198.1,142.7,-196.0,140.1,-193.7,135.7,-193.3,131.9,-193.9,131.2,-190.3,120.2,-113.8],"walk":true},{"n":"York Street","w":9.0,"p":[21.2,-212.0,25.7,-211.3,34.7,-210.0,38.2,-209.5,106.6,-200.0,124.4,-197.4],"walk":false},{"n":"Hudson Street","w":11.0,"p":[44.3,-368.6,44.1,-358.2,44.1,-354.6,37.1,-311.9,35.9,-303.9],"walk":false,"ow":1},{"n":"Montgomery Street","w":11.0,"p":[-98.4,-311.8,-89.3,-310.5,-2.6,-298.0],"walk":false,"ow":1},{"n":"Sussex Street","w":9.0,"p":[-136.1,-70.7,-142.1,-71.6,-249.1,-87.0,-268.2,-89.8],"walk":false,"ow":1},{"n":"Grand Street","w":11.0,"p":[-265.0,-172.4,-255.0,-171.0,-129.8,-151.7,-119.2,-150.3],"walk":false},{"n":"Greene Street","w":11.0,"p":[-119.2,-150.3,-117.7,-160.0,-108.7,-225.1,-108.1,-230.9,-107.1,-238.7,-99.3,-304.1,-98.4,-311.8],"walk":false},{"n":"Christopher Columbus Drive","w":8.0,"p":[58.3,-366.4,62.5,-365.7,130.2,-355.4,144.5,-353.2],"walk":false},{"n":"York Street","w":9.0,"p":[-108.1,-230.9,-99.5,-229.6,13.1,-213.0,21.2,-212.0],"walk":false},{"n":"Sussex Street","w":9.0,"p":[-127.1,-69.2,-121.7,-68.3,-14.9,-52.1,-4.2,-50.4],"walk":false},{"n":"Hudson Street","w":9.0,"p":[-4.2,-50.4,-6.6,-40.9,-15.4,20.6,-17.1,30.5],"walk":false,"ow":1},{"n":"Grand Street","w":11.0,"p":[-119.2,-150.3,-108.6,-149.0,-2.1,-133.0,8.8,-131.4],"walk":false},{"n":"Washington Street","w":9.0,"p":[-240.3,-333.7,-241.8,-326.0,-251.4,-262.1,-253.1,-252.9,-253.8,-248.1,-255.1,-238.9,-263.3,-182.9,-265.0,-172.4],"walk":false},{"n":"York Street","w":9.0,"p":[-253.1,-252.9,-243.7,-251.5,-167.6,-240.0,-117.1,-232.3,-108.1,-230.9],"walk":false,"ow":1},{"n":"Montgomery Street","w":11.0,"p":[-240.3,-333.7,-230.5,-332.3,-155.8,-321.9,-108.6,-313.6,-98.4,-311.8],"walk":false,"ow":1},{"n":"Hudson Street","w":11.0,"p":[43.8,-293.3,46.9,-302.5,49.2,-308.0,49.7,-309.9,50.9,-314.8,56.9,-356.5,58.3,-366.4],"walk":false,"ow":1},{"n":"Exchange Place","w":5.0,"p":[142.4,-277.8,149.3,-276.6,156.0,-275.5],"walk":true},{"n":"Hudson River Waterfront Walkway","w":5.0,"p":[108.4,-34.0,103.9,-34.8,93.4,-36.5],"walk":true},{"n":"Hudson River Waterfront Walkway","w":5.0,"p":[120.2,-113.8,108.4,-34.0,127.8,-30.7,125.7,-15.5,123.9,-2.3],"walk":true},{"n":"Montgomery Street","w":11.0,"p":[-28.5,-312.8,-88.3,-321.3,-97.4,-322.6],"walk":false,"ow":1},{"n":"Greene Street","w":11.0,"p":[-97.4,-322.6,-96.5,-333.0,-95.8,-340.1,-91.6,-385.7,-90.1,-397.0],"walk":false},{"n":"Montgomery Street","w":11.0,"p":[-97.4,-322.6,-107.3,-324.1,-135.5,-328.4,-228.3,-342.8,-238.1,-344.3],"walk":false,"ow":1},{"n":"Greene Street","w":9.0,"p":[-127.1,-69.2,-125.9,-76.4,-116.7,-135.8,-117.4,-140.4,-119.2,-150.3],"walk":false,"ow":1},{"n":"Greene Street","w":9.0,"p":[-136.1,-70.7,-137.3,-63.2,-138.4,-57.5,-147.8,-2.2,-148.6,3.1,-149.9,9.9],"walk":false,"ow":1},{"n":"Sussex Street","w":9.0,"p":[-136.1,-70.7,-127.1,-69.2],"walk":false},{"n":"Greene Street","w":9.0,"p":[-140.8,11.4,-139.3,2.9,-138.9,0.8,-129.3,-55.1,-128.7,-59.2,-127.1,-69.2],"walk":false,"ow":1},{"n":"Hudson Street","w":9.0,"p":[43.6,-691.2,8.5,-468.7,-3.9,-390.8,-5.9,-377.8],"walk":false},{"n":"Christopher Columbus Drive","w":11.0,"p":[-5.9,-377.8,17.8,-373.2,44.3,-368.6],"walk":false},{"n":"Montgomery Street","w":11.0,"p":[46.9,-302.5,40.1,-303.4,35.9,-303.9],"walk":false,"ow":1},{"n":"Hudson Street","w":11.0,"p":[35.9,-303.9,27.5,-294.8,34.4,-294.4],"walk":false,"ow":1},{"n":"Montgomery Street","w":11.0,"p":[35.9,-303.9,28.7,-304.8,24.2,-305.5,-28.5,-312.8],"walk":false,"ow":1},{"n":"Hudson Street","w":11.0,"p":[17.0,-185.1,10.2,-141.3,8.8,-131.4],"walk":false,"ow":1},{"n":"Hudson Street","w":9.0,"p":[8.8,-131.4,7.3,-122.9,0.8,-81.8,-2.9,-58.4,-4.2,-50.4],"walk":false,"ow":1},{"n":"Greene Street","w":9.0,"p":[-157.8,85.1,-153.8,76.7,-153.2,75.3,-152.9,73.9,-145.0,23.5,-144.2,20.7,-140.8,11.4],"walk":false,"ow":1},{"n":"Essex Street","w":9.0,"p":[69.4,122.7,67.9,121.9,36.6,116.8,6.6,112.0,-4.0,110.5,-10.0,112.1,-21.7,110.4],"walk":false,"ow":1},{"n":"Hudson Street","w":8.0,"p":[-21.7,110.4,-22.5,119.7,-22.9,122.1,-26.4,145.3],"walk":false},{"n":"Hudson Street","w":9.0,"p":[-22.5,75.6,-22.5,98.3,-22.4,103.7,-21.7,110.4],"walk":false,"ow":1},{"n":"Morris Street","w":9.0,"p":[-149.9,9.9,-140.8,11.4],"walk":false},{"n":"Essex Street","w":9.0,"p":[-175.0,84.6,-223.6,77.4,-228.7,76.6,-292.3,66.8],"walk":false,"ow":1},{"n":"Hudson Street","w":8.0,"p":[-22.5,75.6,-25.6,85.9,-30.0,92.3,-34.0,95.9,-38.8,98.0,-41.6,98.6],"walk":false,"ow":1},{"n":"Essex Street","w":9.0,"p":[-21.7,110.4,-28.7,107.2,-34.3,104.4,-37.1,103.0,-39.3,100.6,-41.6,98.6,-91.8,91.1,-137.5,84.0,-141.1,83.6,-143.7,83.4,-147.8,83.2,-157.8,85.1],"walk":false,"ow":1},{"n":"Greene Street","w":9.0,"p":[-170.5,157.3,-170.7,157.6,-175.6,161.1],"walk":false},{"n":"Morris Street","w":9.0,"p":[-298.5,-13.9,-289.5,-12.5,-279.7,-11.1,-273.3,-10.3,-153.9,8.6,-149.9,9.9],"walk":false,"ow":1},{"n":"Greene Street","w":9.0,"p":[-157.8,85.1,-160.9,88.8,-161.4,92.4,-161.9,96.2,-170.5,157.3],"walk":false},{"n":"Essex Street","w":9.0,"p":[-157.8,85.1,-164.5,86.0,-166.8,85.9,-175.0,84.6],"walk":false,"ow":1},{"n":"Morris Street","w":9.0,"p":[-140.8,11.4,-134.4,12.4,-105.3,16.9],"walk":false},{"n":"Morris Street","w":9.0,"p":[-105.3,16.9,-62.5,23.5,-27.4,28.9,-17.1,30.5],"walk":false},{"n":"Greene Street","w":9.0,"p":[-149.9,9.9,-150.9,16.1,-151.6,21.7,-160.1,73.7,-159.3,77.8,-157.8,85.1],"walk":false,"ow":1},{"n":"Hudson Street","w":9.0,"p":[-17.1,30.5,-18.0,37.5,-21.1,58.9,-22.5,75.6],"walk":false,"ow":1},{"n":"unnamed","w":9.0,"p":[-10.0,112.1,10.1,127.4,34.5,130.9,65.4,135.2,67.4,134.6,68.3,133.2,69.9,124.3,69.4,122.7],"walk":false,"ow":1},{"n":"unnamed","w":9.0,"p":[34.5,130.9,36.6,116.8],"walk":false,"ow":1}],"buildings":[{"n":"90 Hudson St","h":29.7,"p":[39.2,-200.2,30.3,-140.0,100.8,-129.7,102.7,-142.3,106.9,-141.7,112.0,-176.7,107.8,-177.3,109.6,-189.9]},{"n":"70 Hudson Street","h":39.6,"p":[26.8,-117.7,17.9,-58.3,88.3,-47.8,90.1,-59.4,94.0,-58.8,99.3,-93.8,95.3,-94.4,97.2,-107.1]},{"n":"55 Hudson Street","h":191.4,"p":[-129.5,0.7,-120.7,-55.2,-18.9,-39.2,-27.8,16.7]},{"n":"","h":26.4,"p":[13.6,-39.3,4.0,27.6,103.2,42.2,103.8,38.6,112.4,-25.2]},{"n":"77 Hudson Street","h":23.1,"p":[-19.3,-63.4,-10.0,-122.0,-85.4,-133.9,-86.2,-127.6,-109.4,-131.2,-112.2,-119.8,-113.0,-111.1,-113.0,-104.0,-112.8,-97.0,-114.7,-89.9,-117.4,-78.1]},{"n":"Exchange Place Center","h":99.0,"p":[55.9,-313.5,62.4,-354.8,145.3,-341.7,151.9,-322.4,140.3,-310.3,138.9,-300.4,107.7,-304.9,97.0,-294.1,86.4,-308.4]},{"n":"30 Montgomery Street","h":49.5,"p":[-78.9,-379.2,-85.4,-338.3,-77.2,-337.0,-78.2,-330.5,-54.1,-326.8,-53.1,-333.3,-44.9,-332.1,-38.4,-372.9]},{"n":"2 Montgomery Street","h":16.5,"p":[33.5,-315.7,-39.9,-326.6,-33.7,-368.4,39.7,-357.5]},{"n":"Jersey City Post Office","h":9.9,"p":[-169.7,-308.8,-223.8,-317.1,-232.0,-263.8,-177.8,-255.6,-176.0,-267.5,-172.4,-266.9,-167.8,-296.6]},{"n":"Montgomery Greene","h":62.7,"p":[-109.9,-304.5,-138.5,-308.3,-139.8,-299.8,-143.4,-278.9,-130.1,-276.9,-114.4,-276.8,-109.3,-299.5]},{"n":"","h":26.4,"p":[-195.9,-205.7,-200.3,-176.0,-132.1,-165.9,-123.0,-226.7,-166.9,-233.3,-171.6,-202.1]},{"n":"","h":13.2,"p":[-151.4,-22.9,-166.6,-27.6,-168.1,-34.2,-173.1,-34.1,-182.0,-27.0,-186.7,-27.7,-197.1,-29.0,-200.1,-9.4,-154.4,-3.7]},{"n":"","h":13.2,"p":[-149.0,-40.9,-146.2,-59.8,-191.5,-66.9,-193.5,-52.2,-184.4,-41.4,-173.7,-44.2]},{"n":"","h":13.2,"p":[-149.0,-84.0,-146.8,-99.7,-140.2,-100.8,-138.9,-110.4,-145.3,-111.4,-184.0,-107.4,-190.6,-108.1,-193.3,-90.8]},{"n":"The Grand View","h":19.8,"p":[-146.2,-143.3,-194.1,-150.5,-197.8,-126.6,-155.5,-120.2,-156.5,-113.8,-139.0,-111.1,-136.1,-129.8]},{"n":"","h":16.5,"p":[-194.9,-206.0,-246.7,-213.7,-242.1,-244.3,-188.8,-236.4]},{"n":"","h":13.2,"p":[-118.1,-243.8,-113.6,-276.0,-149.9,-277.5,-154.2,-249.3]},{"n":"15 Exchange Place","h":36.3,"p":[95.3,-262.4,117.4,-259.3,110.5,-212.8,101.4,-209.9,77.7,-213.5,84.2,-240.2]},{"n":"","h":13.2,"p":[-151.0,-279.8,-139.7,-309.5,-155.0,-311.7,-159.5,-281.0]},{"n":"Hyatt House","h":46.2,"p":[39.6,-218.0,47.3,-270.5,73.5,-266.6,68.5,-236.4,80.8,-234.6,77.5,-212.4]},{"n":"101 Hudson Street","h":138.6,"p":[-77.9,-299.0,5.3,-286.2,-0.1,-251.4,17.4,-248.7,13.6,-224.0,-87.2,-239.4]},{"n":"99 Hudson","h":23.1,"p":[-102.9,-178.9,-96.8,-220.3,-23.1,-209.2,-1.7,-185.3,-3.8,-162.2,-23.8,-149.0,-91.4,-159.1]},{"n":"","h":13.2,"p":[-160.2,-274.9,-151.2,-273.6,-154.5,-249.5,-163.5,-250.7]},{"n":"30 Hudson Street","h":138.6,"p":[-4.6,101.1,4.4,42.1,73.0,52.1,96.1,58.7,97.2,75.1,92.3,103.8,88.9,111.2,65.0,112.5,41.3,108.2,32.0,106.4]},{"n":"Liberty Terrace","h":29.7,"p":[-126.1,128.1,-122.4,106.3,-46.0,124.3,-47.6,145.6,-110.3,134.8]},{"n":"Liberty Towers","h":19.8,"p":[-51.4,89.8,-132.4,77.6,-136.5,71.2,-130.1,27.9,-124.0,23.5,-114.0,24.7,-102.3,40.8,-68.9,46.1,-52.6,33.9,-42.8,35.4,-38.3,41.8,-40.1,52.6,-36.3,58.0,-40.3,85.7]},{"n":"","h":9.9,"p":[-126.2,88.7,-126.7,92.4,-105.5,95.6,-105.0,92.0]},{"n":"Clermont Cove","h":29.7,"p":[-207.6,90.2,-172.1,95.5,-178.9,155.3,-204.3,151.5,-210.3,108.5]},{"n":"Essex Commons","h":16.5,"p":[-188.1,50.9,-182.4,12.9,-162.9,15.8,-172.3,73.0,-203.8,68.2,-201.9,56.0]},{"n":"","h":13.2,"p":[-184.0,23.2,-182.4,12.9,-225.6,6.2,-228.5,23.0]},{"n":"","h":13.2,"p":[-219.7,65.8,-203.8,68.2,-201.8,50.9,-216.6,48.6,-224.9,51.0,-227.0,64.7]},{"n":"Morris Terrace","h":13.2,"p":[-197.5,-26.4,-227.7,-31.0,-230.3,-13.7,-200.1,-9.4]},{"n":"Paulus Hook Ferry Terminal","h":6.6,"p":[137.86,1.87,135.53,16.58,160.83,20.57,163.16,5.86]}],"river_x":156.1,"rail":{"t1":[-293.13,72.12,-229.39,82.04,-224.42,82.83,-167.75,91.36,-161.41,92.43,-145.13,94.82,-97.8,102.06,-60.3,107.91,-56.89,108.35,-47.9,109.52,-43.08,109.79,-38.5,109.67,-35.03,109.09,-32.28,108.33,-28.66,107.18,-22.37,103.68,-18.75,100.36,-15.01,95.92,-11.47,89.75,-8.98,81.99,-2.57,39.71,-0.04,23.02,9.37,-38.6,10.85,-48.33,12.04,-56.36,21.52,-120.3,22.9,-129.26,24.33,-139.34,33.72,-202.84,34.75,-210.0,35.78,-216.69,40.93,-251.24],"t2":[32.17,-252.63,26.8,-217.9,25.73,-211.34,25.03,-203.87,25.27,-196.86,26.24,-180.07,26.05,-173.31,24.88,-165.02,20.94,-139.8,19.3,-129.78,18.03,-120.93,8.26,-56.87,7.04,-48.86,5.59,-39.15,-3.62,22.45,-6.12,39.2,-11.94,78.46,-14.36,85.92,-17.37,91.71,-20.33,95.6,-22.53,98.33,-28.38,102.22,-34.32,104.38,-36.25,105.08,-39.94,105.65,-46.84,105.72,-54.35,104.99,-59.63,104.13,-97.3,98.35,-144.43,91.12,-160.88,88.75,-167.15,87.75,-175.27,86.43,-223.91,79.29,-228.92,78.57,-292.6,68.7],"station":[-118.32,98.37]},"streets":[{"n":"Hudson Street","w":11.0,"p":[44.3,-368.6,44.1,-358.2,44.1,-354.6,37.1,-311.9,35.9,-303.9,27.5,-294.8,34.4,-294.4,33.2,-286.8,22.3,-218.5,21.2,-212.0,20.0,-204.5,17.0,-185.1,10.2,-141.3,8.8,-131.4,7.3,-122.9,0.8,-81.8,-2.9,-58.4,-4.2,-50.4,-6.6,-40.9,-15.4,20.6,-17.1,30.5,-18.0,37.5,-21.1,58.9,-22.5,75.6,-22.5,98.3,-22.4,103.7,-21.7,110.4,-22.5,119.7,-22.9,122.1,-26.4,145.3],"len":529},{"n":"Sussex Street","w":9.0,"p":[93.4,-36.5,46.7,-43.1,42.7,-43.7,38.6,-44.3,14.0,-47.9,10.9,-48.3,7.0,-48.9,-4.2,-50.4,-14.9,-52.1,-121.7,-68.3,-127.1,-69.2,-136.1,-70.7,-142.1,-71.6,-249.1,-87.0,-268.2,-89.8],"len":366},{"n":"Grand Street","w":11.0,"p":[102.4,-117.0,100.8,-117.3,26.6,-128.7,22.9,-129.3,19.3,-129.8,8.8,-131.4,-2.1,-133.0,-108.6,-149.0,-119.2,-150.3,-129.8,-151.7,-255.0,-171.0,-265.0,-172.4],"len":372},{"n":"York Street","w":9.0,"p":[-253.1,-252.9,-243.7,-251.5,-167.6,-240.0,-117.1,-232.3,-108.1,-230.9,-99.5,-229.6,13.1,-213.0,21.2,-212.0,25.7,-211.3,34.7,-210.0,38.2,-209.5,106.6,-200.0,124.4,-197.4],"len":382},{"n":"Montgomery Street","w":11.0,"p":[46.9,-302.5,40.1,-303.4,35.9,-303.9,28.7,-304.8,24.2,-305.5,-28.5,-312.8,-88.3,-321.3,-97.4,-322.6,-107.3,-324.1,-135.5,-328.4,-228.3,-342.8,-238.1,-344.3],"len":288},{"n":"Greene Street","w":11.0,"p":[-136.1,-70.7,-137.3,-63.2,-138.4,-57.5,-147.8,-2.2,-148.6,3.1,-149.9,9.9,-150.9,16.1,-151.6,21.7,-160.1,73.7,-159.3,77.8,-157.8,85.1,-153.8,76.7,-153.2,75.3,-152.9,73.9,-145.0,23.5,-144.2,20.7,-140.8,11.4,-139.3,2.9,-138.9,0.8,-129.3,-55.1,-128.7,-59.2,-127.1,-69.2,-125.9,-76.4,-116.7,-135.8,-117.4,-140.4,-119.2,-150.3,-117.7,-160.0,-108.7,-225.1,-108.1,-230.9,-107.1,-238.7,-99.3,-304.1,-98.4,-311.8],"len":561},{"n":"Christopher Columbus Drive","w":8.0,"p":[58.3,-366.4,62.5,-365.7,130.2,-355.4,144.5,-353.2],"len":87},{"n":"Washington Street","w":9.0,"p":[-240.3,-333.7,-241.8,-326.0,-251.4,-262.1,-253.1,-252.9,-253.8,-248.1,-255.1,-238.9,-263.3,-182.9,-265.0,-172.4],"len":163},{"n":"Essex Street","w":9.0,"p":[69.4,122.7,67.9,121.9,36.6,116.8,6.6,112.0,-4.0,110.5,-10.0,112.1,-21.7,110.4,-28.7,107.2,-34.3,104.4,-37.1,103.0,-39.3,100.6,-41.6,98.6,-91.8,91.1,-137.5,84.0,-141.1,83.6,-143.7,83.4,-147.8,83.2,-157.8,85.1,-164.5,86.0,-166.8,85.9,-175.0,84.6,-223.6,77.4,-228.7,76.6,-292.3,66.8],"len":369},{"n":"Morris Street","w":9.0,"p":[-298.5,-13.9,-289.5,-12.5,-279.7,-11.1,-273.3,-10.3,-153.9,8.6,-149.9,9.9,-140.8,11.4,-134.4,12.4,-105.3,16.9,-62.5,23.5,-27.4,28.9,-17.1,30.5],"len":285}],"parts":[{"n":"70 Greene","host":"77 Hudson Street","b":23.1,"h":152.5,"p":[-87.2,-125.2,-87.6,-110.3,-88.4,-109.7,-88.6,-105.6,-89.5,-105.1,-89.5,-100.6,-90.6,-96.4,-90.1,-96.3,-91.2,-91.8,-90.2,-91.7,-95.4,-75.2,-103.8,-76.2,-111.7,-78.3,-109.9,-98.4,-109.5,-98.4,-109.4,-104.0,-107.9,-109.2,-108.4,-109.4,-104.4,-127.6,-95.6,-127.5]},{"n":"77 Hudson Street","host":"77 Hudson Street","b":23.1,"h":152.5,"p":[-55.2,-79.6,-49.9,-115.8,-41.3,-122.5,-38.9,-122.3,-35.5,-118.0,-32.1,-118.6,-29.3,-111.5,-26.7,-112.1,-24.5,-105.1,-21.6,-105.9,-17.2,-93.4,-25.2,-81.5,-27.6,-82.8,-31.8,-76.7,-34.3,-78.2,-39.2,-72.9,-41.9,-75.1,-47.9,-70.6]},{"n":"","host":"30 Hudson Street","b":138.6,"h":145.0,"p":[40.3,52.9,49.3,51.6,63.4,51.5,73.2,52.5,86.9,55.8,95.6,59.2,96.9,67.0,96.5,75.1,95.6,82.7,94.9,88.1,93.6,95.6,91.6,103.5,88.3,110.6,79.1,111.9,65.0,112.0,55.2,111.0,41.5,107.8,32.8,104.4,31.5,96.6,31.9,88.4,32.8,80.9,33.5,75.4,34.8,67.9,36.8,60.0]},{"n":"","host":"30 Hudson Street","b":180.0,"h":210.0,"p":[41.6,54.7,49.5,53.6,63.3,53.5,72.8,54.5,86.3,57.7,93.8,60.6,94.8,67.1,94.5,74.9,93.6,82.2,92.9,87.8,91.6,95.2,89.7,102.9,86.9,108.8,78.9,109.9,65.1,110.0,55.6,109.0,42.1,105.9,34.6,102.9,33.5,96.5,33.9,88.6,34.8,81.0,35.5,75.7,36.7,68.3,38.7,60.7]},{"n":"","host":"30 Hudson Street","b":210.0,"h":238.0,"p":[42.6,56.1,49.6,55.1,63.2,55.0,72.6,56.0,85.9,59.1,92.4,61.7,93.3,67.2,93.0,74.8,92.1,82.0,91.4,87.6,90.2,94.9,88.3,102.4,85.9,107.4,78.8,108.5,65.1,108.5,55.8,107.6,42.5,104.4,35.9,101.9,35.0,96.4,35.4,88.7,36.3,81.3,37.0,75.9,38.2,68.6,40.1,61.2]},{"n":"","host":"30 Hudson Street","b":145.0,"h":180.0,"p":[40.9,53.8,49.4,52.6,63.4,52.5,73.0,53.5,86.6,56.7,94.7,59.9,95.9,67.0,95.5,75.0,94.6,82.5,93.9,87.9,92.6,95.4,90.6,103.2,87.6,109.7,79.0,110.9,65.0,111.0,55.4,110.0,41.8,106.8,33.7,103.7,32.5,96.5,32.9,88.5,33.8,80.9,34.5,75.6,35.8,68.1,37.7,60.4]},{"n":"Liberty Towers West","host":"Liberty Towers","b":19.8,"h":120.0,"p":[-134.5,60.5,-128.5,56.1,-133.0,49.8,-126.9,45.0,-131.3,38.9,-125.1,34.2,-124.5,29.0,-118.6,30.0,-116.9,28.2,-113.0,33.1,-110.1,38.5,-108.8,47.4,-109.5,56.3,-110.9,62.3,-113.2,68.1,-116.8,73.9,-122.0,78.2,-125.3,73.0,-130.8,72.1,-129.9,66.8]},{"n":"Liberty Towers East","host":"Liberty Towers","b":19.8,"h":120.0,"p":[-61.0,86.8,-64.2,81.9,-66.3,75.7,-66.8,68.4,-65.8,60.8,-64.4,53.5,-61.2,47.0,-56.9,42.1,-51.1,38.4,-49.9,40.3,-44.0,41.0,-44.9,46.4,-40.6,52.7,-46.7,57.0,-41.9,63.4,-48.1,68.0,-43.6,74.3,-49.9,79.1,-50.9,84.4,-56.1,83.4]},{"n":"","host":"101 Hudson Street","b":138.6,"h":167.0,"p":[-0.1,-251.4,5.3,-286.2,-77.9,-299.0,-84.5,-256.1,-1.3,-243.4]},{"n":"","host":"Exchange Place Center","b":99.0,"h":149.5,"p":[86.4,-308.4,80.6,-309.3,55.9,-313.5,62.4,-354.8,145.3,-341.7,145.1,-338.2,148.3,-335.1,150.7,-331.7,151.8,-327.5,151.9,-322.4,150.3,-317.9,147.5,-314.3,144.1,-311.5,140.3,-310.3,138.9,-300.4,114.6,-304.0,107.7,-304.9]},{"n":"","host":"99 Hudson","b":23.1,"h":274.0,"p":[-39.1,-198.4,-25.7,-180.5,-26.6,-174.1,-44.6,-160.8,-37.3,-150.9,-35.6,-152.1,-32.8,-154.2,-30.8,-151.5,-29.7,-150.0,-26.4,-152.5,-23.8,-149.0,-5.6,-162.5,-3.8,-162.2,-0.2,-185.1,-1.7,-185.3,-12.0,-199.1,-15.7,-204.0,-18.1,-202.2,-19.2,-201.4,-21.6,-204.6,-26.4,-201.0,-29.7,-205.4]}]};
 const OSM_SHOPS = [{"n":"CAVA","k":"restaurant","x":-74.9,"z":-332.2},{"n":"Chipotle","k":"fast_food","x":-55.5,"z":-330.6},{"n":"Milanos","k":"fast_food","x":-142.3,"z":-311.4},{"n":"Gregorys Coffee","k":"cafe","x":133.3,"z":-305.4},{"n":"Dunkin'","k":"fast_food","x":-111.9,"z":-298.3},{"n":"Amiya","k":"restaurant","x":-44.5,"z":-292.7},{"n":"Pizza Pie La Cantina Italiana","k":"restaurant","x":-123.7,"z":-264.0},{"n":"PNC Bank","k":"bank","x":97.4,"z":-261.1},{"n":"Starbucks","k":"cafe","x":113.7,"z":-256.4},{"n":"The Iron Monkey","k":"bar","x":-123.2,"z":-248.2},{"n":"Five Guys","k":"fast_food","x":8.3,"z":-230.0},{"n":"Subway","k":"fast_food","x":42.9,"z":-221.2},{"n":"Dunkin'","k":"fast_food","x":54.2,"z":-218.9},{"n":"RoofTop at Exchange Place","k":"bar","x":87.0,"z":-217.4},{"n":"Naya","k":"fast_food","x":104.3,"z":-216.5},{"n":"Honshu Sushi","k":"restaurant","x":-128.6,"z":-212.8},{"n":"Sweetgreen","k":"fast_food","x":34.5,"z":-144.1},{"n":"Refined Wines & Spirits","k":"liquor","x":-70.2,"z":-128.2},{"n":"Greene Hook Bar & Kitchen","k":"bar","x":-107.1,"z":-127.8},{"n":"Hudson Greene Market","k":"market","x":-19.5,"z":-114.9},{"n":"CVS Pharmacy","k":"pharmacy","x":30.7,"z":-111.4},{"n":"Maman","k":"cafe","x":86.7,"z":-105.4},{"n":"Rumi Turkish Grill","k":"restaurant","x":-144.6,"z":-86.4},{"n":"Semicolon Cafe","k":"cafe","x":-20.8,"z":-70.9},{"n":"Sky Thai","k":"restaurant","x":-166.2,"z":-4.3},{"n":"Exchange Place Florist","k":"florist","x":-125.2,"z":27.3},{"n":"Krispy Pizza","k":"restaurant","x":-40.8,"z":41.1},{"n":"Bluestone Lane","k":"cafe","x":27.6,"z":49.9},{"n":"Yaso","k":"restaurant","x":3.2,"z":61.2},{"n":"Grace Nails & Spa","k":"salon","x":-105.9,"z":79.3}];
 const OSM_WATER = {"water":[[[439.4,-578.8,437.7,-576.7,436.1,-576.6,280.9,-600.0,170.7,-600.0,169.3,-591.0,174.4,-584.6,175.4,-574.4,170.6,-564.4,164.8,-560.9,143.7,-421.7,148.1,-415.6,149.9,-405.0,389.1,-368.4,383.4,-329.9,230.4,-353.1,222.3,-350.4,208.7,-352.4,200.1,-292.6,275.5,-281.3,267.9,-230.8,263.5,-222.8,259.7,-220.1,255.1,-218.9,246.5,-220.6,242.6,-222.9,238.0,-230.3,237.3,-234.9,241.7,-263.5,240.1,-267.2,163.1,-279.5,159.0,-266.5,147.8,-198.1,145.7,-193.5,143.3,-191.7,140.6,-190.3,135.8,-190.3,126.4,-127.4,128.8,-127.0,124.8,-101.3,122.5,-101.6,116.3,-60.5,119.9,-60.1,117.7,-44.3,127.6,-43.1,132.7,-39.5,133.8,-33.9,130.0,-7.9,136.3,-6.9,135.8,-3.2,173.2,2.5,174.0,-2.8,183.3,-1.4,182.5,4.1,220.5,9.9,221.1,5.8,227.1,6.7,225.6,16.7,218.5,15.6,216.5,30.0,223.5,31.0,220.9,48.7,202.9,46.1,205.5,28.4,212.6,29.4,214.6,15.0,163.4,7.2,161.2,21.3,134.8,17.3,136.9,3.0,128.5,1.8,122.8,38.4,125.2,38.8,121.6,61.4,119.5,61.0,109.0,129.3,97.1,127.5,91.7,153.3,91.8,161.0,93.5,167.6,98.6,173.4,100.1,178.6,98.2,184.0,89.9,188.1,70.3,228.4,66.9,230.8,56.4,230.3,52.1,232.4,48.4,232.6,16.2,227.9,-25.5,219.1,-19.8,183.2,-26.9,176.0,-32.5,178.0,-41.2,170.5,-45.2,169.7,-47.1,172.1,-64.9,172.5,-71.0,170.0,-81.3,170.3,-92.9,173.5,-104.0,180.5,-118.3,175.4,-153.6,170.7,-164.4,173.2,-252.2,159.8,-255.6,153.7,-284.4,148.9,-287.3,145.3,-299.8,143.4,-306.5,187.3,-52.7,224.1,-48.9,226.2,-48.0,231.9,-50.6,253.4,-55.4,260.1,-61.2,263.5,-71.9,269.2,-80.9,270.8,-96.0,267.4,-106.9,259.7,-127.4,251.4,-187.7,239.4,-213.1,240.3,-225.2,243.5,-234.6,249.0,-241.5,255.2,-264.8,281.7,-278.9,294.8,-296.2,302.7,-313.1,305.8,-348.9,304.4,-349.1,306.2,-418.7,297.3,-421.5,316.4,-474.6,308.7,-473.3,300.0,-482.9,298.6,-486.1,301.7,-491.1,302.7,-551.9,293.8,-552.1,295.5,-582.0,291.1,-580.4,265.4,-557.4,267.9,-551.8,222.8,-553.3,222.5,-552.8,211.7,-545.1,173.3,-546.5,169.2,-546.0,163.8,-547.5,161.2,-566.1,151.7,-586.1,148.6,-600.0,156.2,-600.0,437.7,-434.4,462.0,-422.6,388.3,-410.3,378.8,-402.6,385.8,-396.5,389.3,-369.8,392.4,-353.3,396.7,-346.0,402.2,-342.2,409.6,-344.7,448.1,-326.8,471.8,-306.3,471.2,-293.1,485.7,-281.3,490.7,-64.9,522.1,-37.5,514.9,-24.9,512.6,-14.0,512.4,-7.2,528.0,13.6,539.5,22.0,551.5,25.8,559.9,285.5,600.0,600.0,600.0,600.0,-600.0,442.6,-600.0]]],"near":[[[126.4,-127.4,128.8,-127.0,124.8,-101.3,122.5,-101.6,116.3,-60.5,119.9,-60.1,117.7,-44.3,127.6,-43.1,132.7,-39.5,133.8,-33.9,130.0,-7.9,136.3,-6.9,135.8,-3.2,173.2,2.5,174.0,-2.8,183.3,-1.4,182.5,4.1,185.0,4.5,185.0,-185.0,135.0,-185.0]],[[163.4,7.2,161.2,21.3,134.8,17.3,136.9,3.0,128.5,1.8,122.8,38.4,125.2,38.8,121.6,61.4,119.5,61.0,109.0,129.3,97.1,127.5,91.7,153.3,91.8,161.0,93.5,167.6,98.6,173.4,100.1,178.6,98.2,184.0,96.2,185.0,185.0,185.0,185.0,10.5]],[[-19.8,183.2,-26.9,176.0,-32.5,178.0,-41.2,170.5,-45.2,169.7,-47.1,172.1,-64.9,172.5,-71.0,170.0,-81.3,170.3,-92.9,173.5,-104.0,180.5,-118.3,175.4,-153.6,170.7,-164.4,173.2,-185.0,170.1,-185.0,185.0,-20.0,185.0]]],"clock":[53.7,192.5],"land":[[[285.5,600.0,25.8,559.9,22.0,551.5,13.6,539.5,-7.2,528.0,-14.0,512.4,-24.9,512.6,-37.5,514.9,-64.9,522.1,-281.3,490.7,-293.1,485.7,-306.3,471.2,-326.8,471.8,-344.7,448.1,-342.2,409.6,-346.0,402.2,-353.3,396.7,-369.8,392.4,-396.5,389.3,-402.6,385.8,-410.3,378.8,-422.6,388.3,-434.4,462.0,-600.0,437.7,-600.0,600.0]],[[-600.0,156.2,-586.1,148.6,-566.1,151.7,-547.5,161.2,-546.0,163.8,-546.5,169.2,-545.1,173.3,-552.8,211.7,-553.3,222.5,-551.8,222.8,-557.4,267.9,-580.4,265.4,-582.0,291.1,-552.1,295.5,-551.9,293.8,-491.1,302.7,-486.1,301.7,-482.9,298.6,-473.3,300.0,-474.6,308.7,-421.5,316.4,-418.7,297.3,-349.1,306.2,-348.9,304.4,-313.1,305.8,-296.2,302.7,-278.9,294.8,-264.8,281.7,-241.5,255.2,-234.6,249.0,-225.2,243.5,-213.1,240.3,-187.7,239.4,-127.4,251.4,-106.9,259.7,-96.0,267.4,-80.9,270.8,-71.9,269.2,-61.2,263.5,-55.4,260.1,-50.6,253.4,-48.0,231.9,-48.9,226.2,-52.7,224.1,-306.5,187.3,-299.8,143.4,-287.3,145.3,-284.4,148.9,-255.6,153.7,-252.2,159.8,-164.4,173.2,-153.6,170.7,-118.3,175.4,-104.0,180.5,-92.9,173.5,-81.3,170.3,-71.0,170.0,-170.0,170.0,-170.0,-170.0,132.8,-170.0,135.8,-190.3,140.6,-190.3,143.3,-191.7,145.7,-193.5,147.8,-198.1,159.0,-266.5,163.1,-279.5,240.1,-267.2,241.7,-263.5,237.3,-234.9,238.0,-230.3,242.6,-222.9,246.5,-220.6,255.1,-218.9,259.7,-220.1,263.5,-222.8,267.9,-230.8,275.5,-281.3,200.1,-292.6,208.7,-352.4,222.3,-350.4,230.4,-353.1,383.4,-329.9,389.1,-368.4,149.9,-405.0,148.1,-415.6,143.7,-421.7,164.8,-560.9,170.6,-564.4,175.4,-574.4,174.4,-584.6,169.3,-591.0,170.7,-600.0,-600.0,-600.0]],[[-64.9,172.5,-47.1,172.1,-45.4,170.0,-71.0,170.0]],[[-41.2,170.5,-32.5,178.0,-26.9,176.0,-19.8,183.2,-25.5,219.1,16.2,227.9,48.4,232.6,52.1,232.4,56.4,230.3,66.9,230.8,70.3,228.4,89.9,188.1,98.2,184.0,100.1,178.6,98.6,173.4,95.6,170.0,-43.7,170.0]],[[214.6,15.0,212.6,29.4,205.5,28.4,202.9,46.1,220.9,48.7,223.5,31.0,216.5,30.0,218.5,15.6,225.6,16.7,227.1,6.7,221.1,5.8,220.5,9.9,182.5,4.1,183.3,-1.4,174.0,-2.8,173.2,2.5,170.0,2.0,170.0,8.2]],[[436.1,-576.6,437.7,-576.7,439.4,-578.8,442.6,-600.0,280.9,-600.0]]]};
-function boot(SCN, bootData) {
+// Kvarnby: a made-up Swedish village for the second snow job, laid out by hand in code. It comes out in the
+// same shape as the OpenStreetMap data the Paulus Hook job uses (metres, x east, z south, polylines and
+// footprints), so the snow, traffic, markings and map code run on it unchanged. The extra fields (house
+// styles, driveways, props, the rink, the level crossing) are read by the village builder in boot().
+function villageData() {
+  let seed = 20231;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const pickR = a => a[Math.floor(rnd() * a.length)];
+  const HALF = 170;
+  const roads = [], buildings = [], streets = [], shops = [], parked = [], props = [], drives = [], spots = [];
+  const distSeg = (x, z, x0, z0, x1, z1) => {
+    const dx = x1 - x0, dz = z1 - z0, l2 = dx * dx + dz * dz || 1, t = Math.max(0, Math.min(1, ((x - x0) * dx + (z - z0) * dz) / l2));
+    return Math.hypot(x - x0 - dx * t, z - z0 - dz * t);
+  };
+  const inPoly = (x, z, p) => {
+    let c = false;
+    for (let i = 0, j = p.length - 2; i < p.length; j = i, i += 2) {
+      const xi = p[i], zi = p[i + 1], xj = p[j], zj = p[j + 1];
+      if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c;
+    }
+    return c;
+  };
+  // a rectangle footprint, w along (ux, uz) and d across it
+  const rect = (cx, cz, w, d, ux = 1, uz = 0) => {
+    const vx = -uz, vz = ux, a = w / 2, b = d / 2;
+    return [cx - ux * a - vx * b, cz - uz * a - vz * b, cx + ux * a - vx * b, cz + uz * a - vz * b, cx + ux * a + vx * b, cz + uz * a + vz * b, cx - ux * a + vx * b, cz - uz * a + vz * b];
+  };
+  // sw: how wide a verge or sidewalk runs along it; nm: no painted lines; drive: a private driveway;
+  // nocount: plowed but not part of the streets-cleared score
+  const road = (n, w, P, o = {}) => { const r = Object.assign({ n, w, p: P.flat(), walk: false, sw: 1.2 }, o); roads.push(r); return P; };
+  const street = (n, w, P, o) => { road(n, w, P, o); streets.push({ n, w, p: P.flat() }); return P; };
+
+  // ---- the lake (Kvarndammen, the old mill pond) in the north-east ----
+  const LAKE = { x: 106, z: -118, rx: 46, rz: 34 };
+  const lakeR = a => 1 + 0.1 * Math.sin(3 * a + 1) + 0.06 * Math.sin(5 * a + 2.2) + 0.04 * Math.sin(7 * a + 0.4);
+  const lake = []; for (let k = 0; k < 64; k++) { const a = k / 64 * Math.PI * 2, r = lakeR(a); lake.push(+(LAKE.x + Math.cos(a) * LAKE.rx * r).toFixed(2), +(LAKE.z + Math.sin(a) * LAKE.rz * r).toFixed(2)); }
+  const shoreAt = (a, off) => { const r = lakeR(a); return [LAKE.x + Math.cos(a) * (LAKE.rx * r + off), LAKE.z + Math.sin(a) * (LAKE.rz * r + off)]; };
+  const lakeDist = (x, z) => { let d = 1e9; for (let i = 0, j = lake.length - 2; i < lake.length; j = i, i += 2) d = Math.min(d, distSeg(x, z, lake[j], lake[j + 1], lake[i], lake[i + 1])); return inPoly(x, z, lake) ? -d : d; };
+
+  // ---- streets with traffic ----
+  const S = street('Storgatan', 9, [[-300, 12], [-230, 9], [-160, 5], [-100, 2], [-30, 0], [40, 0], [100, -3], [160, -8], [230, -13], [300, -18]], { sw: 3 });
+  const K = street('Kyrkvägen', 7, [[-30, 0], [-31, -40], [-36, -80], [-48, -120], [-62, -160], [-74, -200], [-90, -300]], { sw: 1.5 });
+  const ST = street('Stationsvägen', 7.5, [[40, 0], [41, 45], [40, 85], [40, 112], [38, 150], [36, 200], [33, 300]], { sw: 1.5 });
+  const A = street('Ängsvägen', 6, [[-100, 2], [-101, 40], [-98, 68], [-88, 84], [-60, 88], [-20, 88], [15, 86], [40, 85]], { nm: true });
+  const B = street('Björkvägen', 6, [[-31, -40], [-60, -45], [-95, -52], [-120, -68], [-130, -95], [-117, -120], [-86, -128], [-58, -124], [-46.5, -115]], { nm: true });
+  // dead ends, lots and yards
+  const SK = road('Skolvägen', 6, [[100, -3], [101, 35], [102, 62]], { nm: true });
+  road('Skolvägen', 16, [[102, 66], [102, 70]], { nm: true, sw: 1.5 }); // the school bus turning circle
+  const LV = road('Lönnvägen', 6, [[-36, -80], [-88, -86]], { nm: true });
+  road('Lönnvägen', 14, [[-91, -86.4], [-93, -86.6]], { nm: true, sw: 1.5 }); // turning circle
+  const EK = road('Ekvägen', 6, [[100, -3], [99, -32], [112, -50], [153.9, -40]], { nm: true });
+  const SJ = road('Sjövägen', 6, [[160, -8], [155, -35], [145, -58]], { nm: true });
+  road('Badplatsen', 10, [[128, -64], [146, -64]], { nm: true, sw: 1.5 });
+  road('Industrivägen', 7, [[38, 150], [75, 148], [112, 142]], { nm: true });
+  road('Kommunförrådet', 22, [[112, 142], [142, 142]], { nm: true, nocount: true, sw: 1.5 });
+  road('Butiksinfarten', 8, [[40, 0], [40, -18]], { nm: true });
+  road('Butiksparkeringen', 20, [[26, -28], [62, -28]], { nm: true, sw: 1.5 });
+  road('Kyrkans parkering', 8, [[-90, -164], [-66, -164]], { nm: true, sw: 1.5 });
+  road('Brandstationen', 7, [[-83, 9], [-67, 9]], { nm: true });
+  road('Macken', 12, [[122, 15], [150, 15]], { nm: true, sw: 1.5 });
+  road('Macken', 6, [[126, -4], [126, 10]], { nm: true }); road('Macken', 6, [[146, -6], [146, 10]], { nm: true });
+  // walkways: the square, the path down to the mill and the shore promenade
+  road('Torget', 16, [[-14, -22], [5, -22]], { walk: true, sw: 0 });
+  const mill = shoreAt(Math.PI * 1.02, 0);
+  road('Kvarnstigen', 3, [[-4.5, -30], [-4.5, -56], [4, -82], [14, -104], [mill[0] - 12, mill[1] + 2]], { walk: true, sw: 0 });
+  const prom = []; for (let a = Math.PI * 0.32; a <= Math.PI * 0.95; a += 0.07) prom.push(shoreAt(a, 6).map(v => +v.toFixed(1)));
+  road('Strandpromenaden', 3, [[134, -60], ...prom], { walk: true, sw: 0 });
+
+  // ---- the railway: two tracks across the south of the village, a station and a level crossing ----
+  const railZ = x => 110 + 6 * Math.sin(x / 260);
+  const t1 = [], t2 = [];
+  for (let x = -470; x <= 470; x += 20) t1.push(x, +railZ(x).toFixed(2));
+  for (let x = 470; x >= -470; x -= 20) t2.push(x, +(railZ(x) + 4.4).toFixed(2));
+  const rail = { t1, t2, station: [-20, +(railZ(-20) + 2.2).toFixed(2)] };
+  const crossing = { x: 40, z: +(railZ(40) + 2.2).toFixed(2), road: 'Stationsvägen' };
+
+  // ---- the named buildings ----
+  const bld = (n, p, h, o = {}) => { const b = Object.assign({ n, p, h }, o); buildings.push(b); return b; };
+  // st: wall paint; roof: gable / flat; pitch in degrees; ridge along the long side unless across
+  bld('Kvarnby Livs', rect(40, -57, 50, 24), 6, { st: 'shop', roof: 'flat' });
+  bld(undefined, rect(-14, -46, 15.2, 11.7), 6.6, { st: 'yellow', roof: 'gable', pitch: 32, chimney: true });
+  bld(undefined, rect(5, -46, 15.2, 11.7), 6.6, { st: 'white', roof: 'gable', pitch: 32, chimney: true });
+  bld(undefined, rect(-64, -24, 25.7, 11.7), 9.9, { st: 'ochre', roof: 'gable', pitch: 27, chimney: true });
+  bld(undefined, rect(-93, -26, 18.7, 11.7), 9.9, { st: 'ochre', roof: 'gable', pitch: 27, chimney: true });
+  bld('Brandstationen', rect(-75, 23, 22, 16), 7, { st: 'fire', roof: 'gable', pitch: 22 });
+  bld('Biblioteket', rect(-42, 21, 18.7, 11.7), 6.6, { st: 'brick', roof: 'gable', pitch: 30 });
+  bld(undefined, rect(-17, 20, 18.7, 11.7), 6.6, { st: 'white', roof: 'gable', pitch: 32, chimney: true });
+  bld('Sparbanken', rect(9, 20, 15.2, 11.7), 6.6, { st: 'brick', roof: 'gable', pitch: 30 });
+  bld('Kvarnby skola', rect(76, 34, 32.7, 14.2), 6.6, { st: 'brick', roof: 'gable', pitch: 28 });
+  bld(undefined, rect(65, 53, 11.7, 18.7), 3.3, { st: 'brick', roof: 'gable', pitch: 28 });
+  bld('Kvarnby kyrka', rect(-86, -150, 26, 12), 7.5, { st: 'church', roof: 'gable', pitch: 48 });
+  bld(undefined, rect(-102, -150, 7, 7), 17, { st: 'tower' });
+  bld('Stationshuset', rect(-22, 99, 15.2, 8.2), 3.3, { st: 'red', roof: 'gable', pitch: 34, chimney: true });
+  bld('Kommunförrådet', rect(161, 142, 24, 12, 0, 1), 6.5, { st: 'depot', roof: 'gable', pitch: 14 });
+  bld(undefined, rect(150, 31, 10, 7), 3.6, { st: 'shop', roof: 'flat', kiosk: true });
+  // the mill stands on the west shore with its wheel in the water
+  const mw = 11.7, md = 8.2, mcx = mill[0] - 1 - md / 2;
+  bld('Kvarnen', rect(mcx, mill[1], mw, md, 0, 1), 6.6, { st: 'red', roof: 'gable', pitch: 38, mill: { x: mill[0] + 1.2, z: mill[1] } });
+
+  shops.push(
+    { n: 'Kvarnby Livs', k: 'grocer', x: 40, z: -44 }, { n: 'Konditori Kanelen', k: 'cafe', x: -15, z: -40 },
+    { n: 'Pizzeria Napoli', k: 'fast_food', x: 5, z: -40 }, { n: 'Apoteket Kronan', k: 'pharmacy', x: -22, z: 14 },
+    { n: 'Blomsterboden', k: 'florist', x: -11, z: 14 }, { n: 'Sparbanken', k: 'bank', x: 9, z: 14 },
+    { n: 'Frisör Saxen', k: 'salon', x: -60, z: -17 }, { n: 'Kvarnby Krog', k: 'bar', x: -93, z: -19 },
+    { n: 'Kiosken', k: 'fast_food', x: 145, z: 31 });
+
+  // ---- props: the things on the ground the builder dresses the village with ----
+  props.push({ t: 'xmas', x: -4.5, z: -22, r: 1.6 });
+  props.push({ t: 'canopy', x: 136, z: 15, w: 18, d: 9 });
+  for (const [x, z] of [[128.5, 11], [143.5, 11], [128.5, 19], [143.5, 19]]) props.push({ t: 'post', x, z, r: 0.3 });
+  for (const [x, z] of [[133, 15], [139, 15]]) props.push({ t: 'pump', x, z, r: 0.7 });
+  props.push({ t: 'pylon', x: 157, z: 5, r: 0.4 });
+  props.push({ t: 'busstop', x: 14, z: -6.5, r: 0 });
+  // the outdoor ice rink by the school, with its gate onto the bus turning circle
+  const RINK = { x: 78, z: 80, w: 24, d: 16, gate: 4.5 };
+  // the churchyard: rows of headstones south of the church
+  for (let gx = -97; gx <= -75; gx += 2.6) for (const gz of [-140.5, -137.5]) if (rnd() < 0.8) props.push({ t: 'grave', x: gx + (rnd() - 0.5) * 0.4, z: gz, r: 0.45, yaw: (rnd() - 0.5) * 0.1 });
+
+  // ---- houses along the residential streets, each with a driveway ----
+  const FAM = ['Andersson', 'Johansson', 'Karlsson', 'Nilsson', 'Eriksson', 'Larsson', 'Olsson', 'Persson', 'Svensson', 'Gustafsson', 'Pettersson', 'Jonsson',
+    'Hansson', 'Bengtsson', 'Lindberg', 'Lindqvist', 'Sjöberg', 'Holm', 'Ek', 'Lund', 'Engström', 'Forsberg', 'Sandberg', 'Wallin', 'Björk', 'Nyström',
+    'Lundgren', 'Hedlund', 'Berglund', 'Åberg', 'Dahl', 'Strand', 'Falk', 'Viklund', 'Öberg', 'Mattsson'];
+  const COLS = ['red', 'red', 'red', 'yellow', 'white', 'grey', 'green', 'red', 'yellow', 'white'];
+  const allSegs = () => { const o = []; for (const r of roads) for (let i = 0; i + 3 < r.p.length; i += 2) o.push({ r, x0: r.p[i], z0: r.p[i + 1], x1: r.p[i + 2], z1: r.p[i + 3], hw: r.w / 2 + (r.walk ? 0 : r.sw) }); return o; };
+  let SEGS = allSegs();
+  const railDist = (x, z) => Math.abs(z - railZ(x) - 2.2);
+  // keep-out areas for houses: the rink, the school yard, the churchyard, the depot, the gas station
+  const keepOut = [rect(RINK.x, RINK.z, RINK.w + 8, RINK.d + 8), rect(80, 50, 46, 44), rect(-86, -140, 34, 14), rect(140, 140, 64, 40), rect(140, 20, 44, 36), rect(-4, -22, 40, 26)];
+  const hitsBuilding = (pts, pad) => buildings.some(b => {
+    for (let q = 0; q < pts.length; q += 2) if (inPoly(pts[q], pts[q + 1], b.grow || (b.grow = growPoly(b.p, pad)))) return true;
+    for (let q = 0; q < b.p.length; q += 2) if (inPoly(b.p[q], b.p[q + 1], pts)) return true;
+    return false;
+  });
+  function growPoly(p, pad) { // push each corner out from the centre by pad (fine for the convex footprints here)
+    let cx = 0, cz = 0; const n = p.length / 2; for (let q = 0; q < p.length; q += 2) { cx += p[q]; cz += p[q + 1]; } cx /= n; cz /= n;
+    return p.map((v, q) => { const c = q % 2 ? cz : cx, o = q % 2 ? p[q] - cz : p[q] - cx, other = q % 2 ? p[q - 1] - cx : p[q + 1] - cz, l = Math.hypot(o, other) || 1; return c + o + o / l * pad * 1.42; });
+  }
+  const samples = (cx, cz, w, d, ux, uz, pad) => { const o = []; for (const a of [-1, -0.5, 0, 0.5, 1]) for (const b of [-1, -0.5, 0, 0.5, 1]) { const lx = a * (w / 2 + pad), lz = b * (d / 2 + pad); o.push(cx + ux * lx - uz * lz, cz + uz * lx + ux * lz); } return o; };
+  const roadClear = (pts, pad, skip) => { for (let q = 0; q < pts.length; q += 2) for (const s of SEGS) { if (s.r === skip) continue; if (distSeg(pts[q], pts[q + 1], s.x0, s.z0, s.x1, s.z1) < s.hw + pad) return false; } return true; };
+  const counters = {};
+  function houseRow(P, name, sides, opts = {}) {
+    const segL = []; let L = 0; for (let i = 0; i + 1 < P.length; i++) { const l = Math.hypot(P[i + 1][0] - P[i][0], P[i + 1][1] - P[i][1]); segL.push(l); L += l; }
+    const at = s => { let i = 0; while (i < segL.length - 1 && s > segL[i]) { s -= segL[i]; i++; } const [ax, az] = P[i], [bx, bz] = P[i + 1], t = Math.min(1, s / segL[i]); return [ax + (bx - ax) * t, az + (bz - az) * t, (bx - ax) / segL[i], (bz - az) / segL[i]]; };
+    const hw = opts.hw || 3;
+    for (const sd of sides) {
+      let num = sd > 0 ? 1 : 2;
+      for (let s = opts.s0 || 14; s < L - (opts.s1 || 12); s += 16 + rnd() * 5) {
+        const [px, pz, tx, tz] = at(s), nx = -tz * sd, nz = tx * sd; // nx, nz: from the street toward the house
+        const w = rnd() < 0.55 ? 8.2 : 11.7, d = rnd() < 0.5 ? 7.2 : 8.2, yard = 6.5 + rnd() * 3;
+        const off = hw + yard + d / 2, cx = px + nx * off, cz = pz + nz * off;
+        const inside = Math.abs(cx) < HALF - 7 && Math.abs(cz) < HALF - 7;
+        if (!inside && (Math.abs(cx) > 250 || Math.abs(cz) > 250 || Math.abs(cx) < HALF + 6 && Math.abs(cz) < HALF + 6)) continue;
+        // the house faces the street: its local x runs along the street (ux, uz), local +z toward the street
+        const ux = -nz, uz = nx;
+        const pts = samples(cx, cz, w, d, ux, uz, 2.2);
+        if (!roadClear(pts, 0.6)) continue;
+        if (hitsBuilding(pts, 2.5)) continue;
+        if (keepOut.some(k => { for (let q = 0; q < pts.length; q += 2) if (inPoly(pts[q], pts[q + 1], k)) return true; return false; })) continue;
+        let wet = false; for (let q = 0; q < pts.length; q += 2) if (lakeDist(pts[q], pts[q + 1]) < 5) wet = true; if (wet) continue;
+        if (pts.some((v, q) => q % 2 === 0 && railDist(v, pts[q + 1]) < 11)) continue;
+        // the driveway: from the street edge to the front wall, on one side of the front door
+        const dside = rnd() < 0.5 ? 1 : -1, dOff = (w / 2 - 1.9) * dside;
+        const dx0 = px + ux * dOff + nx * (hw - 0.4), dz0 = pz + uz * dOff + nz * (hw - 0.4);
+        const dx1 = cx + ux * dOff - nx * (d / 2 + 0.3), dz1 = cz + uz * dOff - nz * (d / 2 + 0.3);
+        if (inside) {
+          // the driveway mouth must be clear of junctions and other driveways
+          let ok = true;
+          for (const sg of SEGS) if (sg.r.n !== name && !sg.r.drive && distSeg(dx0, dz0, sg.x0, sg.z0, sg.x1, sg.z1) < sg.hw + 7) { ok = false; break; }
+          if (!ok || drives.some(dv => Math.hypot(dv.x0 - dx0, dv.z0 - dz0) < 9)) continue;
+        }
+        const fam = FAM[Math.floor(rnd() * FAM.length)], addr = `${name} ${num}`; num += 2;
+        const pitch = 28 + rnd() * 12, tall = rnd() < 0.4;
+        const b = bld(undefined, rect(cx, cz, w, d, ux, uz), tall ? 6.6 : 3.3, { st: pickR(COLS), roof: 'gable', pitch, chimney: rnd() < 0.8, house: true, fam, addr,
+          cx, cz, w, d, ux, uz, door: dside > 0 ? -1 : 1 });
+        if (!inside) continue;
+        const dv = { x0: +dx0.toFixed(2), z0: +dz0.toFixed(2), x1: +dx1.toFixed(2), z1: +dz1.toFixed(2), fam, addr, street: name };
+        drives.push(dv); road('Uppfart', 3.2, [[dv.x0, dv.z0], [dv.x1, dv.z1]], { nm: true, drive: true, sw: 0.3 });
+        SEGS = allSegs();
+        props.push({ t: 'mailbox', x: dx0 + ux * 2.2 * dside - nx * 0.4, z: dz0 + uz * 2.2 * dside - nz * 0.4, yaw: Math.atan2(-nx, -nz), r: 0 });
+        // a car on some of the driveways, a snowman in a few front yards, trees round the back
+        if (rnd() < 0.4) { const cl = Math.hypot(dx1 - dx0, dz1 - dz0); if (cl > 8.5) parked.push({ x: dx1 - nx * 3.0, z: dz1 - nz * 3.0, yaw: Math.atan2(nx, nz), col: pickR([0x2d4a73, 0x9b2f2a, 0xb9bec4, 0x23262a, 0xe9e6df, 0x3f5d47, 0x6b6f75]), tall: rnd() < 0.45 }); }
+        if (rnd() < 0.14) props.push({ t: 'snowman', x: cx - ux * dOff * 0.9 - nx * (d / 2 + yard * 0.55), z: cz - uz * dOff * 0.9 - nz * (d / 2 + yard * 0.55), r: 0.7, yaw: Math.atan2(-nx, -nz) });
+        for (const sx of [-1, 1]) if (rnd() < 0.6) spots.push([cx + ux * sx * (w / 2 + 2 + rnd() * 2) + nx * (d / 2 + 2 + rnd() * 3), cz + uz * sx * (w / 2 + 2 + rnd() * 2) + nz * (d / 2 + 2 + rnd() * 3), rnd() < 0.65 ? 'spruce' : 'birch']);
+      }
+    }
+  }
+  houseRow(B, 'Björkvägen', [1, -1], { s0: 16, s1: 14 });
+  houseRow(A, 'Ängsvägen', [1, -1], { s0: 16, s1: 10 });
+  houseRow(K, 'Kyrkvägen', [1, -1], { hw: 3.5, s0: 20 });
+  houseRow(SK, 'Skolvägen', [1], { s0: 14, s1: 4 });
+  houseRow(SJ, 'Sjövägen', [1, -1], { s0: 16, s1: 6 });
+  houseRow(ST.slice(3), 'Stationsvägen', [1, -1], { hw: 3.75, s0: 24 });
+  houseRow(S.slice(0, 4), 'Storgatan', [1, -1], { hw: 4.5, s0: 10, s1: 18 });
+  houseRow(S.slice(5), 'Storgatan', [1, -1], { hw: 4.5, s0: 34 });
+  houseRow(LV, 'Lönnvägen', [1, -1], { s0: 14, s1: 4 });
+  houseRow(EK, 'Ekvägen', [1, -1], { s0: 14, s1: 8 });
+  // parked cars: outside the shop, at the church, on Storgatan by the square, at the school
+  for (let x = 30; x <= 58; x += 3.1) if (rnd() < 0.55) parked.push({ x, z: -34.5, yaw: 0, col: pickR([0x2d4a73, 0x9b2f2a, 0xb9bec4, 0x23262a, 0xe9e6df, 0x3f5d47]), tall: rnd() < 0.4 });
+  for (let x = 32; x <= 56; x += 3.1) if (rnd() < 0.35) parked.push({ x, z: -21.5, yaw: Math.PI, col: pickR([0x2d4a73, 0x9b2f2a, 0xb9bec4, 0x23262a, 0xe9e6df]), tall: rnd() < 0.4 });
+  for (const x of [-86, -80.5]) parked.push({ x, z: -164, yaw: Math.PI / 2, col: pickR([0x23262a, 0xb9bec4]), tall: false });
+  for (const x of [-20, -2]) parked.push({ x, z: 4.0, yaw: Math.PI / 2, col: pickR([0x9b2f2a, 0xe9e6df, 0x3f5d47]), tall: x > -10 });
+
+  // ---- trees: in the yards (above), along the shore and round the edges of the village ----
+  const treeOk = (x, z, r) => Math.abs(x) < HALF - 5 && Math.abs(z) < HALF - 5 && roadClear([x, z], r + 1.2) && !hitsBuilding([x, z], 2.5) && lakeDist(x, z) > 3 && railDist(x, z) > 8
+    && !keepOut.some(k => inPoly(x, z, k)) && !parked.some(c => Math.hypot(c.x - x, c.z - z) < 4) && !props.some(p => Math.hypot(p.x - x, p.z - z) < (p.r || 0.5) + 2.5);
+  const trees = [];
+  for (const [x, z, t] of spots) if (treeOk(x, z, 1.2) && !trees.some(o => Math.hypot(o.x - x, o.z - z) < 3.5)) trees.push({ x, z, t, s: 0.8 + rnd() * 0.5 });
+  for (let n = 0; n < 2600 && trees.length < 330; n++) {
+    const x = (rnd() - 0.5) * 2 * (HALF - 6), z = (rnd() - 0.5) * 2 * (HALF - 6);
+    // thickest round the edges of the map and in the strip between the railway and the depot road
+    const edge = Math.max(Math.abs(x), Math.abs(z)) > HALF - 40, wood = z > 120 && x < 30;
+    if (!edge && !wood && rnd() > 0.12) continue;
+    if (!treeOk(x, z, 2) || trees.some(o => Math.hypot(o.x - x, o.z - z) < 4.2)) continue;
+    trees.push({ x, z, t: rnd() < 0.72 ? 'spruce' : 'birch', s: 0.8 + rnd() * 0.7 });
+  }
+
+  for (const b of buildings) delete b.grow;
+  const water = { near: [[lake]], water: [[lake]], land: [[[-600, -600, 600, -600, 600, 600, -600, 600], [-HALF, -HALF, -HALF, HALF, HALF, HALF, HALF, -HALF]]], clock: [1e5, 1e5] };
+  return { map: { roads, buildings, streets, parts: [], rail, river_x: 0 }, water, shops, parked, props, drives, trees, rink: RINK, crossing, lake: LAKE };
+}
+function boot(SCN, bootData, opts = {}) {
+  // opts.settings: the start screen's settings; opts.save: a saved game to continue (see makeSave)
+  const SET = opts.settings || loadSettings(), SAVE = opts.save && opts.save.v === 3 && opts.save.scn === SCN ? opts.save : null;
   const T = THREE;
-  const SNOW = SCN === 'snow';
-  const OSM = OSM_PAULUS_HOOK;
-  const N = SNOW ? 560 : 520, SIZE = SNOW ? 340 : 130, CS = SIZE / N, A = CS * CS, HALF = SIZE / 2, NV = (N + 1) * (N + 1), ROW = N + 1;
+  // two snow jobs share everything: Paulus Hook (real streets from OpenStreetMap) and Kvarnby (a made-up village)
+  const VILLAGE = SCN === 'village', SNOW = SCN === 'snow' || VILLAGE;
+  const VD = VILLAGE ? villageData() : null;
+  const OSM = VILLAGE ? VD.map : OSM_PAULUS_HOOK, WATER = VILLAGE ? VD.water : OSM_WATER, SHOPS = VILLAGE ? VD.shops : OSM_SHOPS;
+  // Phones and tablets get a lighter game: a coarser snow and dirt grid, fewer trees, flakes and lights, no
+  // mirror views, a lazier minimap and the cheap graphics setting. ?mobile=1 / ?mobile=0 forces it either way.
+  const PERF_Q = new URLSearchParams(location.search).get('mobile');
+  const MOBILE = PERF_Q !== null ? PERF_Q !== '0' : SET.perf === 'on' ? true : SET.perf === 'off' ? false : matchMedia('(pointer: coarse)').matches && navigator.maxTouchPoints > 0;
+  // a saved game keeps the grid it was played on, whatever the performance setting says now
+  const N = SAVE && SAVE.N ? SAVE.N : SNOW ? (MOBILE ? 400 : 560) : (MOBILE ? 360 : 520), SIZE = SNOW ? 340 : 130, CS = SIZE / N, A = CS * CS, HALF = SIZE / 2, NV = (N + 1) * (N + 1), ROW = N + 1;
   const TALUS = (SNOW ? 0.85 : 0.62) * CS;
   const OFF = 5000; // the old dirt-lot hopper and pipe trench are parked far off the map in both jobs
   const PILE = { x: -9, z: 2 };
@@ -193,7 +510,8 @@ function boot(SCN, bootData) {
   // tower (30 Hudson Street), out of the traffic lanes. The loop is one-way eastbound, so they all face east:
   // the loader and salt truck past the loop's short cut-through, the dump truck behind them.
   const LOOP_E = Math.atan2(30.9, 4.3); // heading east along the loop's eastern straight
-  const LOADER_HOME = SNOW ? { x: 58, z: 134.17, yaw: LOOP_E, a: -0.63 } : { x: -8, z: 28, yaw: Math.PI, a: 0.05 }; // gravel pit: on the open floor near the middle
+  // Kvarnby: the machines start in the municipal depot yard in the south-east, facing west toward the gate
+  const LOADER_HOME = VILLAGE ? { x: 105, z: 146, yaw: -Math.PI / 2, a: -0.63 } : SNOW ? { x: 58, z: 134.17, yaw: LOOP_E, a: -0.63 } : { x: -8, z: 28, yaw: Math.PI, a: 0.05 }; // gravel pit: on the open floor near the middle
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
   const lerp = (a, b, t) => a + (b - a) * t;
@@ -253,10 +571,10 @@ function boot(SCN, bootData) {
   // the Hudson, the Little Basin and the Morris Canal Basin from the OSM coastline and water areas.
   // `near` is the water clipped to the live square (fast); `water` is all of it, out to the backdrop.
   const inRings = (x, z, pg) => inPolyXZ(x, z, pg[0]) && !pg.slice(1).some(r => inPolyXZ(x, z, r));
-  const inWater = (x, z, set = OSM_WATER.near) => set.some(pg => inRings(x, z, pg));
+  const inWater = (x, z, set = WATER.near) => set.some(pg => inRings(x, z, pg));
   function waterEdgeDist(x, z) {
     let d = 1e9;
-    for (const pg of OSM_WATER.near) for (const p of pg) for (let i = 0, j = p.length - 2; i < p.length; j = i, i += 2) d = Math.min(d, distSeg(x, z, p[j], p[j + 1], p[i], p[i + 1]));
+    for (const pg of WATER.near) for (const p of pg) for (let i = 0, j = p.length - 2; i < p.length; j = i, i += 2) d = Math.min(d, distSeg(x, z, p[j], p[j + 1], p[i], p[i + 1]));
     return d;
   }
   // Lane markings as real painted strips laid on the pavement, so they come out crisp: white edge lines
@@ -264,10 +582,12 @@ function boot(SCN, bootData) {
   // one-way streets, continental crosswalks on every leg of every intersection and stop lines across the
   // lanes coming in. They sit a hair above the asphalt, under the snow, and show once it is cleared off.
   function buildRoadMarkings() {
-    const segs = [];
+    // painted streets (nm: lanes, lots and driveways carry no paint), and every paved piece the paint must stop at
+    const segs = [], paved = [];
     for (const r of OSM.roads) if (!r.walk) for (let i = 0; i + 3 < r.p.length; i += 2) {
       const x0 = r.p[i], z0 = r.p[i + 1], x1 = r.p[i + 2], z1 = r.p[i + 3], len = Math.hypot(x1 - x0, z1 - z0);
-      if (len > 0.5) segs.push({ n: r.n, x0, z0, x1, z1, len, ux: (x1 - x0) / len, uz: (z1 - z0) / len, hw: r.w / 2, ow: r.ow || 0 });
+      const sg = { n: r.n, x0, z0, x1, z1, len, ux: (x1 - x0) / len, uz: (z1 - z0) / len, hw: r.w / 2, ow: r.ow || 0 };
+      if (len > 0.5) { paved.push(sg); if (!r.nm) segs.push(sg); }
     }
     // intersections: where streets of different names cross or meet
     const nodesM = [];
@@ -281,7 +601,7 @@ function boot(SCN, bootData) {
       if (!nodesM.some(n => Math.hypot(n[0] - px, n[1] - pz) < 8)) nodesM.push([px, pz]);
     }
     const inMap = (x, z) => Math.abs(x) < HALF - 1 && Math.abs(z) < HALF - 1;
-    const inOther = (x, z, name, pad) => segs.some(sg => sg.n !== name && distSeg(x, z, sg.x0, sg.z0, sg.x1, sg.z1) < sg.hw + pad);
+    const inOther = (x, z, name, pad) => paved.some(sg => sg.n !== name && distSeg(x, z, sg.x0, sg.z0, sg.x1, sg.z1) < sg.hw + pad);
     const nearNode = (x, z, r) => nodesM.some(n => Math.hypot(n[0] - x, n[1] - z) < r);
     const W = [], Y = [];
     const yAt = (x, z) => sampleAt(gnd, x, z) + 0.012;
@@ -310,7 +630,9 @@ function boot(SCN, bootData) {
     for (const sg of segs) {
       line(sg, sg.hw - 0.55, 0.15, W, { pad: 0.5 });
       line(sg, -(sg.hw - 0.55), 0.15, W, { pad: 0.5 });
-      if (!sg.ow) { line(sg, 0.12, 0.1, Y, { pad: 1, stopAtNodes: true }); line(sg, -0.12, 0.1, Y, { pad: 1, stopAtNodes: true }); }
+      // Swedish roads split their lanes with a dashed white line (3 m paint, 9 m gap), American ones a double yellow
+      if (!sg.ow && VILLAGE) line(sg, 0, 0.1, W, { pad: 1, stopAtNodes: true, dash: true, phase: 0 });
+      else if (!sg.ow) { line(sg, 0.12, 0.1, Y, { pad: 1, stopAtNodes: true }); line(sg, -0.12, 0.1, Y, { pad: 1, stopAtNodes: true }); }
       else if (sg.hw >= 5) line(sg, 0, 0.12, W, { pad: 1, stopAtNodes: true, dash: true, phase: sg.x0 * 0.37 + sg.z0 * 0.61 });
     }
     // crosswalks and stop lines on each leg of each intersection
@@ -346,10 +668,10 @@ function boot(SCN, bootData) {
     mk(W, 0xe8e8e2); mk(Y, 0xe2b32c);
   }
   function buildSnowGround() {
-    kind = new Uint8Array(NV); gnd = new Float32Array(NV); mark = new Uint8Array(NV);
+    kind = new Uint8Array(NV); gnd = new Float32Array(NV); mark = new Uint8Array(NV); const offRoad = new Uint8Array(NV);
     const TILE = 8, TN = Math.ceil(SIZE / TILE) + 1, tiles = Array.from({ length: TN * TN }, () => []);
     for (const r of OSM.roads) for (let i = 0; i + 3 < r.p.length; i += 2) {
-      const sg = { x0: r.p[i], z0: r.p[i + 1], x1: r.p[i + 2], z1: r.p[i + 3], hw: r.w / 2, walk: r.walk, cl: r.w >= 11 };
+      const sg = { x0: r.p[i], z0: r.p[i + 1], x1: r.p[i + 2], z1: r.p[i + 3], hw: r.w / 2, walk: r.walk, cl: r.w >= 11, sw: r.sw ?? 3, off: r.drive ? 2 : r.nocount ? 1 : 0 };
       const pad = sg.hw + 3.5;
       const a0 = clamp(Math.floor((Math.min(sg.x0, sg.x1) - pad + HALF) / TILE), 0, TN - 1), a1 = clamp(Math.floor((Math.max(sg.x0, sg.x1) + pad + HALF) / TILE), 0, TN - 1);
       const b0 = clamp(Math.floor((Math.min(sg.z0, sg.z1) - pad + HALF) / TILE), 0, TN - 1), b1 = clamp(Math.floor((Math.max(sg.z0, sg.z1) + pad + HALF) / TILE), 0, TN - 1);
@@ -359,14 +681,17 @@ function boot(SCN, bootData) {
       const k = idx(i, j), x = wx(i), z = wz(j);
       if (inWater(x, z)) { kind[k] = 8; gnd[k] = -1.6; continue; }
       const list = tiles[clamp(Math.floor((z + HALF) / TILE), 0, TN - 1) * TN + clamp(Math.floor((x + HALF) / TILE), 0, TN - 1)];
-      let best = 1e9, walk = false, cl = 1e9;
+      // the nearest paved piece decides; a public road beats a driveway or yard it overlaps
+      let best = 1e9, walk = false, cl = 1e9, verge = false, off = 9;
       for (const sg of list) {
         const d = distSeg(x, z, sg.x0, sg.z0, sg.x1, sg.z1), e = d - sg.hw;
         if (e < best) { best = e; walk = sg.walk; }
+        if (e <= sg.sw) verge = true; // sidewalk, or the verge along a village lane
+        if (!sg.walk && e <= 0) off = Math.min(off, sg.off);
         if (sg.cl && !sg.walk) cl = Math.min(cl, d);
       }
-      if (best <= 0 && !walk) { kind[k] = 1; gnd[k] = 0; } // lane markings are real geometry (buildRoadMarkings)
-      else if (best <= 3.0) { kind[k] = 5; gnd[k] = 0.15; }
+      if (best <= 0 && !walk) { kind[k] = 1; gnd[k] = 0; if (off < 9) offRoad[k] = off; } // lane markings are real geometry (buildRoadMarkings)
+      else if (verge) { kind[k] = 5; gnd[k] = 0.15; }
       else { kind[k] = 6; gnd[k] = 0.15; }
     }
     rasterRail();
@@ -381,8 +706,10 @@ function boot(SCN, bootData) {
     placeStreetlights();
     placeStreetTrees();
     // the trackbed is the train's to clear, so only the streets count (where the rails run in a street, it still counts)
-    const rc = []; for (let k = 0; k < NV; k++) if (kind[k] === 1 && !railBed[k]) rc.push(k);
+    // in Kvarnby the private driveways and the depot yard don't count either (driveways are scored on their own)
+    const rc = []; for (let k = 0; k < NV; k++) if (kind[k] === 1 && !railBed[k] && !offRoad[k]) rc.push(k);
     roadCells = Int32Array.from(rc);
+    if (VILLAGE) villageGround(offRoad);
   }
   // parked cars along the curbs: both sides of the wide streets, one side of the narrow ones
   let cars = [];
@@ -393,7 +720,9 @@ function boot(SCN, bootData) {
     OSM.roads.forEach(r => { if (!r.walk) for (let i = 0; i + 3 < r.p.length; i += 2) segs.push({ n: r.n, x0: r.p[i], z0: r.p[i + 1], x1: r.p[i + 2], z1: r.p[i + 3], hw: r.w / 2 }); });
     const PAL = [0x9b2f2a, 0x2d4a73, 0xb9bec4, 0x23262a, 0xe9e6df, 0x3f5d47, 0x6b6f75, 0x7a5a3a];
     const kindAt = (x, z) => kind[idx(clamp(Math.round((x + HALF) / CS), 0, N), clamp(Math.round((z + HALF) / CS), 0, N))];
-    for (const r of OSM.roads) {
+    // Kvarnby parks its cars by hand: in driveways, outside the shop and the church, a couple on Storgatan
+    if (VILLAGE) cars = VD.parked.map(c => ({ ...c }));
+    else for (const r of OSM.roads) {
       if (r.walk || r.w < 9) continue;
       const sides = r.w >= 11 ? [1, -1] : [1];
       for (let i = 0; i + 3 < r.p.length; i += 2) {
@@ -433,7 +762,7 @@ function boot(SCN, bootData) {
     const kindAt = (x, z) => kind[idx(clamp(Math.round((x + HALF) / CS), 0, N), clamp(Math.round((z + HALF) / CS), 0, N))];
     let flip = 1;
     for (const r of OSM.roads) {
-      if (r.walk) continue;
+      if (r.walk || r.drive) continue;
       for (let i = 0; i + 3 < r.p.length; i += 2) {
         const x0 = r.p[i], z0 = r.p[i + 1], x1 = r.p[i + 2], z1 = r.p[i + 3], len = Math.hypot(x1 - x0, z1 - z0);
         if (len < 5) continue;
@@ -995,7 +1324,7 @@ function boot(SCN, bootData) {
       const p = new T.Vector3().setFromMatrixPosition(g.matrixWorld);
       parkTool(key, p.x, p.z, L.tF);
       couple('none');
-      toast(`${tools[key].name} set down. Line up with another tool, lower the boom and press B`, 3200);
+      toast(`${tools[key].name} set down`, 1600);
       return;
     }
     const cp = new T.Vector3(0, 0, ARM_L).applyMatrix4(L.arm.matrixWorld);
@@ -1410,8 +1739,7 @@ function boot(SCN, bootData) {
   const screen = document.getElementById('screen');
   // Rendering: physically based materials in a linear colour pipeline, lit by the sun plus an environment
   // map made from the sky dome, with filmic tone mapping. 'high' adds ambient occlusion and bloom (O toggles).
-  const QKEY = 'backlot.quality';
-  let quality = 'high'; try { quality = localStorage.getItem(QKEY) || 'high'; } catch (_) {}
+  let quality = SET.quality === 'high' || SET.quality === 'low' ? SET.quality : MOBILE ? 'low' : 'high';
   const renderer = new T.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
   renderer.outputColorSpace = T.SRGBColorSpace;
   renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
@@ -1438,8 +1766,9 @@ function boot(SCN, bootData) {
   function buildComposer() {
     if (composer) { composer.renderTarget1.dispose(); composer.renderTarget2.dispose(); composer = null; aoPass = bloomPass = null; }
     renderer.setPixelRatio(Math.min(devicePixelRatio || 1, quality === 'high' ? 1.5 : 1));
-    sun.shadow.mapSize.set(quality === 'high' ? 4096 : 2048, quality === 'high' ? 4096 : 2048);
-    const ext = quality === 'high' ? 36 : 24;
+    const sm = MOBILE ? (quality === 'high' ? 2048 : 1024) : quality === 'high' ? 4096 : 2048;
+    sun.shadow.mapSize.set(sm, sm);
+    const ext = quality === 'high' ? 36 : MOBILE ? 18 : 24;
     Object.assign(sun.shadow.camera, { left: -ext, right: ext, top: ext, bottom: -ext }); sun.shadow.camera.updateProjectionMatrix();
     if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
     if (quality === 'high' && T.EffectComposer && T.RenderPass && T.OutputPass) {
@@ -1477,7 +1806,7 @@ function boot(SCN, bootData) {
     { name: 'Dusk', hs: 0xffc9a0, hg: 0x5b4330, hi: 0.42, sc: 0xffa060, si: 0.7, fog: 0xc6977a, fn: 55, ff: 210, exp: 0.88, top: 0x5f6f98, hor: 0xf0a56f, lamp: 0, glow: 0, head: 0.45, bea: 0.45 },
     { name: 'Night', hs: 0x5e6c94, hg: 0x2a241c, hi: 0.26, sc: 0xa4b4ff, si: 0.14, fog: 0x1f2533, fn: 40, ff: 180, exp: 1.1, top: 0x0a0f1d, hor: 0x2a3348, lamp: 0, glow: 0, head: 0.85, bea: 1 },
   ];
-  let timeIdx = SNOW ? 1 : 0, lampScale = 1, skylineMat = null, skyGeo = null, lampGlowMat = null, lampConeMat = null;
+  let timeIdx = SNOW ? clamp(+SET.time || 0, 0, 2) : 0, lampScale = 1, skylineMat = null, skyGeo = null, lampGlowMat = null, lampConeMat = null;
   const headlights = []; let beaconScale = 1;
   function paintSky(topHex, horHex, geo = skyGeo, radius = 450) {
     if (!geo) return;
@@ -1547,7 +1876,7 @@ function boot(SCN, bootData) {
     // the land is the real shoreline: snow-covered ground with a stone bulkhead dropping to the water
     const ring = (r, sh) => { sh.moveTo(r[0], -r[1]); for (let q = 2; q < r.length; q += 2) sh.lineTo(r[q], -r[q + 1]); };
     const wallPos = [], onFrame = v => Math.abs(Math.abs(v) - HALF) < 0.05 || Math.abs(Math.abs(v) - 600) < 0.05;
-    for (const pg of OSM_WATER.land) {
+    for (const pg of WATER.land) {
       const sh = new T.Shape(); ring(pg[0], sh);
       for (const hRing of pg.slice(1)) { const p = new T.Path(); ring(hRing, p); sh.holes.push(p); }
       const g = new T.ShapeGeometry(sh); g.rotateX(-Math.PI / 2);
@@ -1561,9 +1890,9 @@ function boot(SCN, bootData) {
     const wg = new T.BufferGeometry(); wg.setAttribute('position', new T.Float32BufferAttribute(wallPos, 3)); wg.computeVertexNormals();
     scene.add(new T.Mesh(wg, std({ color: 0x6f6a62, side: T.DoubleSide })));
     const rg = new T.PlaneGeometry(1400, 1400); rg.rotateX(-Math.PI / 2);
-    const river = new T.Mesh(rg, std({ color: 0x5d6b76 })); river.position.set(0, -0.9, 0); scene.add(river);
+    const river = new T.Mesh(rg, std({ color: VILLAGE ? 0x4c5d66 : 0x5d6b76, roughness: VILLAGE ? 0.35 : 0.85 })); river.position.set(0, -0.9, 0); scene.add(river);
     const skyMat = skylineMat = new T.MeshBasicMaterial({ color: 0x7d8796, fog: false });
-    for (let k = 0; k < 46; k++) {
+    if (!VILLAGE) for (let k = 0; k < 46; k++) {
       const z = -380 + k * 17 + Math.sin(k * 7.3) * 6, w = 10 + Math.abs(Math.sin(k * 3.1)) * 18, hh = 40 + Math.abs(Math.sin(k * 1.7)) * 150 + (Math.abs(k - 24) < 4 ? 220 : 0);
       const b = new T.Mesh(new T.BoxGeometry(w, hh, w), skyMat); b.position.set(400 + Math.sin(k * 2.2) * 15, hh / 2 - 1, z); scene.add(b);
     }
@@ -1632,6 +1961,7 @@ function boot(SCN, bootData) {
         if (kd === 8) { r = 0.17; g = 0.22; b = 0.26; }
         else if (kd === 1) { if (mark[k] === 2) { r = 0.46; g = 0.47; b = 0.5; } else if (mark[k] >= 3) { r = 0.86 + 0.03 * n; g = 0.86 + 0.03 * n; b = 0.84 + 0.03 * n; } else if (mark[k]) { r = 0.86; g = 0.7; b = 0.22; } else { r = 0.22 + 0.04 * n; g = 0.23 + 0.04 * n; b = 0.25 + 0.04 * n; } }
         else if (kd === 5) { r = 0.6 + 0.05 * n; g = 0.6 + 0.05 * n; b = 0.58 + 0.05 * n; }
+        else if (mark[k] === 7) { r = 0.72 + 0.04 * n; g = 0.82 + 0.04 * n; b = 0.9 + 0.03 * n; } // the rink's ice
         else { r = 0.5; g = 0.5; b = 0.47; }
         const cover = kd === 8 ? 0 : clamp(depth / 0.07, 0, 1);
         const worked = dist[k];                       // pushed or packed snow is greyer than fresh powder
@@ -1724,7 +2054,7 @@ function boot(SCN, bootData) {
   let tufts, tuftHead, tuftNext, tuftDirty = false;
   const ZERO = new T.Matrix4().makeScale(0, 0, 0);
   function buildTufts() {
-    const COUNT = 9000;
+    const COUNT = MOBILE ? 3500 : 9000;
     tufts = new T.InstancedMesh(tuftGeometry(7, 0.55), tuftMat, COUNT);
     tufts.receiveShadow = true;
     tuftHead = new Int32Array(NV).fill(-1); tuftNext = new Int32Array(COUNT).fill(-1);
@@ -1749,7 +2079,7 @@ function boot(SCN, bootData) {
     const m = new T.Matrix4(), q = new T.Quaternion(), s = new T.Vector3(), p = new T.Vector3(), up = new T.Vector3(0, 1, 0), c = new T.Color();
 
     // meadow tufts outside the dig area
-    const OUT = 5000, out = new T.InstancedMesh(tuftGeometry(7, 0.6), tuftMat, OUT);
+    const OUT = MOBILE ? 1800 : 5000, out = new T.InstancedMesh(tuftGeometry(7, 0.6), tuftMat, OUT);
     out.receiveShadow = true;
     for (let r = 0; r < OUT; r++) {
       let x, z;
@@ -1839,6 +2169,7 @@ function boot(SCN, bootData) {
     }
   }
   function buildCity() {
+    if (VILLAGE) return buildVillage();
     const roof = std({ color: 0xf1f4f7 });
     // a few variants of each facade so neighbouring buildings don't light up in the same pattern;
     // office towers burn more lights than the brick walk-ups
@@ -1864,6 +2195,544 @@ function boot(SCN, bootData) {
     // the towers rising out of their podiums (OSM building:part), each stacked on whatever it stands on
     for (const t of OSM.parts) if (t.host !== 'Liberty Towers') addPrism(t.p, t.b, t.h - t.b, variant(t.h > 60 ? 'glass' : 'stone'));
     buildLibertyTowers();
+  }
+  // ---------------- Kvarnby, the village snow job ----------------
+  // Wooden houses with snowy gable roofs, chimneys that smoke, lit windows after dark, a white church with a
+  // clock in its tower, the mill on the pond, an ice rink by the school, a level crossing on the railway and a
+  // Christmas tree on the square. All of it static and merged into a few meshes per material.
+  const vill = { smoke: [], chim: [], wheel: null, xing: null, drives: [], rinkCells: null, rinkDone: false, plog: 0, pondToast: false, lights: [], hands: [], props: [], boards: [], tag: null };
+  let vseed = 99; const vr = () => (vseed = (vseed * 16807) % 2147483647) / 2147483647;
+  // ground work, called from buildSnowGround: the rink's ice, and the cells at each driveway's mouth
+  function villageGround(offRoad) {
+    const R = VD.rink, cells = [];
+    for (let j = 0; j <= N; j++) for (let i = 0; i <= N; i++) {
+      const x = wx(i), z = wz(j);
+      if (Math.abs(x - R.x) < R.w / 2 - 0.3 && Math.abs(z - R.z) < R.d / 2 - 0.3) { const k = idx(i, j); if (kind[k] === 6) { mark[k] = 7; cells.push(k); } }
+    }
+    vill.rinkCells = Int32Array.from(cells);
+    vill.drives = VD.drives.map(d => {
+      const len = Math.hypot(d.x1 - d.x0, d.z1 - d.z0), ux = (d.x1 - d.x0) / len, uz = (d.z1 - d.z0) / len, mouth = [], all = [];
+      for (let j = Math.floor((Math.min(d.z0, d.z1) - 3 + HALF) / CS); j <= Math.ceil((Math.max(d.z0, d.z1) + 3 + HALF) / CS); j++)
+        for (let i = Math.floor((Math.min(d.x0, d.x1) - 3 + HALF) / CS); i <= Math.ceil((Math.max(d.x0, d.x1) + 3 + HALF) / CS); i++) {
+          if (i < 0 || j < 0 || i > N || j > N) continue;
+          const k = idx(i, j); if (kind[k] !== 1 || offRoad[k] !== 2) continue;
+          const dx = wx(i) - d.x0, dz = wz(j) - d.z0, al = dx * ux + dz * uz, lat = Math.abs(-dx * uz + dz * ux);
+          if (lat > 1.6 || al < -0.5 || al > len + 0.5) continue;
+          all.push(k); if (al < 4.5) mouth.push(k);
+        }
+      return { ...d, mouth: Int32Array.from(mouth), cells: Int32Array.from(all), open: false, walled: false, told: false };
+    });
+  }
+
+  // wall textures laid out like windowTexture (8 x 8 bays of 3.5 m x 3.3 m), so windowGlow's lights line up.
+  // surf: boards (vertical timber cladding), plaster, brick or metal; win: house, church or none
+  function vTex(base, trim, surf, win) {
+    const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
+    x.fillStyle = base; x.fillRect(0, 0, 512, 512);
+    let s = 7; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    if (surf === 'boards') for (let px = 0; px < 512; px += 4) { x.fillStyle = `rgba(${r() < 0.5 ? '0,0,0' : '255,255,255'},${0.03 + r() * 0.05})`; x.fillRect(px, 0, 4, 512); x.fillStyle = 'rgba(0,0,0,.22)'; x.fillRect(px, 0, 1, 512); }
+    else if (surf === 'brick') for (let py = 0; py < 512; py += 3) for (let px = (py / 3 % 2) * 3; px < 512; px += 6) { x.fillStyle = `rgba(${r() < 0.5 ? '40,10,0' : '255,220,200'},${0.05 + r() * 0.1})`; x.fillRect(px, py, 5, 2); }
+    else if (surf === 'metal') for (let px = 0; px < 512; px += 3) { x.fillStyle = px % 6 ? 'rgba(255,255,255,.12)' : 'rgba(0,0,0,.16)'; x.fillRect(px, 0, 2, 512); }
+    else for (let n = 0; n < 2500; n++) { x.fillStyle = `rgba(${r() < 0.5 ? '0,0,0' : '255,255,255'},0.04)`; x.fillRect(r() * 512, r() * 512, 3, 3); }
+    if (win !== 'none') for (let j = 0; j < 8; j++) for (let i = 0; i < 8; i++) {
+      const ox = i * 64, oy = j * 64;
+      if (win === 'church') {
+        x.fillStyle = trim; x.beginPath(); x.moveTo(ox + 15, oy + 58); x.lineTo(ox + 15, oy + 22); x.arc(ox + 32, oy + 22, 17, Math.PI, 0); x.lineTo(ox + 49, oy + 58); x.fill();
+        x.fillStyle = '#28323c'; x.beginPath(); x.moveTo(ox + 18, oy + 56); x.lineTo(ox + 18, oy + 22); x.arc(ox + 32, oy + 22, 14, Math.PI, 0); x.lineTo(ox + 46, oy + 56); x.fill();
+        x.fillStyle = trim; for (let k = 1; k < 4; k++) x.fillRect(ox + 18, oy + 18 + k * 10, 28, 1.2); x.fillRect(ox + 31.4, oy + 8, 1.2, 48);
+        continue;
+      }
+      x.fillStyle = trim; x.fillRect(ox + 13, oy + 13, 38, 42);
+      const g = x.createLinearGradient(0, oy + 17, 0, oy + 51); g.addColorStop(0, '#46566a'); g.addColorStop(1, '#222a33');
+      x.fillStyle = g; x.fillRect(ox + 17, oy + 17, 30, 34);
+      x.fillStyle = trim; x.fillRect(ox + 31, oy + 17, 2, 34); x.fillRect(ox + 17, oy + 28, 30, 1.5); // the panes: two casements, a transom
+      x.fillStyle = 'rgba(0,0,0,.25)'; x.fillRect(ox + 12, oy + 55, 40, 2);                        // shadow under the sill
+    }
+    const t = srgbTex(new T.CanvasTexture(c)); t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(1 / 28, 1 / 26.4); t.anisotropy = 8;
+    return t;
+  }
+  // wall paint and trim per style; lit = how busy the windows are after dark
+  const VSTYLE = {
+    red: ['#8b2a1f', '#f2eee4', 'boards', 'house', 0.3], yellow: ['#d5b25a', '#f4f0e6', 'boards', 'house', 0.32], white: ['#e9e5d9', '#ffffff', 'boards', 'house', 0.3],
+    grey: ['#a6b6bf', '#f4f2ec', 'boards', 'house', 0.3], green: ['#9aae8c', '#f4f2ec', 'boards', 'house', 0.3], ochre: ['#c8a467', '#efe6d4', 'plaster', 'house', 0.38],
+    brick: ['#93472f', '#e8e0d2', 'brick', 'house', 0.28], church: ['#f0ede5', '#d9d4c8', 'plaster', 'church', 0.45], tower: ['#f0ede5', '#d9d4c8', 'plaster', 'none', 0],
+    fire: ['#a8261c', '#f2eee4', 'boards', 'house', 0.25], shop: ['#e4e0d6', '#ffffff', 'plaster', 'none', 0], depot: ['#6f7d82', '#ffffff', 'metal', 'none', 0],
+  };
+  const vMats = {};
+  function vMat(st, part) { // part: wall (windows) or plain (gables, and walls without windows)
+    const key = st + part; if (vMats[key]) return vMats[key];
+    const [base, trim, surf, win, lit] = VSTYLE[st] || VSTYLE.white;
+    if (part === 'plain' || win === 'none') return vMats[key] = std({ map: vTex(base, trim, surf, 'none'), roughness: 0.88 });
+    return vMats[key] = windowMaterial(vTex(base, trim, surf, win), windowGlow(lit));
+  }
+  // houses on the same street share a handful of glow maps, so whole rows don't light up alike
+  const vWallMat = (st, n) => { const key = `${st}wall${n % 3}`; return vMats[key] || (vMats[key] = (() => { const [base, trim, surf, win, lit] = VSTYLE[st]; return windowMaterial(vMat(st, 'wall').map, windowGlow(lit * (0.6 + 0.4 * (n % 3)))); })()); };
+  const VM = {
+    roof: std({ color: 0x2f2a28, roughness: 0.8 }), snow: std({ color: 0xf3f6fa, roughness: 0.92 }), plinth: std({ color: 0x5d5a55, roughness: 0.95 }),
+    chimney: std({ color: 0x7a3a2a, roughness: 0.9 }), door: [0x2e4a3a, 0x1f3550, 0xf0ece2, 0x5a3a26, 0x7a1f1a].map(c => std({ color: c, roughness: 0.6 })),
+    slate: std({ color: 0x2b2f34, roughness: 0.5, metalness: 0.3 }), gold: std({ color: 0xd8a83a, roughness: 0.3, metalness: 1 }),
+    timber: std({ color: 0x5b4330, roughness: 0.9 }), steel: std({ color: 0x6a7075, roughness: 0.45, metalness: 0.6 }),
+    white: std({ color: 0xf2f2ee, roughness: 0.6 }), redP: std({ color: 0xc8202a, roughness: 0.5 }), dark: std({ color: 0x1d2124, roughness: 0.6 }),
+    glass: std({ color: 0x9fb6c4, transparent: true, opacity: 0.35, roughness: 0.05, metalness: 0.1 }), stone: std({ color: 0x8e8c86, roughness: 0.9 }),
+    lamp: std({ color: 0xfff2d0, emissive: 0xffd9a0, emissiveIntensity: 0 }), grave: std({ color: 0x6f6e6a, roughness: 0.85 }),
+  };
+  // merge everything static per material
+  const vBuckets = new Map();
+  const vAdd = (mat, geo, m4) => { if (m4) geo.applyMatrix4(m4); if (!geo.attributes.normal) geo.computeVertexNormals(); if (!vBuckets.has(mat)) vBuckets.set(mat, []); vBuckets.get(mat).push(geo); };
+  const vBox = (mat, w, hh, d, x, y, z, m4, rx = 0, ry = 0, rz = 0) => vAdd(mat, put(new T.BoxGeometry(w, hh, d), x, y, z, rx, ry, rz), m4);
+  function vFlush() {
+    for (const [mat, list] of vBuckets) {
+      const g = mergeAll(list.map(q => { const o = q.index ? q.toNonIndexed() : q; for (const k of Object.keys(o.attributes)) if (!['position', 'normal', 'uv'].includes(k)) o.deleteAttribute(k); if (!o.attributes.uv) o.setAttribute('uv', new T.Float32BufferAttribute(new Float32Array(o.attributes.position.count * 2), 2)); return o; }));
+      const m = new T.Mesh(g, mat); m.castShadow = !mat.transparent; m.receiveShadow = true; scene.add(m);
+    }
+    vBuckets.clear();
+  }
+  // a wall quad L wide from y0 to y1, facing +z, u in metres from u0
+  function wallQuad(L, y0, y1, u0, vs = 1) {
+    const a = -L / 2, b = L / 2, g = new T.BufferGeometry();
+    g.setAttribute('position', new T.Float32BufferAttribute([a, y0, 0, b, y0, 0, b, y1, 0, a, y0, 0, b, y1, 0, a, y1, 0], 3));
+    g.setAttribute('normal', new T.Float32BufferAttribute([0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1], 3));
+    g.setAttribute('uv', new T.Float32BufferAttribute([u0, y0 * vs, u0 + L, y0 * vs, u0 + L, y1 * vs, u0, y0 * vs, u0 + L, y1 * vs, u0, y1 * vs], 2));
+    return g;
+  }
+  function gableTri(W, y0, y1) {
+    const g = new T.BufferGeometry();
+    g.setAttribute('position', new T.Float32BufferAttribute([-W / 2, y0, 0, W / 2, y0, 0, 0, y1, 0], 3));
+    g.setAttribute('normal', new T.Float32BufferAttribute([0, 0, 1, 0, 0, 1, 0, 0, 1], 3));
+    g.setAttribute('uv', new T.Float32BufferAttribute([0, y0, W, y0, W / 2, y1], 2));
+    return g;
+  }
+  // centre the window bays on a wall so no window is cut at a corner
+  const bayU0 = L => { const n = Math.max(1, Math.floor((L + 0.05) / 3.5)); return -(L - n * 3.5) / 2; };
+  // read a rectangle footprint: centre, the long axis (e1) and the short one (e2 = e1 x up), its sizes
+  function rectFrame(p) {
+    const ax = p[2] - p[0], az = p[3] - p[1], bx = p[4] - p[2], bz = p[5] - p[3], la = Math.hypot(ax, az), lb = Math.hypot(bx, bz);
+    const cx = (p[0] + p[4]) / 2, cz = (p[1] + p[5]) / 2;
+    const [L, W, ex, ez] = la >= lb ? [la, lb, ax / la, az / la] : [lb, la, bx / lb, bz / lb];
+    const m4 = new T.Matrix4().makeBasis(new T.Vector3(ex, 0, ez), new T.Vector3(0, 1, 0), new T.Vector3(-ez, 0, ex)).setPosition(cx, 0, cz);
+    return { cx, cz, L, W, ex, ez, m4 };
+  }
+  // the side of a building that looks onto the nearest street: +1 / -1 along e2
+  function streetSide(F) {
+    let best = 1e9, side = 1;
+    for (const r of OSM.roads) if (!r.walk && !r.drive) for (let i = 0; i + 3 < r.p.length; i += 2) for (const sd of [1, -1]) {
+      const mx = F.cx - F.ez * sd * (F.W / 2 + 1), mz = F.cz + F.ex * sd * (F.W / 2 + 1), d = distSeg(mx, mz, r.p[i], r.p[i + 1], r.p[i + 2], r.p[i + 3]) - r.w / 2;
+      if (d < best) { best = d; side = sd; }
+    }
+    return side;
+  }
+  // A building: walls with windows, a plinth, then a gable roof (rafter boards under a blanket of snow, a
+  // snow ridge, snowy gable ends) or a flat roof with its snow. Houses get a front door with a lamp and
+  // a porch roof, and maybe a chimney. Returns the frame for any extra dressing.
+  function vBuilding(b, n) {
+    const F = rectFrame(b.p), { L, W, m4 } = F, H = b.h, st = b.st;
+    const plain = vMat(st, 'plain'), wall = b.plain ? plain : b.house ? vWallMat(st, n) : vMat(st, 'wall');
+    const vs = st === 'church' ? 3.3 / H : 1; // the church has one row of tall windows the height of the nave
+    vAdd(wall, put(wallQuad(L, 0, H, bayU0(L), vs), 0, 0, W / 2, 0, 0, 0), m4);
+    vAdd(wall, put(wallQuad(L, 0, H, bayU0(L), vs), 0, 0, -W / 2, 0, Math.PI, 0), m4);
+    vAdd(wall, put(wallQuad(W, 0, H, bayU0(W), vs), L / 2, 0, 0, 0, Math.PI / 2, 0), m4);
+    vAdd(wall, put(wallQuad(W, 0, H, bayU0(W), vs), -L / 2, 0, 0, 0, -Math.PI / 2, 0), m4);
+    vBox(VM.plinth, L + 0.14, 0.56, W + 0.14, 0, 0.28, 0, m4);
+    let ridge = H;
+    if (b.roof === 'gable') {
+      const p = (b.pitch || 32) * Math.PI / 180, oh = 0.45, th = 0.16, sn = 0.24, R = H + W / 2 * Math.tan(p), Ls = (W / 2 + oh) / Math.cos(p);
+      ridge = R;
+      for (const s of [1, -1]) {
+        const mz = s * (W / 2 + oh) / 2, my = R - (W / 2 + oh) / 2 * Math.tan(p), nz = s * Math.sin(p), ny = Math.cos(p);
+        vBox(VM.roof, L + 2 * oh, th, Ls, 0, my + ny * th / 2, mz + nz * th / 2, m4, s * p, 0, 0);
+        vBox(VM.snow, L + 2 * oh - 0.12, sn, Ls - 0.06, 0, my + ny * (th + sn / 2), mz + nz * (th + sn / 2), m4, s * p, 0, 0);
+      }
+      vBox(VM.snow, L + 2 * oh - 0.12, 0.22, 0.55, 0, R + th + sn * 0.6, 0, m4);
+      for (const s of [1, -1]) vAdd(plain, put(gableTri(W, H, R), s * L / 2, 0, 0, 0, s * Math.PI / 2, 0), m4);
+      if (b.chimney) {
+        const cxl = L * (vr() < 0.5 ? 0.22 : -0.22), czl = -W * 0.16, top = R + 0.9;
+        const base = R - Math.abs(czl) * Math.tan(p) - 0.4;
+        vBox(VM.chimney, 0.62, top - base, 0.62, cxl, (top + base) / 2, czl, m4);
+        vBox(VM.snow, 0.74, 0.14, 0.74, cxl, top + 0.07, czl, m4);
+        const w = new T.Vector3(cxl, top + 0.2, czl).applyMatrix4(m4); vill.chim.push({ x: w.x, y: w.y, z: w.z, ph: vr() * 10 });
+      }
+    } else {
+      vBox(VM.snow, L + 0.3, 0.3, W + 0.3, 0, H + 0.12, 0, m4);
+      vBox(VM.plinth, L + 0.36, 0.18, W + 0.36, 0, H - 0.02, 0, m4);
+    }
+    // front door on the street side, between two window bays, with a lamp and a little snowy porch roof
+    if (b.house || b.door) {
+      const sd = streetSide(F), u0 = bayU0(L), nb = Math.max(1, Math.floor((L + 0.05) / 3.5));
+      const k = nb >= 2 ? Math.round(nb / 2) : 0, along = (-L / 2 - u0 + k * 3.5 + (nb >= 2 ? 0 : L / 2 + 1.1)) * (b.door === -1 ? -1 : 1);
+      const zf = sd * (W / 2 + 0.05), dm = VM.door[Math.floor(vr() * VM.door.length)];
+      vBox(dm, 1.05, 2.15, 0.1, along, 1.075, zf, m4);
+      vBox(VM.white, 1.3, 0.12, 0.14, along, 2.2, zf, m4);
+      vBox(VM.roof, 1.7, 0.08, 1.0, along, 2.75, sd * (W / 2 + 0.5), m4, -sd * 0.25, 0, 0);
+      vBox(VM.snow, 1.6, 0.1, 0.9, along, 2.83, sd * (W / 2 + 0.5), m4, -sd * 0.25, 0, 0);
+      vBox(VM.lamp, 0.16, 0.22, 0.12, along + 0.85, 2.15, zf + sd * 0.06, m4);
+    }
+    city.push(cityRec(b.p, b.n, ridge));
+    return { F, ridge };
+  }
+  const cityRec = (p, n, h) => { let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9; for (let q = 0; q < p.length; q += 2) { x0 = Math.min(x0, p[q]); x1 = Math.max(x1, p[q]); z0 = Math.min(z0, p[q + 1]); z1 = Math.max(z1, p[q + 1]); } return { p, x0, x1, z0, z1, n, h }; };
+  function signMesh(text, st, w, hh, m4, x, y, z, ry = 0) {
+    const tex = signTexture(text, st), m = std({ map: tex, emissiveMap: tex, emissive: 0xffffff, emissiveIntensity: 0, roughness: 0.6 });
+    shopMats.push({ m, day: 0, night: 0.8 });
+    const s = new T.Mesh(new T.BoxGeometry(w, hh, 0.12), [VM.dark, VM.dark, VM.dark, VM.dark, m, VM.dark]);
+    s.applyMatrix4(new T.Matrix4().makeRotationY(ry).setPosition(x, y, z)); if (m4) s.applyMatrix4(m4); s.castShadow = true; scene.add(s); return s;
+  }
+  // church tower: a whitewashed shaft with a clock on each face, a louvred belfry and a slate spire
+  function clockDial() {
+    const S = 256, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d'), m = S / 2;
+    x.fillStyle = '#1d2226'; x.beginPath(); x.arc(m, m, m, 0, 7); x.fill();
+    x.fillStyle = '#f4efe2'; x.beginPath(); x.arc(m, m, m * 0.9, 0, 7); x.fill();
+    x.fillStyle = '#1d2226';
+    for (let k = 0; k < 12; k++) { x.save(); x.translate(m, m); x.rotate(k / 12 * Math.PI * 2); x.fillRect(-4, -m * 0.84, 8, m * (k % 3 ? 0.12 : 0.2)); x.restore(); }
+    return srgbTex(new T.CanvasTexture(c));
+  }
+  function buildTower(b) {
+    const F = rectFrame(b.p), { L, m4 } = F, H = b.h, plain = vMat('tower', 'plain');
+    for (const [ry, ox, oz] of [[0, 0, L / 2], [Math.PI, 0, -L / 2], [Math.PI / 2, L / 2, 0], [-Math.PI / 2, -L / 2, 0]]) {
+      vAdd(plain, put(wallQuad(L, 0, H, 0), ox, 0, oz, 0, ry, 0), m4);
+      const nx = Math.sin(ry), nz = Math.cos(ry);
+      // belfry louvres and a ledge
+      for (let k = 0; k < 4; k++) vBox(VM.dark, 1.3, 0.1, 0.06, ox + nx * 0.05, H - 2.6 + k * 0.35, oz + nz * 0.05, m4, 0, ry, 0);
+      vBox(VM.dark, 1.5, 1.6, 0.04, ox + nx * 0.02, H - 2.1, oz + nz * 0.02, m4, 0, ry, 0);
+      // a clock face on every side
+      const dial = new T.Mesh(new T.CircleGeometry(1.25, 28), vill.dialMat || (vill.dialMat = (() => { const t = clockDial(), mm = std({ map: t, emissiveMap: t, emissive: 0xffffff, emissiveIntensity: 0, roughness: 0.7 }); shopMats.push({ m: mm, day: 0, night: 0.7 }); return mm; })()));
+      const g = new T.Group(); g.applyMatrix4(new T.Matrix4().makeRotationY(ry).setPosition(ox + nx * 0.06, H - 5.2, oz + nz * 0.06).premultiply(m4)); scene.add(g); g.add(dial);
+      const hand = (len, w) => { const p = new T.Group(); p.position.z = 0.04; g.add(p); const hg = new T.BoxGeometry(w, len, 0.04); hg.translate(0, len / 2 - 0.12, 0); p.add(new T.Mesh(hg, VM.dark)); return p; };
+      vill.hands.push({ hr: hand(0.7, 0.12), min: hand(1.05, 0.08) });
+    }
+    vBox(VM.white, L + 0.5, 0.3, L + 0.5, 0, H + 0.15, 0, m4);
+    vBox(VM.snow, L + 0.5, 0.12, L + 0.5, 0, H + 0.36, 0, m4);
+    const sp = new T.ConeGeometry(L / 2 * 1.38, 15, 4, 1); sp.rotateY(Math.PI / 4);
+    vAdd(VM.slate, put(sp, 0, H + 0.3 + 7.5, 0), m4);
+    vAdd(VM.gold, put(new T.SphereGeometry(0.28, 10, 8), 0, H + 15.6, 0), m4);
+    vBox(VM.gold, 0.08, 1.5, 0.08, 0, H + 16.5, 0, m4); vBox(VM.gold, 0.7, 0.08, 0.08, 0, H + 16.7, 0, m4);
+    // the church door in the west face, under an arch
+    vBox(VM.door[3], 1.8, 2.8, 0.12, -L / 2 - 0.04, 1.4, 0, m4, 0, Math.PI / 2, 0);
+    city.push(cityRec(b.p, b.n, H + 16));
+    vill.tag = { x: F.cx, z: F.cz, y: H + 19, name: 'Kvarnby kyrka' };
+  }
+  function updateVillageClock() {
+    if (!vill.hands.length) return;
+    const d = new Date(), mins = d.getMinutes() + d.getSeconds() / 60, hrs = (d.getHours() % 12) + mins / 60;
+    for (const h2 of vill.hands) { h2.min.rotation.z = -mins / 60 * Math.PI * 2; h2.hr.rotation.z = -hrs / 12 * Math.PI * 2; }
+  }
+  // instanced snowy spruces (trunk, three green tiers, three snow caps) and bare birches
+  // Trees go in as 80 m tiles, each its own set of instanced meshes with a real bounding sphere, so the
+  // ones behind the camera or outside the shadow camera aren't drawn at all.
+  let treeGeo = null, treeMats = null;
+  function buildVillageTrees(list) {
+    const tiles = new Map();
+    for (const t of list) { const key = Math.floor(t.x / 80) + ',' + Math.floor(t.z / 80); if (!tiles.has(key)) tiles.set(key, []); tiles.get(key).push(t); }
+    for (const part of tiles.values()) treeTile(part);
+    for (const t of list) if (Math.abs(t.x) < HALF && Math.abs(t.z) < HALF) trees.push({ x: t.x, z: t.z, r: (t.t === 'spruce' ? 0.55 : 0.25) * t.s + 0.2 });
+  }
+  function treeTile(list) {
+    const spr = list.filter(t => t.t === 'spruce'), bir = list.filter(t => t.t === 'birch');
+    if (!treeGeo) {
+      const tiers = [[1.5, 2.6, 2.0], [1.15, 2.3, 3.3], [0.8, 1.9, 4.5]], seg = MOBILE ? 6 : 8;
+      const limbs = []; for (let k = 0; k < 7; k++) { const g = new T.CylinderGeometry(0.02, 0.05, 2.0, 4); g.translate(0, 1.0, 0); limbs.push(put(g, 0, 2.6 + k * 0.45, 0, 0.55 + (k % 3) * 0.15, k * 2.4, 0)); }
+      treeGeo = {
+        green: mergeAll(tiers.map(([r, hh, y]) => put(new T.ConeGeometry(r, hh, seg), 0, y, 0))),
+        caps: mergeAll(tiers.map(([r, hh, y]) => { const hs = hh * 0.5; return put(new T.ConeGeometry(r * 0.62, hs, seg), 0, y + hh / 2 - hs / 2 + 0.04, 0); })),
+        trunk: put(new T.CylinderGeometry(0.14, 0.2, 1.4, 6), 0, 0.7, 0), birch: put(new T.CylinderGeometry(0.09, 0.15, 5.5, 6), 0, 2.75, 0), limbs: mergeAll(limbs),
+      };
+      treeMats = { trunk: std({ color: 0x4e3a28 }), green: std({ color: 0xffffff, flatShading: true }), caps: std({ color: 0xf1f5f9, flatShading: true, roughness: 0.9 }), bark: std({ color: 0xe6e2d8, roughness: 0.8 }), twig: std({ color: 0x3b3029 }) };
+    }
+    const G = treeGeo, TM = treeMats, green = G.green, caps = G.caps, trunkG = G.trunk;
+    const tile = o => { o.userData.cull = true; o.computeBoundingSphere(); o.frustumCulled = true; return o; };
+    const m = new T.Matrix4(), q = new T.Quaternion(), sc = new T.Vector3(), p = new T.Vector3(), up = new T.Vector3(0, 1, 0), c = new T.Color();
+    const yOf = (x, z) => Math.abs(x) < HALF && Math.abs(z) < HALF ? sampleAt(gnd, x, z) : 0.44;
+    if (spr.length) {
+      const trunk = new T.InstancedMesh(trunkG, TM.trunk, spr.length), lv = new T.InstancedMesh(green, TM.green, spr.length), cp = new T.InstancedMesh(caps, TM.caps, spr.length);
+      spr.forEach((t, n) => {
+        m.compose(p.set(t.x, yOf(t.x, t.z) - 0.1, t.z), q.setFromAxisAngle(up, vr() * 6.28), sc.set(t.s, t.s * (0.95 + vr() * 0.35), t.s));
+        trunk.setMatrixAt(n, m); lv.setMatrixAt(n, m); cp.setMatrixAt(n, m);
+        lv.setColorAt(n, c.setHSL(0.37 + vr() * 0.05, 0.4, 0.17 + vr() * 0.07, T.SRGBColorSpace));
+      });
+      for (const o of [trunk, lv, cp]) { o.castShadow = true; o.receiveShadow = true; scene.add(tile(o)); }
+    }
+    if (bir.length) {
+      const tr = new T.InstancedMesh(G.birch, TM.bark, bir.length), lm = new T.InstancedMesh(G.limbs, TM.twig, bir.length);
+      bir.forEach((t, n) => { m.compose(p.set(t.x, yOf(t.x, t.z) - 0.1, t.z), q.setFromAxisAngle(up, vr() * 6.28), sc.set(t.s, t.s, t.s)); tr.setMatrixAt(n, m); lm.setMatrixAt(n, m); });
+      for (const o of [tr, lm]) { o.castShadow = true; scene.add(tile(o)); }
+    }
+  }
+  // the Christmas tree on the square: a big spruce strung with warm lights and a star on top
+  function buildXmasTree(pr) {
+    const y0 = sampleAt(gnd, pr.x, pr.z);
+    buildVillageTrees([{ x: pr.x, z: pr.z, t: 'spruce', s: 2.1 }]);
+    trees[trees.length - 1].r = pr.r;
+    const bulbs = [], lit = new T.MeshBasicMaterial({ color: new T.Color(0xffc870).multiplyScalar(3.5) });
+    for (let k = 0; k < 140; k++) {
+      const t = k / 140, y = 1.6 + t * 9.4, r = (1 - t) * 3.15 + 0.25, a = k * 2.4;
+      bulbs.push(put(new T.SphereGeometry(0.12, 6, 4), pr.x + Math.cos(a) * r, y0 + y, pr.z + Math.sin(a) * r));
+    }
+    const bm = new T.Mesh(mergeAll(bulbs), lit); scene.add(bm); vill.lights.push(lit);
+    const star = new T.Mesh(new T.OctahedronGeometry(0.35, 0), new T.MeshBasicMaterial({ color: new T.Color(0xffe39a).multiplyScalar(4) })); star.position.set(pr.x, y0 + 12.1, pr.z); star.scale.set(1, 1.4, 0.4); scene.add(star);
+  }
+  // the props from the village plan
+  function buildVillageProps() {
+    const pm = VD.props;
+    for (const pr of pm) {
+      const y0 = Math.abs(pr.x) < HALF && Math.abs(pr.z) < HALF ? sampleAt(gnd, pr.x, pr.z) : 0.44;
+      const at = (ry = 0) => new T.Matrix4().makeRotationY(ry).setPosition(pr.x, y0, pr.z);
+      if (pr.t === 'xmas') buildXmasTree(pr);
+      else if (pr.t === 'canopy') {
+        const m4 = at(); vBox(VM.white, pr.w, 0.7, pr.d, 0, 5.0, 0, m4); vBox(VM.redP, pr.w + 0.04, 0.24, pr.d + 0.04, 0, 4.86, 0, m4); vBox(VM.snow, pr.w - 0.1, 0.18, pr.d - 0.1, 0, 5.44, 0, m4);
+        vBox(VM.lamp, pr.w - 2, 0.04, pr.d - 2, 0, 4.63, 0, m4);
+      } else if (pr.t === 'post') { vAdd(VM.white, put(new T.CylinderGeometry(0.22, 0.22, 4.7, 10), 0, 2.35, 0), at()); vill.props.push(pr); }
+      else if (pr.t === 'pump') { const m4 = at(Math.PI / 2); vBox(VM.white, 0.9, 1.8, 0.6, 0, 0.9, 0, m4); vBox(VM.redP, 0.92, 0.35, 0.62, 0, 1.6, 0, m4); vBox(VM.dark, 0.5, 0.3, 0.64, 0, 1.15, 0, m4); vill.props.push(pr); }
+      else if (pr.t === 'pylon') { const m4 = at(); vBox(VM.steel, 0.3, 6, 0.3, 0, 3, 0, m4); for (const ry of [Math.PI / 2, -Math.PI / 2]) { signMesh('KVARNBY BENSIN', { sign: '#c8202a', ink: '#ffffff' }, 2.8, 1.3, m4, Math.sin(ry) * 0.2, 5.4, 0, ry); signMesh('Diesel 18,49 · 95 17,89', { sign: '#ffffff', ink: '#1d2124' }, 2.8, 0.9, m4, Math.sin(ry) * 0.2, 4.2, 0, ry); } vill.props.push(pr); }
+      else if (pr.t === 'busstop') {
+        const m4 = at(Math.PI); vBox(VM.steel, 3.2, 0.08, 1.5, 0, 2.5, 0, m4); vBox(VM.snow, 3.1, 0.12, 1.4, 0, 2.6, 0, m4);
+        vBox(VM.glass, 3.1, 2.3, 0.04, 0, 1.3, -0.68, m4); vBox(VM.glass, 0.04, 2.3, 1.3, -1.55, 1.3, 0, m4); vBox(VM.steel, 0.08, 2.5, 0.08, 1.55, 1.25, 0.7, m4);
+        vBox(VM.timber, 2.4, 0.08, 0.4, 0, 0.55, -0.4, m4); vBox(VM.steel, 0.06, 2.6, 0.06, 1.95, 1.3, 0.6, m4);
+        signMesh('Kvarnby torg', { sign: '#f0c419', ink: '#1f3550' }, 0.9, 0.5, m4, 1.95, 2.8, 0.6);
+        vill.props.push({ x: pr.x - 1.1, z: pr.z, r: 0.8 }, { x: pr.x + 1.1, z: pr.z, r: 0.8 });
+      } else if (pr.t === 'grave') { const m4 = at(pr.yaw); vBox(VM.grave, 0.6, 0.9, 0.16, 0, 0.45, 0, m4); vBox(VM.snow, 0.64, 0.08, 0.2, 0, 0.92, 0, m4); vill.props.push(pr); }
+      else if (pr.t === 'mailbox') { const m4 = at(pr.yaw); vBox(VM.timber, 0.1, 1.1, 0.1, 0, 0.55, 0, m4); vBox(VM.door[Math.floor(vr() * 3)], 0.28, 0.26, 0.42, 0, 1.18, 0, m4); vBox(VM.snow, 0.3, 0.06, 0.44, 0, 1.34, 0, m4); }
+      else if (pr.t === 'snowman') {
+        const m4 = at(pr.yaw);
+        for (const [r, y] of [[0.55, 0.4], [0.4, 1.15], [0.28, 1.68]]) vAdd(VM.snow, put(new T.SphereGeometry(r, 12, 8), 0, y, 0), m4);
+        vAdd(std({ color: 0xe07020 }), put(new T.ConeGeometry(0.05, 0.25, 6), 0, 1.7, 0.33, Math.PI / 2, 0, 0), m4);
+        vAdd(VM.dark, put(new T.CylinderGeometry(0.2, 0.2, 0.32, 10), 0, 2.05, 0), m4); vAdd(VM.dark, put(new T.CylinderGeometry(0.32, 0.32, 0.03, 12), 0, 1.9, 0), m4);
+        vBox(VM.timber, 0.03, 0.8, 0.03, 0.45, 1.25, 0, m4, 0, 0, 0.9); vBox(VM.timber, 0.03, 0.8, 0.03, -0.45, 1.25, 0, m4, 0, 0, -0.9);
+        vill.props.push(pr);
+      }
+    }
+  }
+  // the ice rink: low boards with a gate onto the turning circle, two goals, floodlights at the corners
+  function buildRink() {
+    const R = VD.rink, y0 = sampleAt(gnd, R.x, R.z), hw = R.w / 2, hd = R.d / 2, gz0 = R.z - R.gate / 2, gz1 = R.z + R.gate / 2;
+    const runs = [[R.x - hw, R.z - hd, R.x + hw, R.z - hd], [R.x - hw, R.z + hd, R.x + hw, R.z + hd], [R.x - hw, R.z - hd, R.x - hw, R.z + hd], [R.x + hw, R.z - hd, R.x + hw, gz0], [R.x + hw, gz1, R.x + hw, R.z + hd]];
+    for (const [x0, z0, x1, z1] of runs) {
+      const len = Math.hypot(x1 - x0, z1 - z0), m4 = new T.Matrix4().makeRotationY(Math.atan2(x1 - x0, z1 - z0)).setPosition((x0 + x1) / 2, y0, (z0 + z1) / 2);
+      vBox(VM.white, 0.12, 1.15, len, 0, 0.58, 0, m4); vBox(VM.redP, 0.14, 0.16, len, 0, 1.08, 0, m4); vBox(VM.timber, 0.16, 0.1, len, 0, 0.12, 0, m4);
+      vill.boards.push([x0, z0, x1, z1]);
+    }
+    for (const s of [-1, 1]) {
+      const m4 = new T.Matrix4().makeRotationY(s > 0 ? -Math.PI / 2 : Math.PI / 2).setPosition(R.x + s * (hw - 2.2), y0, R.z);
+      vBox(VM.redP, 0.06, 1.2, 0.06, -0.9, 0.6, 0, m4); vBox(VM.redP, 0.06, 1.2, 0.06, 0.9, 0.6, 0, m4); vBox(VM.redP, 1.86, 0.06, 0.06, 0, 1.2, 0, m4);
+      vBox(VM.glass, 1.8, 1.15, 0.02, 0, 0.6, -0.5, m4); vBox(VM.redP, 1.86, 0.06, 0.06, 0, 0.03, -0.55, m4);
+      vill.props.push({ x: R.x + s * (hw - 2.2), z: R.z, r: 0.8 });
+    }
+    for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+      const x = R.x + sx * (hw + 0.8), z = R.z + sz * (hd + 0.8), m4 = new T.Matrix4().makeRotationY(Math.atan2(-sx, -sz)).setPosition(x, y0, z);
+      vAdd(VM.steel, put(new T.CylinderGeometry(0.08, 0.11, 8, 8), 0, 4, 0), m4); vBox(VM.dark, 0.7, 0.4, 0.3, 0, 8, 0.2, m4, -0.5, 0, 0); vBox(VM.lamp, 0.6, 0.04, 0.24, 0, 7.82, 0.26, m4, -0.5, 0, 0);
+      vill.props.push({ x, z, r: 0.3 });
+    }
+    signMesh('ISBANAN', { sign: '#1f3550', ink: '#ffffff' }, 3, 0.7, new T.Matrix4().makeRotationY(Math.PI / 2).setPosition(R.x + hw + 0.1, y0, R.z - hd + 3), 0, 1.6, 0);
+  }
+  // the level crossing on Stationsvägen: half barriers and twin red lights on each side, and the bell
+  function buildCrossing() {
+    const C = VD.crossing;
+    const y0 = sampleAt(gnd, C.x, C.z), arms = [], lamps = [];
+    const on = new T.MeshBasicMaterial({ color: new T.Color(0xff2a1a).multiplyScalar(3) }), off = std({ color: 0x3a0c08 });
+    const crossTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); x.fillStyle = 'rgba(0,0,0,0)'; x.fillRect(0, 0, 128, 128); x.save(); x.translate(64, 64); for (const a of [0.6, -0.6]) { x.save(); x.rotate(a); x.fillStyle = '#c8202a'; x.fillRect(-60, -9, 120, 18); x.fillStyle = '#fff'; x.fillRect(-56, -6, 112, 12); x.restore(); } x.restore(); const t = srgbTex(new T.CanvasTexture(c)); return t; })();
+    const crossMat = new T.MeshBasicMaterial({ map: crossTex, transparent: true, side: T.DoubleSide, alphaTest: 0.5 });
+    for (const sd of [-1, 1]) { // -1: north side, cars coming south; +1: south side, cars coming north
+      const px = C.x + (sd < 0 ? -1 : 1) * 5.2, pz = C.z + sd * 6.6, g = new T.Group(); g.position.set(px, y0, pz); scene.add(g);
+      box(0.18, 3.2, 0.18, VM.white, 0, 1.6, 0, g);
+      for (let k = 0; k < 6; k++) box(0.19, 0.25, 0.19, VM.redP, 0, 0.4 + k * 0.5, 0, g);
+      const sign = new T.Mesh(new T.PlaneGeometry(1.4, 1.4), crossMat); sign.position.set(0, 3.2, sd * 0.12); sign.rotation.y = sd < 0 ? Math.PI : 0; g.add(sign);
+      const lp = [];
+      for (const lx of [-0.3, 0.3]) { const l = new T.Mesh(new T.CylinderGeometry(0.12, 0.12, 0.06, 12), off); l.rotation.x = Math.PI / 2; l.position.set(lx, 2.3, sd * 0.14); g.add(l); lp.push(l); }
+      box(0.9, 0.3, 0.1, VM.dark, 0, 2.3, sd * 0.08, g);
+      lamps.push(lp);
+      // the barrier arm pivots on the post and reaches over the incoming lane
+      const pv = new T.Group(); pv.position.set(0, 1.05, sd * 0.2); g.add(pv);
+      const arm = new T.Group(); pv.add(arm); arm.rotation.y = sd < 0 ? 0 : Math.PI;
+      for (let k = 0; k < 6; k++) box(0.68, 0.1, 0.1, k % 2 ? VM.white : VM.redP, 0.35 + k * 0.68, 0, 0, arm);
+      arms.push(pv); pv.rotation.z = (sd < 0 ? 1 : -1) * 1.45;
+      vill.props.push({ x: px, z: pz, r: 0.25 });
+    }
+    vill.xing = { ...C, arms, lamps, on, off, closed: false, a: 1.45, bellT: 0, t: 0, s: null };
+  }
+  const xingZone = (x, z) => { const X = vill.xing; return X && Math.abs(x - X.x) < 5.5 && Math.abs(z - X.z) < 7.5; };
+  function updateCrossing(dt) {
+    const X = vill.xing; if (!X || !train) return;
+    if (!X.s) X.s = { t1: nearestS(RAIL.t1, X.x, X.z), t2: nearestS(RAIL.t2, X.x, X.z) };
+    const tr = train, ds = X.s[tr.trip] - tr.s;
+    // down from about eight seconds before the train reaches the road until it is past; open while it waits at the station
+    const closed = tr.state === 'run' && ds > -34 && ds < 75;
+    if (closed && !X.closed) crossingBell(X);
+    X.closed = closed;
+    const want = closed ? 0 : 1.45; X.a += clamp(want - X.a, -dt * 0.9, dt * 0.9);
+    X.arms.forEach((pv, i) => { pv.rotation.z = (i === 0 ? 1 : -1) * X.a; });
+    X.t += dt; const blink = closed && (X.t * 1.4) % 1 < 0.5;
+    X.lamps.forEach(lp => { lp[0].material = closed && blink ? X.on : X.off; lp[1].material = closed && !blink ? X.on : X.off; });
+    if (closed) { X.bellT -= dt; if (X.bellT <= 0) { X.bellT = 0.55; crossingBell(X); } }
+  }
+  function crossingBell(X) {
+    if (!AU || muted) return;
+    const d = camera.position.distanceTo(new T.Vector3(X.x, 2, X.z)), vol = clamp(20 / d, 0, 1) * 0.06; if (vol < 0.003) return;
+    const t = ac.currentTime;
+    for (const [f, a] of [[880, 1], [2210, 0.3]]) { const o = ac.createOscillator(), g = gainN(0); o.frequency.value = f; g.gain.setValueAtTime(vol * a, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.4); chain(o, g, AU.cabLP); o.start(t); o.stop(t + 0.45); }
+  }
+  // the mill's wheel turns slowly in the pond
+  function buildMill(b, F) {
+    const w = new T.Group(), y0 = -0.3, R = 3.2; w.position.set(b.mill.x + 1.0, y0 + 1.6, b.mill.z); scene.add(w);
+    const rot = new T.Group(); w.add(rot);
+    for (const sx of [-0.8, 0.8]) { const ring = new T.Mesh(new T.TorusGeometry(R, 0.1, 6, 28), VM.timber); ring.rotation.y = Math.PI / 2; ring.position.x = sx; rot.add(ring); }
+    for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2; const pad = box(1.7, 0.08, 0.7, VM.timber, 0, Math.sin(a) * (R - 0.25), Math.cos(a) * (R - 0.25), rot); pad.rotation.x = -a; }
+    for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI; const sp = box(0.12, R * 2, 0.12, VM.timber, 0, 0, 0, rot); sp.rotation.x = a; }
+    const ax = new T.Mesh(new T.CylinderGeometry(0.2, 0.2, 2.4, 10), VM.steel); ax.rotation.z = Math.PI / 2; ax.position.x = -0.6; w.add(ax);
+    // the race that feeds it: a wooden flume off the roof edge
+    box(1.4, 0.3, 5, VM.timber, 0, R + 0.5, -2.6, w).rotation.x = 0.1;
+    vill.wheel = rot;
+  }
+  // beyond the mapped square: forest, fields, a few farms, the roads and the railway running on
+  function buildVillageBackdrop() {
+    const list = [];
+    const homes = OSM.buildings.map(b => { const c = rectFrame(b.p); return [c.cx, c.cz, c.L / 2 + 6]; });
+    const clearOf = (x, z) => {
+      for (const st of OSM.streets) for (let q = 0; q + 3 < st.p.length; q += 2) if (distSeg(x, z, st.p[q], st.p[q + 1], st.p[q + 2], st.p[q + 3]) < 9) return false;
+      if (Math.abs(z - (110 + 6 * Math.sin(x / 260) + 2.2)) < 9) return false;
+      return !homes.some(([cx, cz, r]) => Math.hypot(cx - x, cz - z) < r);
+    };
+    // fields (open) and forest (dense), decided by smooth noise
+    const forest = (x, z) => Math.sin(x * 0.013 + 1.3) * Math.cos(z * 0.011 - 0.4) + 0.6 * Math.sin(x * 0.031 + z * 0.027) > -0.15;
+    for (let n = 0; n < 16000 && list.length < (MOBILE ? 1000 : 2600); n++) {
+      const a = vr() * Math.PI * 2, r = HALF + 8 + Math.pow(vr(), 0.8) * 260, x = Math.cos(a) * r, z = Math.sin(a) * r;
+      if (Math.abs(x) < HALF + 3 && Math.abs(z) < HALF + 3) continue;
+      if (!forest(x, z) && vr() > 0.04) continue;
+      if (!clearOf(x, z)) continue;
+      list.push({ x, z, t: vr() < 0.85 ? 'spruce' : 'birch', s: 0.9 + vr() * 0.9 });
+    }
+    buildVillageTrees(list);
+    // a couple of farms out in the fields: a farmhouse and a big red barn
+    const farms = [[-260, -120, 0.3], [250, 90, -0.6], [-230, 200, 1.2], [210, -230, 0.9], [-120, 260, 0.1]];
+    let n = 100;
+    for (const [fx, fz, a] of farms) {
+      const ux = Math.cos(a), uz = Math.sin(a);
+      const rect2 = (cx, cz, w, d) => { const vx = -uz, vz = ux; return [cx - ux * w / 2 - vx * d / 2, cz - uz * w / 2 - vz * d / 2, cx + ux * w / 2 - vx * d / 2, cz + uz * w / 2 - vz * d / 2, cx + ux * w / 2 + vx * d / 2, cz + uz * w / 2 + vz * d / 2, cx - ux * w / 2 + vx * d / 2, cz - uz * w / 2 + vz * d / 2]; };
+      vBuilding({ p: rect2(fx, fz, 11.7, 8.2), h: 6.6, st: vr() < 0.5 ? 'red' : 'yellow', roof: 'gable', pitch: 36, chimney: true, house: true }, n++);
+      vBuilding({ p: rect2(fx + uz * 22, fz - ux * 22, 26, 13), h: 4.5, st: 'red', roof: 'gable', pitch: 40, plain: true }, n++);
+    }
+    // the roads and the railway beyond the edge: packed, dirty snow on the roads, a dark trackbed
+    const rd = std({ color: 0xc9cfd6, roughness: 0.9 }), bed = std({ color: 0x55524d, roughness: 0.95 }), rl = std({ color: 0x3a3a3a, roughness: 0.5, metalness: 0.6 });
+    const ribbon = (P, w, mat, y) => {
+      for (let q = 0; q + 3 < P.length; q += 2) {
+        let x0 = P[q], z0 = P[q + 1], x1 = P[q + 2], z1 = P[q + 3];
+        const ins = (x, z) => Math.abs(x) < HALF && Math.abs(z) < HALF;
+        if (ins(x0, z0) && ins(x1, z1)) continue;
+        // clip to the outside of the square, stepping in from the outer end
+        const N2 = 40; let a = null, bb = null;
+        for (let k = 0; k <= N2; k++) { const t = k / N2, x = x0 + (x1 - x0) * t, z = z0 + (z1 - z0) * t; if (!ins(x, z)) { if (a === null) a = t; bb = t; } }
+        if (a === null) continue;
+        const ax = x0 + (x1 - x0) * a, az = z0 + (z1 - z0) * a, bx = x0 + (x1 - x0) * bb, bz = z0 + (z1 - z0) * bb, len = Math.hypot(bx - ax, bz - az);
+        if (len < 0.5) continue;
+        const g = new T.BoxGeometry(w, 0.04, len + w * 0.3); const m4 = new T.Matrix4().makeRotationY(Math.atan2(bx - ax, bz - az)).setPosition((ax + bx) / 2, y, (az + bz) / 2);
+        vAdd(mat, put(g), m4);
+      }
+    };
+    for (const st of OSM.streets) ribbon(st.p, st.w, rd, 0.45);
+    for (const t of [OSM.rail.t1, OSM.rail.t2]) { ribbon(t, 3.2, bed, 0.46); for (const o of [-0.72, 0.72]) { const off = []; for (let q = 0; q + 1 < t.length; q += 2) off.push(t[q], t[q + 1] + o); ribbon(off, 0.08, rl, 0.56); } }
+  }
+  function buildVillage() {
+    city = [];
+    shopMats.push({ m: VM.lamp, day: 0, night: 2.2 });
+    let n = 0;
+    const towerOf = OSM.buildings.find(b => b.st === 'tower');
+    for (const b of OSM.buildings) {
+      if (b.st === 'tower') { buildTower(b); continue; }
+      const r = vBuilding(b, n++);
+      const F = r.F;
+      if (b.mill) buildMill(b, F);
+      if (b.st === 'fire' || b.st === 'depot') {
+        // big doors on the street (or yard) side, and the name over them
+        const sd = streetSide(F), dw = Math.min(4.2, F.L / 2 - 1.2);
+        for (const ox of [-F.L / 4, F.L / 4]) {
+          vBox(b.st === 'fire' ? VM.redP : VM.white, dw, 4.2, 0.12, ox, 2.1, sd * (F.W / 2 + 0.06), F.m4);
+          for (let k = 1; k < 5; k++) vBox(VM.dark, dw, 0.04, 0.13, ox, k * 0.84, sd * (F.W / 2 + 0.07), F.m4);
+        }
+        const face = sd;
+        signMesh(b.st === 'fire' ? 'RÄDDNINGSTJÄNSTEN' : 'KOMMUNFÖRRÅDET', b.st === 'fire' ? { sign: '#f2eee4', ink: '#a8261c' } : { sign: '#1f3550', ink: '#ffffff' }, 6, 0.8, F.m4, 0, b.h - 1.0, face * (F.W / 2 + 0.1), face > 0 ? 0 : Math.PI);
+      }
+      if (b.n === 'Stationshuset') {
+        const face = streetSide(F) * -1; // the sign faces the tracks
+        signMesh('KVARNBY', { sign: '#f2eee4', ink: '#1f3550' }, 4, 0.7, F.m4, 0, 2.75, face * (F.W / 2 + 0.1), face > 0 ? 0 : Math.PI);
+      }
+      if (b.n === 'Kvarnby skola') { const sd = streetSide(F); signMesh('KVARNBY SKOLA', { sign: '#f4f0e6', ink: '#3b2d1f' }, 5, 0.7, F.m4, 0, 5.3, sd * (F.W / 2 + 0.1), sd > 0 ? 0 : Math.PI); }
+      if (b.n === 'Biblioteket') { const sd = streetSide(F); signMesh('BIBLIOTEK', { sign: '#f4f0e6', ink: '#3b2d1f' }, 3.4, 0.6, F.m4, 0, 3.4, sd * (F.W / 2 + 0.1), sd > 0 ? 0 : Math.PI); }
+    }
+    buildVillageTrees(VD.trees);
+    buildVillageProps();
+    buildRink();
+    buildCrossing();
+    buildVillageBackdrop();
+    vFlush();
+    // chimney smoke: a few soft puffs drifting off each chimney
+    const per = 6, cnt = vill.chim.length * per;
+    vill.smokeMesh = new T.InstancedMesh(new T.IcosahedronGeometry(0.5, 1), std({ color: 0xc9ccd0, transparent: true, opacity: 0.32, depthWrite: false, roughness: 1 }), Math.max(1, cnt));
+    vill.smokeMesh.frustumCulled = false; scene.add(vill.smokeMesh);
+    updateVillageClock();
+  }
+  // snow poles (plogpinnar) along the lanes, so you can tell where the road runs under the snow
+  function buildSnowPoles() {
+    const names = new Set(['Storgatan', 'Kyrkvägen', 'Stationsvägen', 'Ängsvägen', 'Björkvägen', 'Lönnvägen', 'Ekvägen', 'Skolvägen', 'Sjövägen', 'Industrivägen']);
+    const segs = []; for (const r of OSM.roads) if (!r.walk) for (let i = 0; i + 3 < r.p.length; i += 2) segs.push({ r, x0: r.p[i], z0: r.p[i + 1], x1: r.p[i + 2], z1: r.p[i + 3] });
+    const spots = [];
+    for (const r of OSM.roads) {
+      if (!names.has(r.n) || r.w > 9) continue;
+      for (let i = 0; i + 3 < r.p.length; i += 2) {
+        const x0 = r.p[i], z0 = r.p[i + 1], x1 = r.p[i + 2], z1 = r.p[i + 3], len = Math.hypot(x1 - x0, z1 - z0), ux = (x1 - x0) / len, uz = (z1 - z0) / len;
+        for (let a = 6; a < len - 3; a += 16) for (const sd of [1, -1]) {
+          const off = r.w / 2 + 0.75, x = x0 + ux * a - uz * off * sd, z = z0 + uz * a + ux * off * sd;
+          if (Math.abs(x) > HALF - 3 || Math.abs(z) > HALF - 3) continue;
+          if (segs.some(sg => sg.r !== r && !(sg.r.n === r.n && !sg.r.drive && sg.r.w === r.w) && distSeg(x, z, sg.x0, sg.z0, sg.x1, sg.z1) < sg.r.w / 2 + 2.2)) continue;
+          if (lamps.some(l => Math.hypot(l.x - x, l.z - z) < 2) || cars.some(c => Math.hypot(c.x - x, c.z - z) < 3.5)) continue;
+          spots.push([x, z]);
+        }
+      }
+    }
+    const pole = new T.InstancedMesh(new T.CylinderGeometry(0.022, 0.028, 1.8, 5), std({ color: 0xe8591a, roughness: 0.5 }), spots.length);
+    const tip = new T.InstancedMesh(new T.CylinderGeometry(0.03, 0.03, 0.22, 5), new T.MeshBasicMaterial({ color: 0xf4f4f0 }), spots.length);
+    const m = new T.Matrix4(), q = new T.Quaternion(), e = new T.Euler(), one = new T.Vector3(1, 1, 1), p = new T.Vector3();
+    spots.forEach(([x, z], n) => {
+      const y0 = sampleAt(gnd, x, z); q.setFromEuler(e.set((vr() - 0.5) * 0.12, 0, (vr() - 0.5) * 0.12));
+      m.compose(p.set(x, y0 + 0.75, z), q, one); pole.setMatrixAt(n, m);
+      m.compose(p.set(x, y0 + 1.5, z), q, one); tip.setMatrixAt(n, m);
+    });
+    for (const o of [pole, tip]) { o.frustumCulled = false; o.castShadow = o === pole; scene.add(o); }
+  }
+  function villageHit(px, pz, r) {
+    for (const p of vill.props) if (p.r && (p.x - px) ** 2 + (p.z - pz) ** 2 < (p.r + r) ** 2) return true;
+    for (const [x0, z0, x1, z1] of vill.boards) if (distSeg(px, pz, x0, z0, x1, z1) < r + 0.12) return true;
+    return false;
+  }
+  // driveways, the rink and the pond: checked every second or so
+  let vCheckT = 0;
+  const _sm = new T.Matrix4(), _sq = new T.Quaternion(), _ss = new T.Vector3(), _sp = new T.Vector3();
+  function updateVillage(dt) {
+    updateCrossing(dt);
+    if (vill.wheel) vill.wheel.rotation.x -= dt * 0.35;
+    // smoke: each puff rises, swells, drifts downwind and fades, then starts over at its chimney
+    if (vill.smokeMesh) {
+      let c = 0; const per = 6;
+      for (const ch of vill.chim) for (let k = 0; k < per; k++) {
+        const t = ((time * 0.11 + ch.ph + k / per) % 1), s = 0.35 + t * 1.6;
+        _sm.compose(_sp.set(ch.x + t * 3.2 + Math.sin(time * 0.7 + k + ch.ph) * 0.3, ch.y + t * 5.5, ch.z + t * 1.4), _sq, _ss.setScalar(s * (1 - t * 0.35) * (t < 0.08 ? t / 0.08 : 1)));
+        vill.smokeMesh.setMatrixAt(c++, _sm);
+      }
+      vill.smokeMesh.count = c; vill.smokeMesh.instanceMatrix.needsUpdate = true;
+    }
+    for (const l of vill.lights) { const tw = 3.2 + Math.sin(time * 2.3) * 0.4 + Math.sin(time * 5.1) * 0.2; l.color.setRGB(1, 0.66, 0.3).multiplyScalar(tw * 0.5 * (0.4 + 0.6 * (TIMES[timeIdx].win || 0.2))); }
+    vCheckT -= dt; if (vCheckT > 0) return; vCheckT = 0.8;
+    for (const d of vill.drives) {
+      let sum = 0, mx = 0;
+      for (const k of d.mouth) { const e = h[k] - gnd[k]; sum += e; mx = Math.max(mx, h[k] - orig[k]); }
+      const avg = d.mouth.length ? sum / d.mouth.length : 0;
+      d.open = avg < 0.08 && mx < 0.2;
+      const walled = mx > 0.28;
+      if (walled && !d.walled && !d.told) { d.told = true; vill.plog++; toast(`Plogvall! The ${d.fam}s at ${d.addr} are snowed in`, 3400); }
+      d.walled = walled;
+    }
+    if (vill.rinkCells && !vill.rinkDone && vill.rinkCells.length) {
+      let ok = 0; for (const k of vill.rinkCells) if (h[k] - gnd[k] < 0.05) ok++;
+      vill.rinkPct = ok / vill.rinkCells.length * 100;
+      if (vill.rinkPct > 85) { vill.rinkDone = true; toast('Isbanan is clear. The kids are out with their skates!', 4200); }
+    }
+    if (riverVol > 2 && !vill.pondToast) { vill.pondToast = true; toast('Into Kvarndammen. The mill race keeps the pond open', 3000); }
   }
   // ---- Liberty Towers (33 Hudson Street, Gruzen Samton, 2003), modelled with care ----
   // Two 116 m towers on a parking podium. Each tower has a curved glass curtain wall facing the other
@@ -2081,6 +2950,7 @@ function boot(SCN, bootData) {
     bank: { awn: 0x24476b, sign: '#1d3550', ink: '#ffffff' }, pharmacy: { awn: 0xb0201f, sign: '#ffffff', ink: '#b0201f' },
     market: { awn: 0x2f6b3a, sign: '#21502a', ink: '#f4f1e4' }, liquor: { awn: 0x5a1f35, sign: '#2a1520', ink: '#ead7a8' },
     florist: { awn: 0x4f7a3e, sign: '#f6f1e3', ink: '#3f6a2f' }, salon: { awn: 0xb46a86, sign: '#fff4f8', ink: '#8f3e5d' },
+    grocer: { awn: 0xc8202a, sign: '#c8202a', ink: '#ffffff' },
   };
   const shopMats = [], shopFronts = [], shopRoads = [];
   function signTexture(name, st) {
@@ -2143,7 +3013,7 @@ function boot(SCN, bootData) {
     const door = std({ color: 0x15191c, emissiveMap: shopInterior(), emissive: 0xffd8a0, emissiveIntensity: 0.15, roughness: 0.15 });
     shopMats.push({ m: glass, day: 0.25, night: 1.15 }, { m: door, day: 0.1, night: 0.6 });
     const awnMats = {};
-    for (const s of OSM_SHOPS) {
+    for (const s of SHOPS) {
       const f = placeShop(s); if (!f) continue;
       const st = SHOP_STYLE[s.k] || SHOP_STYLE.restaurant, W = f.W;
       const g = new T.Group(); g.position.set(f.x + f.nx * 0.03, 0, f.z + f.nz * 0.03); g.rotation.y = Math.atan2(f.nx, f.nz); scene.add(g);
@@ -2174,7 +3044,7 @@ function boot(SCN, bootData) {
   // falling snow around the camera
   let snowfall = null;
   function buildSnowfall() {
-    const n = 3500, pos = new Float32Array(n * 3), seed = new Float32Array(n * 3);
+    const n = MOBILE ? 1200 : 3500, pos = new Float32Array(n * 3), seed = new Float32Array(n * 3);
     for (let i = 0; i < n; i++) { seed[i * 3] = Math.random() * 60; seed[i * 3 + 1] = Math.random() * 30; seed[i * 3 + 2] = Math.random() * 60; }
     const g = new T.BufferGeometry(), attr = new T.BufferAttribute(pos, 3); attr.setUsage(T.DynamicDrawUsage); g.setAttribute('position', attr);
     const pts = new T.Points(g, new T.PointsMaterial({ color: 0xffffff, size: 0.09, transparent: true, opacity: 0.85, depthWrite: false }));
@@ -2281,6 +3151,7 @@ function boot(SCN, bootData) {
     });
     // the wash light hangs well above the lamps so its own roof doesn't flare white on every flash
     const light = new T.PointLight(0xffa21a, 0, 16, 2); light.position.set(x, y + 1.3, z); parent.add(light);
+    if (MOBILE) light.visible = false; // on a phone the lamps still flash, but they don't light up the snow
     beacons.push({ lamps, light, off: Math.random() });
   }
   // Cab interiors, only shown from the driver's seat. Everything is laid out from each cab's real box
@@ -3048,7 +3919,7 @@ function boot(SCN, bootData) {
     // dragging the stick in or curling fills it; pushing straight down only takes a first bite
     const cutting = !dumping && E.load < EXC_CAP && (((dCurl > 0 || dStick > 0) && mouthAlong > 0.05) || (toothAlong > 0.15 && E.load < EXC_CAP * 0.3));
     if (!cutting && hydMoved && dCurl <= 0 && sinking && pen > 0.12 && Math.abs(E.v) < 0.2) {
-      if (E.load >= EXC_CAP * 0.99 && time - lastFullToast > 5) { lastFullToast = time; toast('Bucket is full. Lift, swing out and press L to dump'); }
+      if (E.load >= EXC_CAP * 0.99 && time - lastFullToast > 5) { lastFullToast = time; toast('Bucket is full'); }
       return true;
     }
     E.lastMinY = minY;
@@ -3093,8 +3964,13 @@ function boot(SCN, bootData) {
   // east the way the loop runs. It keeps to the one-way streets: out through the loop's cut-through, west on
   // Essex, then south down the two-way end of Hudson; back up Hudson from the south. OpenStreetMap has no
   // legal way into the loop (Essex is westbound only), so the truck makes the last 12 m from Hudson against it.
-  const TRUCK_PARK = SNOW ? { x: 22, z: 129.1, yaw: Math.atan2(24.4, 3.5) } : { x: 40, z: 175, yaw: Math.PI }; // gravel pit: off the map down the entry road until the first truck comes in
-  const TRUCK_ROUTE = SNOW ? {
+  // Kvarnby: the dump truck waits in the depot yard facing east; it loops round the yard, takes Industrivägen
+  // west and Stationsvägen south out of the village to the snow tip, and comes back the same way
+  const TRUCK_PARK = VILLAGE ? { x: 128, z: 150, yaw: Math.PI / 2 } : SNOW ? { x: 22, z: 129.1, yaw: Math.atan2(24.4, 3.5) } : { x: 40, z: 175, yaw: Math.PI }; // gravel pit: off the map down the entry road until the first truck comes in
+  const TRUCK_ROUTE = VILLAGE ? {
+    leave: [[128, 150], [144, 149], [148, 142], [141, 137], [112, 140.5], [75, 146.5], [38.5, 148.2], [35.5, 160], [34.5, 200], [31.5, 300], [31, 340]],
+    back: [[34.5, 340], [34.5, 300], [37.5, 200], [39.5, 152], [75, 149.5], [112, 145], [120, 149], [128, 150]], yaw: Math.PI }
+    : SNOW ? {
     leave: [[TRUCK_PARK.x, TRUCK_PARK.z], [34.5, 130.9], [36.6, 116.8], [6.6, 112.0], [-4.0, 110.5], [-10.0, 112.1], HUDSON[3], HUDSON[2], HUDSON[1], HUDSON[0], [-33, 210]],
     back: [[-33, 210], HUDSON[0], HUDSON[1], HUDSON[2], HUDSON[3], [-10.0, 112.1], [10.1, 127.4], [TRUCK_PARK.x, TRUCK_PARK.z]], yaw: Math.PI }
     : { leave: [[4, ROAD_Z], [140, ROAD_Z]], back: [[-140, ROAD_Z], [4, ROAD_Z]], yaw: Math.PI / 2 };
@@ -3250,7 +4126,7 @@ function boot(SCN, bootData) {
   // A compact municipal tractor with a front blower: the auger takes the snow right down to the pavement
   // across 1.5 m and the chute throws it 6-9 m. J / L swing the chute, B turns the blower on and off.
   // Narrow enough for the sidewalks and the waterfront walkway.
-  const BLOWER_HOME = { x: 70, z: 135.9, yaw: LOOP_E };
+  const BLOWER_HOME = VILLAGE ? { x: 110, z: 135, yaw: -Math.PI / 2 } : { x: 70, z: 135.9, yaw: LOOP_E };
   let blower = null;
   const blowerPts = (x, z, yaw) => { const s = Math.sin(yaw), c = Math.cos(yaw); return [[x + s * 1.7, z + c * 1.7], [x, z], [x - s * 1.0, z - c * 1.0]]; };
   function buildBlower() {
@@ -3367,7 +4243,7 @@ function boot(SCN, bootData) {
   }
 
   // ---------------- salt spreader (snow job) ----------------
-  const SALT_HOME = { x: 46, z: 132.5, yaw: LOOP_E }; // on the service loop between the dump truck and the loader, facing east
+  const SALT_HOME = VILLAGE ? { x: 124, z: 133, yaw: -Math.PI / 2 } : { x: 46, z: 132.5, yaw: LOOP_E }; // on the service loop between the dump truck and the loader, facing east
   let saltTruck = null, saltPile = null, saltMap = null;
   const salted = new Set();
   const SALT_N = 360;
@@ -3428,7 +4304,7 @@ function boot(SCN, bootData) {
     saltTruck = { g, spinner, saltTop, front, rear, cab: cabS, operator: [], glass: glassS, x: SALT_HOME.x, z: SALT_HOME.z, y: 0, yaw: SALT_HOME.yaw, pitch: 0, roll: 0, v: 0, steer: 0, spin: 0, spinA: 0, tank: 1, on: true, width: 6, load: 0, spots: [] };
     saltTruck.y = sampleAt(gnd, saltTruck.x, saltTruck.z);
     // the salt pile the truck reloads from
-    saltPile = findPileSpot(14, 128);
+    saltPile = VILLAGE ? findPileSpot(128, 161) : findPileSpot(14, 128);
     const pile = new T.Mesh(new T.ConeGeometry(3.4, 2.4, 14), saltMat); pile.position.set(saltPile.x, sampleAt(gnd, saltPile.x, saltPile.z) + 1.2, saltPile.z); pile.castShadow = true; pile.receiveShadow = true; scene.add(pile);
     // salt grains in flight
     grains = { mesh: new T.InstancedMesh(new T.BoxGeometry(0.05, 0.05, 0.05), new T.MeshBasicMaterial({ color: 0xe8eef5 }), SALT_N), list: [], acc: 0 };
@@ -3576,7 +4452,8 @@ function boot(SCN, bootData) {
 
   function buildRail() {
     const concrete = std({ color: 0x9a9ea3 }), snowTop = std({ color: 0xf1f4f7 });
-    const njtBlue = std({ color: 0x1f4e9c }), steelD = std({ color: 0x3a3f44 });
+    // Paulus Hook runs NJ Transit light rail (white, blue, orange); Kvarnby a red regional train
+    const njtBlue = std({ color: VILLAGE ? 0x3c4146 : 0x1f4e9c }), steelD = std({ color: 0x3a3f44 });
     for (const pl of platforms) {
       const g = new T.Group(); g.position.set(pl.x, 0, pl.z); g.rotation.y = pl.yaw; scene.add(g);
       box(pl.hw * 2, 0.35, pl.hl * 2, concrete, 0, 0.175, 0, g);
@@ -3595,7 +4472,8 @@ function boot(SCN, bootData) {
       const [x, z, yaw] = pathAt(s1, s), ox = -Math.cos(yaw), oz = Math.sin(yaw);
       const px = x + ox * 2.6, pz = z + oz * 2.6;
       if (Math.abs(px) > HALF + 40 || Math.abs(pz) > HALF + 40) continue;
-      if (kind && Math.abs(px) < HALF && Math.abs(pz) < HALF && kind[idx(Math.round((px + HALF) / CS), Math.round((pz + HALF) / CS))] >= 7) continue;
+      if (VILLAGE && Math.hypot(px - VD.crossing.x, pz - VD.crossing.z) < 14) continue; // keep the level crossing clear
+      if (kind && Math.abs(px) < HALF && Math.abs(pz) < HALF) { const kk = idx(Math.round((px + HALF) / CS), Math.round((pz + HALF) / CS)); if (kind[kk] >= 7 || (kind[kk] === 1 && !railBed[kk])) continue; } // not in a building or a street
       const p = new T.Mesh(new T.CylinderGeometry(0.1, 0.13, 6.6, 8), poleMat); p.position.set(px, 3.3, pz); scene.add(p);
       const arm = new T.Group(); arm.position.set(px, 6.2, pz); arm.rotation.y = Math.atan2(-ox, -oz); scene.add(arm);
       box(0.08, 0.08, 6.4, poleMat, 0, 0, 3.0, arm);
@@ -3608,7 +4486,7 @@ function boot(SCN, bootData) {
       const w = new T.Mesh(new T.BoxGeometry(0.03, 0.03, len), wireMat); w.position.set((x0 + x1) / 2, 5.75, (z0 + z1) / 2); w.rotation.y = Math.atan2(x1 - x0, z1 - z0); scene.add(w);
     }
     // the train: three articulated sections in NJ Transit white, blue and orange
-    const white = std({ color: 0xe4e7ea }), glassD = std({ color: 0x24303a }), orangeS = std({ color: 0xf08a24 });
+    const white = std({ color: VILLAGE ? 0xb3262b : 0xe4e7ea, roughness: 0.4 }), glassD = std({ color: 0x24303a }), orangeS = std({ color: VILLAGE ? 0xe9e6df : 0xf08a24 });
     const roofG = std({ color: 0x9aa1a7 }), headL = new T.MeshBasicMaterial({ color: new T.Color(0xfff2cf).multiplyScalar(4) }), tailL = new T.MeshBasicMaterial({ color: new T.Color(0xb0241d).multiplyScalar(2.5) });
     const secs = [];
     for (let i = 0; i < 3; i++) {
@@ -3757,7 +4635,7 @@ function boot(SCN, bootData) {
     }
     for (const st of streets) st.cross.sort((p, q) => p.s - q.s);
     const PAL = [0x9b2f2a, 0x2d4a73, 0xb9bec4, 0x23262a, 0xe9e6df, 0x3f5d47, 0xd9a520, 0x7a5a3a];
-    for (let n = 0; n < 24; n++) {
+    for (let n = 0; n < (VILLAGE ? (MOBILE ? 7 : 9) : MOBILE ? 14 : 24); n++) {
       const g = makeCar(PAL[n % PAL.length], n % 3 === 0, false); scene.add(g);
       const c = { id: n, g, st: 0, s: 0, dir: 1, off: 0, v: 4, wait: 0, stuck: 0, honkT: 0, ghost: 0, hold: null, passed: null, x: 0, z: 0, yaw: 0, px: null, pz: 0, vyaw: 0, hw: 0.95, hl: 2.25 };
       spawnCar(c, true); traffic.push(c);
@@ -3901,6 +4779,7 @@ function boot(SCN, bootData) {
         const ax = x + hx * a, az = z + hz * a;
         if (machineNear(ax, az, 1.0)) { blocked = true; if (!trainHit(ax, az, 1.0)) byPlayer = true; break; }
         if (parkedNear(ax, az, 0.4)) { blocked = true; byParked = true; break; }
+        if (VILLAGE && vill.xing && vill.xing.a < 1.2 && xingZone(ax, az) && !xingZone(x, z)) { blocked = true; break; } // the barriers are coming down
         if (!(c.squeeze > 0)) for (const o of traffic) if (o !== c && o.wait <= 0 && boxHit(o, ax, az, 1.0)) {
           // two cars nose to nose (both blocked by each other): the lower id goes first
           const heads = Math.sin(o.yaw) * (c.x - o.x) + Math.cos(o.yaw) * (c.z - o.z) > 0;
@@ -3948,7 +4827,8 @@ function boot(SCN, bootData) {
             opts.push({ oi, s: cr.s, d });
           } });
         // where carrying straight on would go the wrong way down a one-way block, the car has to turn
-        const mustTurn = !legal(st, next.s + c.dir * 6, c.dir);
+        // so does a street that ends just past this junction (Kvarnby's loops come back to the street they left)
+        const mustTurn = !legal(st, next.s + c.dir * 6, c.dir) || (c.dir > 0 ? st.pa.L - next.s : next.s) < 14;
         const choice = mustTurn ? (opts.length ? pick(opts) : legalTurns.length ? pick(legalTurns) : null) : opts.length && Math.random() < 0.45 ? pick(opts) : null;
         if (choice) { c.st = choice.oi; c.s = choice.s + choice.d * 0.6; c.dir = choice.d; c.off = laneOff(streets[choice.oi]); c.adj = 0; }
         else if (mustTurn) { if (c.hold && c.hold.occ === c) c.hold.occ = null; c.hold = null; c.wait = 1.5 + Math.random() * 5; continue; }
@@ -3972,7 +4852,7 @@ function boot(SCN, bootData) {
     streetTrees = [];
     const kindAt = (x, z) => kind[idx(clamp(Math.round((x + HALF) / CS), 0, N), clamp(Math.round((z + HALF) / CS), 0, N))];
     for (const r of OSM.roads) {
-      if (r.walk) continue;
+      if (r.walk || r.drive) continue;
       for (let i = 0; i + 3 < r.p.length; i += 2) {
         const x0 = r.p[i], z0 = r.p[i + 1], x1 = r.p[i + 2], z1 = r.p[i + 3], len = Math.hypot(x1 - x0, z1 - z0);
         if (len < 10) continue;
@@ -4018,9 +4898,9 @@ function boot(SCN, bootData) {
     // keep them on land, clear of the mapped buildings and of the Colgate Clock's spot on the point
     const mapped = OSM.buildings.map(b => { let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9; for (let q = 0; q < b.p.length; q += 2) { x0 = Math.min(x0, b.p[q]); x1 = Math.max(x1, b.p[q]); z0 = Math.min(z0, b.p[q + 1]); z1 = Math.max(z1, b.p[q + 1]); } return [x0 - 6, x1 + 6, z0 - 6, z1 + 6]; });
     const clear = (cx, cz, w, d) => {
-      for (const [ox, oz] of [[0, 0], [-1, -1], [1, -1], [-1, 1], [1, 1], [0, -1], [0, 1], [-1, 0], [1, 0]]) { const x = cx + ox * (w / 2 + 3), z = cz + oz * (d / 2 + 3); if (inWater(x, z, OSM_WATER.water) || (Math.abs(x) < HALF + 4 && Math.abs(z) < HALF + 4)) return false; }
+      for (const [ox, oz] of [[0, 0], [-1, -1], [1, -1], [-1, 1], [1, 1], [0, -1], [0, 1], [-1, 0], [1, 0]]) { const x = cx + ox * (w / 2 + 3), z = cz + oz * (d / 2 + 3); if (inWater(x, z, WATER.water) || (Math.abs(x) < HALF + 4 && Math.abs(z) < HALF + 4)) return false; }
       if (mapped.some(([x0, x1, z0, z1]) => cx + w / 2 > x0 && cx - w / 2 < x1 && cz + d / 2 > z0 && cz - d / 2 < z1)) return false;
-      return Math.hypot(cx - OSM_WATER.clock[0], cz - OSM_WATER.clock[1]) > 40;
+      return Math.hypot(cx - WATER.clock[0], cz - WATER.clock[1]) > 40;
     };
     for (let gx = -470; gx <= 470; gx += 46) for (let gz = -470; gz <= 470; gz += 46) {
       if (Math.abs(gx) < HALF + 22 && Math.abs(gz) < HALF + 22) continue;
@@ -4061,7 +4941,7 @@ function boot(SCN, bootData) {
     return srgbTex(new T.CanvasTexture(c));
   }
   function buildColgateClock() {
-    const [cx, cz] = OSM_WATER.clock, y0 = 0.44, R = 7.6, C = y0 + 1.8 + R * 1.06;
+    const [cx, cz] = WATER.clock, y0 = 0.44, R = 7.6, C = y0 + 1.8 + R * 1.06;
     const steel = std({ color: 0x3a3f44, roughness: 0.55, metalness: 0.5 }), snowCap = std({ color: 0xf2f5f8 });
     const g = new T.Group(); g.position.set(cx, 0, cz); g.rotation.y = Math.atan2(1, 0.2); scene.add(g); // faces east by a little south
     // the steel frame behind the dial: two legs on footings, cross members and bracing
@@ -4327,6 +5207,7 @@ function boot(SCN, bootData) {
     if (Math.abs(px - HOPPER.x) < HOPPER.half + r && Math.abs(pz - HOPPER.z) < HOPPER.half + r) return true;
     if (px > HOPPER.x + 1.5 && px < HOPPER.x + 5.5 && Math.abs(pz - HOPPER.z) < 0.5 + r) return true;
     if (pipeHit(px, pz, r)) return true;
+    if (VILLAGE && villageHit(px, pz, r)) return true;
     if (SNOW && (cityHit(px, pz, r) || ltHit(px, pz, r) || sigHit(px, pz, r) || carHit(px, pz, r) || lampHit(px, pz, r) || treeHit(px, pz, r) || trainHit(px, pz, r) || trafficHit(px, pz, r) || platforms.some(pl => boxHit(pl, px, pz, r)))) return true;
     if (self !== 'loader' && loader) for (const [a, b] of loaderPts(loader.x, loader.z, loader.tF, loader.tR)) if ((a - px) ** 2 + (b - pz) ** 2 < (r + 1.2) ** 2) return true;
     if (self !== 'blower' && blower) for (const [a, b] of blowerPts(blower.x, blower.z, blower.yaw)) if ((a - px) ** 2 + (b - pz) ** 2 < (r + 0.75) ** 2) return true;
@@ -4593,7 +5474,7 @@ function boot(SCN, bootData) {
   const $mirrors = [document.getElementById('mirrorL'), document.getElementById('mirrorR')];
   const _mp = new T.Vector3(), _ml = new T.Vector3();
   function renderMirrors() {
-    const show = camMode === 'cab';
+    const show = camMode === 'cab' && !MOBILE; // each mirror renders the scene again: too dear on a phone
     $mirrors.forEach(m => m.hidden = !show);
     if (!show) return;
     const r = screen.getBoundingClientRect(), mw = Math.round(Math.min(260, r.width * 0.24)), mh = Math.round(mw / 1.6), top = 50, pad = 14;
@@ -4618,15 +5499,28 @@ function boot(SCN, bootData) {
   }
 
   // drag orbit / zoom
-  let drag = null;
-  renderer.domElement.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY, id: e.pointerId }; try { renderer.domElement.setPointerCapture(e.pointerId); } catch (_) {} initAudio(); });
+  // one finger (or the mouse) orbits the camera; two fingers pinch to zoom
+  let drag = null, pinch = null;
+  const touchPts = new Map();
+  const pinchDist = () => { const [a, b] = [...touchPts.values()]; return Math.hypot(a.x - b.x, a.y - b.y) || 1; };
+  renderer.domElement.addEventListener('pointerdown', e => {
+    touchPts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (touchPts.size === 2) { drag = null; pinch = pinchDist(); } else drag = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    try { renderer.domElement.setPointerCapture(e.pointerId); } catch (_) {} initAudio();
+  });
   renderer.domElement.addEventListener('pointermove', e => {
+    if (touchPts.has(e.pointerId)) touchPts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pinch && touchPts.size >= 2) {
+      const d = pinchDist(), f = pinch / d; pinch = d;
+      if (camMode === 'cab') cabFov = clamp(cabFov * f, 60, 95); else camDist = clamp(camDist * f, 6, 34);
+      return;
+    }
     if (!drag || drag.id !== e.pointerId) return;
     const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
     if (camMode === 'chase') { camOff -= dx * 0.006; camPitch = clamp(camPitch + dy * 0.005, 0.12, 1.35); camYaw = null; }
     else { lookYaw = clamp(lookYaw - dx * 0.005, -2.4, 2.4); lookPitch = clamp(lookPitch - dy * 0.004, -0.8, 0.6); }
   });
-  const endDrag = () => drag = null;
+  const endDrag = e => { touchPts.delete(e.pointerId); if (touchPts.size < 2) pinch = null; drag = null; };
   renderer.domElement.addEventListener('pointerup', endDrag); renderer.domElement.addEventListener('pointercancel', endDrag);
   renderer.domElement.addEventListener('wheel', e => {
     e.preventDefault();
@@ -4645,7 +5539,7 @@ function boot(SCN, bootData) {
   // ---------------- HUD ----------------
   const $ = id => document.getElementById(id);
   let $pitClock = null, $pitDay = null;
-  const $fillTxt = $('fillTxt'), $fillBar = $('fillBar'), $grade = $('gradeTxt'), $loads = $('loadsTxt'), $moved = $('movedTxt'), $tag = $('truckTag'), $htag = $('hopperTag'), $trenchLbl = $('trenchLbl'), $trench = $('trenchTxt'), $fillLbl = $('fillLbl'), $ptag = $('placeTag'), $toast = $('toast'), $hint = $('hint');
+  const $fillTxt = $('fillTxt'), $fillBar = $('fillBar'), $grade = $('gradeTxt'), $loads = $('loadsTxt'), $moved = $('movedTxt'), $tag = $('truckTag'), $htag = $('hopperTag'), $trenchLbl = $('trenchLbl'), $trench = $('trenchTxt'), $fillLbl = $('fillLbl'), $ptag = $('placeTag'), $toast = $('toast');
   let toastT = 0, celebrated = false;
   function toast(msg, ms = 2400) { $toast.textContent = msg; $toast.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => $toast.hidden = true, ms); }
   let offStreets = 0;
@@ -4657,6 +5551,7 @@ function boot(SCN, bootData) {
   }
   const $gearSpans = document.querySelectorAll('#gearTxt span');
   function hud() {
+    stickLabels();
     $gearSpans.forEach((e, i) => e.classList.toggle('on', i + 1 === gearOf[active]));
     const L = M(), f = L.load / (active === 'loader' ? (loader.cap || BUCKET_CAP) : EXC_CAP);
     const plowing = active === 'loader' && loader.tool === 'plow';
@@ -4679,8 +5574,14 @@ function boot(SCN, bootData) {
     if (SNOW) {
       const g = streetsCleared();
       $grade.textContent = (g < 10 ? g.toFixed(1) : Math.round(g)) + '%'; $grade.classList.toggle('ok', g >= 90);
-      if (g >= 90 && !celebrated) { celebrated = true; toast('Streets are clear. Nice plowing!', 3500); }
+      if (g >= 90 && !celebrated) { celebrated = true; toast(VILLAGE ? 'Kvarnby is plowed. Time for a fika!' : 'Streets are clear. Nice plowing!', 3500); }
       $loads.textContent = truck.loads;
+      if (VILLAGE) {
+        const open = vill.drives.filter(d => d.open).length, rk = vill.rinkPct || 0;
+        $trench.textContent = `${open} / ${vill.drives.length}${vill.plog ? ` · ${vill.plog} plogvall${vill.plog > 1 ? 'ar' : ''}` : ''}`; $trench.classList.toggle('ok', open === vill.drives.length);
+        $moved.textContent = vill.rinkDone ? 'clear' : Math.round(rk) + '%'; $moved.classList.toggle('ok', vill.rinkDone);
+        return;
+      }
       $trench.textContent = riverVol.toFixed(1) + ' m³';
       $moved.textContent = offStreets.toFixed(1) + ' m³';
       return;
@@ -4701,7 +5602,12 @@ function boot(SCN, bootData) {
   }
   function placeTag() {
     const r = screen.getBoundingClientRect();
-    if (SNOW) {
+    if (VILLAGE && vill.tag) {
+      const T2 = vill.tag; _v.set(T2.x, T2.y, T2.z).project(camera);
+      const pv = _v.z < 1 && Math.abs(_v.x) < 1.05 && Math.abs(_v.y) < 1.05;
+      $ptag.hidden = !pv; $ptag.textContent = T2.name;
+      if (pv) $ptag.style.transform = `translate(${((_v.x + 1) / 2 * r.width).toFixed(0)}px, ${((1 - _v.y) / 2 * r.height).toFixed(0)}px) translate(-50%, -100%)`;
+    } else if (SNOW) {
       // pin the tag on whichever of the two towers is nearer, well above the podium
       let tw = null, td = 1e9;
       for (const t of OSM.parts) if (t.host === 'Liberty Towers') {
@@ -4760,6 +5666,7 @@ function boot(SCN, bootData) {
       if (kd === 9) return [107, 111, 117];
       if (kd === 1) return d > 0.06 ? [217, 226, 234] : mark[k] === 2 ? [124, 132, 140] : mark[k] >= 3 ? [196, 200, 204] : saltMap && saltMap[k] > 0.05 ? [52, 60, 70] : [77, 85, 96];
       if (kd === 5) return d > 0.06 ? [238, 242, 246] : [154, 160, 166];
+      if (mark[k] === 7) return d > 0.05 ? [222, 232, 240] : [150, 196, 226];
       return d > 0.06 ? [230, 235, 240] : [155, 159, 152];
     }
     const kd = kind[k], mm = mat[k], dep = h[k] - hMin[k];
@@ -4785,6 +5692,47 @@ function boot(SCN, bootData) {
     else { const w = (shape === 'long' ? 2.2 : 3) * scale, l = (shape === 'long' ? 6 : 4) * scale; ctx.rect(-w, -l, w * 2, l * 2); }
     ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
   }
+  // Kvarnby's map: the railway, parked cars, the shops, each driveway's state, and names on the full map
+  function drawVillageMap(ctx, size, big, s, path, label) {
+    ctx.save(); ctx.strokeStyle = '#7a5a3c'; ctx.lineWidth = Math.max(1, 0.9 * s); ctx.setLineDash([2.5 * s, 1.6 * s]);
+    for (const t of [OSM.rail.t1, OSM.rail.t2]) { path(t); ctx.stroke(); }
+    ctx.restore();
+    for (const c of cars) drawMarker(ctx, c.x, c.z, c.yaw, size, '#' + c.col.toString(16).padStart(6, '0'), s * 0.4, 'long');
+    ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 1;
+    for (const sh of SHOPS) if (sh.fx !== undefined) { const [px, py] = toMap(sh.fx, sh.fz, size); ctx.fillStyle = '#' + (SHOP_STYLE[sh.k] || SHOP_STYLE.restaurant).awn.toString(16).padStart(6, '0'); ctx.beginPath(); ctx.arc(px, py, Math.max(2, 1.3 * s), 0, 6.3); ctx.fill(); ctx.stroke(); }
+    // driveways: green once the mouth is clear, red where a windrow blocks it
+    for (const d of vill.drives) { const [px, py] = toMap(d.x0, d.z0, size); ctx.fillStyle = d.walled && !d.open ? '#ff3b2a' : d.open ? '#46d36a' : '#f4f7fa'; ctx.strokeStyle = '#20262d'; ctx.beginPath(); ctx.arc(px, py, Math.max(2, 1.2 * s), 0, 6.3); ctx.fill(); ctx.stroke(); }
+    if (vill.xing) { const [px, py] = toMap(vill.xing.x, vill.xing.z, size), r = 2.6 * s; ctx.strokeStyle = vill.xing.closed ? '#ff3b2a' : '#f4f7fa'; ctx.lineWidth = Math.max(1.5, 0.8 * s); ctx.beginPath(); ctx.moveTo(px - r, py - r); ctx.lineTo(px + r, py + r); ctx.moveTo(px + r, py - r); ctx.lineTo(px - r, py + r); ctx.stroke(); }
+    if (!big) return;
+    const fs = Math.max(10, size / 70);
+    for (const b of OSM.buildings) {
+      if (!b.n || b.n === 'Kommunförrådet' || SHOPS.some(sh => sh.n === b.n)) continue;
+      let cx = 0, cz = 0; const n = b.p.length / 2; for (let q = 0; q < b.p.length; q += 2) { cx += b.p[q]; cz += b.p[q + 1]; }
+      label(b.n, cx / n, cz / n - 9, fs, '#f3e7cf', 600);
+    }
+    for (const sh of SHOPS) if (sh.fx !== undefined) label(sh.n, sh.fx, sh.fz - 4.5, Math.max(9, size / 95), '#ffe2b8', 600);
+    // street names along the longest stretch of each street inside the map
+    const best = {};
+    for (const r of OSM.roads) {
+      if (r.walk || r.drive || r.w > 9 || OSM.buildings.some(b => b.n === r.n)) continue;
+      for (let q = 0; q + 3 < r.p.length; q += 2) {
+        const mx = (r.p[q] + r.p[q + 2]) / 2, mz = (r.p[q + 1] + r.p[q + 3]) / 2, len = Math.hypot(r.p[q + 2] - r.p[q], r.p[q + 3] - r.p[q + 1]);
+        if (Math.abs(mx) > HALF - 22 || Math.abs(mz) > HALF - 14 || (best[r.n] && best[r.n].len >= len)) continue;
+        best[r.n] = { mx, mz, len, ang: Math.atan2(r.p[q + 3] - r.p[q + 1], r.p[q + 2] - r.p[q]) };
+      }
+    }
+    ctx.font = `600 ${fs}px "Barlow Condensed", sans-serif`; ctx.fillStyle = '#20262d'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const [name, b] of Object.entries(best)) {
+      const [lx, ly] = toMap(b.mx, b.mz, size); let a = b.ang; if (a > Math.PI / 2) a -= Math.PI; if (a < -Math.PI / 2) a += Math.PI;
+      ctx.save(); ctx.translate(lx, ly); ctx.rotate(a); ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.strokeText(name, 0, 0); ctx.fillText(name, 0, 0); ctx.restore();
+    }
+    label('KVARNDAMMEN', VD.lake.x, VD.lake.z, Math.max(12, size / 55), '#cfe0ee', 700);
+    label('Isbanan', VD.rink.x, VD.rink.z, fs, '#1f3550', 700, 'rgba(255,255,255,.8)');
+    label('Torget', -4.5, -12, fs, '#f3e7cf', 700);
+    label('Machine yard', 127, 126, Math.max(10, size / 64), '#ffb36b', 700);
+    label('Railway', -130, 104, fs, '#d9c6a8', 600);
+    const [px, py] = toMap(OSM.rail.station[0], OSM.rail.station[1], size); ctx.fillStyle = '#b3262b'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(px, py, 2.4 * s, 0, 6.3); ctx.fill(); ctx.stroke();
+  }
   // draw the whole map into a square of `size` pixels (the minimap then crops/zooms it)
   function drawMapScene(ctx, size, big) {
     ctx.imageSmoothingEnabled = true;
@@ -4796,6 +5744,7 @@ function boot(SCN, bootData) {
       ctx.lineWidth = 3; ctx.strokeStyle = halo; ctx.strokeText(txt, lx, ly); ctx.fillStyle = col; ctx.fillText(txt, lx, ly);
     };
     if (SNOW) {
+      if (VILLAGE) drawVillageMap(ctx, size, big, s, path, label); else {
       // light rail tracks, the Liberty towers on their podium, parked cars
       ctx.save(); ctx.strokeStyle = '#9b7fc4'; ctx.lineWidth = Math.max(1, 0.9 * s); ctx.setLineDash([2.5 * s, 1.6 * s]);
       for (const t of [OSM.rail.t1, OSM.rail.t2]) { path(t); ctx.stroke(); }
@@ -4807,7 +5756,7 @@ function boot(SCN, bootData) {
       for (const c of cars) drawMarker(ctx, c.x, c.z, c.yaw, size, '#' + c.col.toString(16).padStart(6, '0'), s * 0.4, 'long');
       // shops: a dot in their awning colour on the sidewalk outside
       ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 1;
-      for (const sh of OSM_SHOPS) if (sh.fx !== undefined) { const [px, py] = toMap(sh.fx, sh.fz, size); ctx.fillStyle = '#' + (SHOP_STYLE[sh.k] || SHOP_STYLE.restaurant).awn.toString(16).padStart(6, '0'); ctx.beginPath(); ctx.arc(px, py, Math.max(2, 1.3 * s), 0, 6.3); ctx.fill(); ctx.stroke(); }
+      for (const sh of SHOPS) if (sh.fx !== undefined) { const [px, py] = toMap(sh.fx, sh.fz, size); ctx.fillStyle = '#' + (SHOP_STYLE[sh.k] || SHOP_STYLE.restaurant).awn.toString(16).padStart(6, '0'); ctx.beginPath(); ctx.arc(px, py, Math.max(2, 1.3 * s), 0, 6.3); ctx.fill(); ctx.stroke(); }
       // one-way arrows down the middle of each one-way block
       ctx.fillStyle = '#2f6fd0'; ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 1;
       for (const r of OSM.roads) if (r.ow) for (let q = 0; q + 3 < r.p.length; q += 2) {
@@ -4829,7 +5778,7 @@ function boot(SCN, bootData) {
           cx /= n; cz /= n; if (Math.abs(cx) > HALF - 12 || Math.abs(cz) > HALF - 8) continue;
           label(b.n, cx, cz, Math.max(10, size / 70), '#c3cbd4', 500);
         }
-        for (const sh of OSM_SHOPS) if (sh.fx !== undefined && Math.abs(sh.fx) < HALF - 10 && Math.abs(sh.fz) < HALF - 6) label(sh.n, sh.fx, sh.fz - 5, Math.max(9, size / 90), '#ffe2b8', 600);
+        for (const sh of SHOPS) if (sh.fx !== undefined && Math.abs(sh.fx) < HALF - 10 && Math.abs(sh.fz) < HALF - 6) label(sh.n, sh.fx, sh.fz - 5, Math.max(9, size / 90), '#ffe2b8', 600);
         if (ltEntrance) label('Liberty Towers lobby', ltEntrance.x, ltEntrance.z, Math.max(10, size / 72), '#f3e7cf', 600);
         if (gs) { label('GOLDMAN SACHS', 45, 72, Math.max(11, size / 58), '#e0b55a', 700); label('30 Hudson Street', 45, 83, Math.max(10, size / 70), '#d9cfae', 500); }
         label('Waterfront walkway', 132, -60, Math.max(10, size / 70), '#cfe0ee', 500);
@@ -4847,6 +5796,7 @@ function boot(SCN, bootData) {
         const [tx, ty] = toMap(-87, 60, size); ctx.fillStyle = '#e0b55a'; ctx.strokeStyle = '#1b1914'; ctx.lineWidth = 3; ctx.font = `700 ${Math.max(11, size / 60)}px "Barlow Condensed", sans-serif`; ctx.strokeText('LIBERTY TOWERS', tx, ty); ctx.fillText('LIBERTY TOWERS', tx, ty);
         const [sx, sy] = toMap(OSM.rail.station[0], OSM.rail.station[1] + 7, size); ctx.fillStyle = '#1f4e9c'; ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 3; ctx.strokeText('Essex St station', sx, sy); ctx.fillText('Essex St station', sx, sy);
         const [rx, ry] = toMap(OSM.river_x + 8, -95, size); ctx.save(); ctx.translate(rx, ry); ctx.rotate(-Math.PI / 2); ctx.fillStyle = '#cfe0ee'; ctx.fillText('HUDSON RIVER', 0, 0); ctx.restore();
+      }
       }
       if (saltPile) { const [px, py] = toMap(saltPile.x, saltPile.z, size); ctx.fillStyle = '#e8eef5'; ctx.strokeStyle = '#333'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(px, py, 4 * s, 0, 6.3); ctx.fill(); ctx.stroke(); if (big) label('Salt', saltPile.x, saltPile.z - 6.5, Math.max(9, size / 85), '#e8eef5', 700); }
       for (const c of traffic) if (c.wait <= 0) { const [px, py] = toMap(c.x, c.z, size); ctx.fillStyle = '#' + c.g.children[0].material.color.getHexString?.() || '#888'; ctx.beginPath(); ctx.arc(px, py, 2.2 * s, 0, 6.3); ctx.fill(); }
@@ -4892,24 +5842,27 @@ function boot(SCN, bootData) {
   const sceneCanvas = document.createElement('canvas'), sceneCtx = sceneCanvas.getContext('2d');
   let mapFrame = 0;
   function updateMaps() {
-    if (++mapFrame % 45 === 1) refreshMapBase();
+    const every = MOBILE ? 2 : 1; // phones redraw the maps half as often
+    if (++mapFrame % (45 * every) === 1) refreshMapBase();
     // minimap: about 110 m around the active machine, north up
     if ($mini && !bigMapOpen) {
       const ctx = $mini.getContext('2d'), W = $mini.width, P = M();
       const full = W * SIZE / (SNOW ? 110 : 75);
       if (sceneCanvas.width !== Math.round(full)) sceneCanvas.width = sceneCanvas.height = Math.round(full);
-      if (mapFrame % 3 === 1) {
+      if (mapFrame % (3 * every) === 1) {
         drawMapScene(sceneCtx, sceneCanvas.width, false);
         const [cx, cy] = toMap(P.x, P.z, sceneCanvas.width);
         ctx.fillStyle = SNOW ? '#2a313b' : '#3a3324'; ctx.fillRect(0, 0, W, W);
         ctx.drawImage(sceneCanvas, cx - W / 2, cy - W / 2, W, W, 0, 0, W, W);
       }
     }
-    if (bigMapOpen && mapFrame % 6 === 1) { const ctx = $bigC.getContext('2d'); drawMapScene(ctx, $bigC.width, true); }
+    if (bigMapOpen && mapFrame % (6 * every) === 1) { const ctx = $bigC.getContext('2d'); drawMapScene(ctx, $bigC.width, true); }
   }
   const sw = c => `<i style="background:${c}"></i>`;
   const $legend = document.getElementById('mapLegend');
-  if ($legend) $legend.innerHTML = (SNOW
+  if ($legend) $legend.innerHTML = (VILLAGE
+    ? [[sw('#d9e2ea'), 'to plow'], [sw('#4d5560'), 'cleared'], [sw('#343c46'), 'salted'], [sw('#ff8a2a'), 'you'], [sw('#e8692c'), 'salt truck'], [sw('#dedbd2'), 'dump truck'], [sw('#46d36a'), 'driveway open'], [sw('#ff3b2a'), 'plogvall'], [sw('#96c4e2'), 'ice rink'], [sw('#7a5a3c'), 'railway']]
+    : SNOW
     ? [[sw('#d9e2ea'), 'to plow'], [sw('#4d5560'), 'cleared'], [sw('#343c46'), 'salted'], [sw('#ff8a2a'), 'you'], [sw('#e8692c'), 'salt truck'], [sw('#dedbd2'), 'dump truck'], [sw('#9b2f2a'), 'parked car'], [sw('#9b7fc4'), 'light rail'], [sw('#2f6fd0'), 'one-way'], [sw('#e0b55a'), 'Goldman Sachs']]
     : [[sw('#ff8a2a'), 'you'], [sw('#d8b55c'), 'other machine'], [sw('#dedbd2'), 'truck'], [sw('#e2b21c'), 'weighbridge'], ...MATS.slice(1).map(M => [sw(`rgb(${M.col.map(v => Math.round(v * 255)).join(',')})`), M.short])]
   ).map(([i, t]) => `<span>${i}${t}</span>`).join('') + '<span>P to close</span>';
@@ -4922,7 +5875,7 @@ function boot(SCN, bootData) {
   // ---------------- audio ----------------
   // All synthesized, nothing recorded. The engines are described at enginePulses below.
   const sfx = { scoop: 0, ground: 0, truck: 0, push: 0, hopper: 0 };
-  let ac = null, AU = null, muted = false;
+  let ac = null, AU = null, muted = SET.sound === 'off';
   const filt = (type, f, q = 0.7) => { const b = ac.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q; return b; };
   const gainN = v => { const g = ac.createGain(); g.gain.value = v; return g; };
   const chain = (...n) => { for (let i = 0; i < n.length - 1; i++) n[i].connect(n[i + 1]); return n[n.length - 1]; };
@@ -5225,29 +6178,28 @@ function boot(SCN, bootData) {
   function press(code) {
     initAudio();
     if (code === 'KeyP') toggleBigMap();
-    if (code === 'KeyO') { quality = quality === 'high' ? 'low' : 'high'; try { localStorage.setItem(QKEY, quality); } catch (_) {} buildComposer(); toast(quality === 'high' ? 'Graphics: high (shadows, ambient occlusion, bloom)' : 'Graphics: low (faster)', 1600); }
+    if (code === 'KeyO') { quality = quality === 'high' ? 'low' : 'high'; SET.quality = quality; saveSettings(SET); buildComposer(); toast(quality === 'high' ? 'Graphics: high (shadows, ambient occlusion, bloom)' : 'Graphics: low (faster)', 1600); }
     if (code === 'Gear' || /^Digit[1-4]$/.test(code)) {
       const g = code === 'Gear' ? gearOf[active] % 4 + 1 : +code.slice(5);
       if (g !== gearOf[active]) { gearOf[active] = g; toast(`Gear ${g}`, 800); }
     }
     if (code === 'Escape' && bigMapOpen) toggleBigMap(false);
     if (code === 'KeyT') { if (!SNOW) pit.manualLight = true; timeIdx = (timeIdx + 1) % TIMES.length; applyTime(timeIdx); toast(TIMES[timeIdx].name, 1100); }
-    if (code === 'KeyC') { camMode = camMode === 'chase' ? 'cab' : 'chase'; lookYaw = lookPitch = 0; camYaw = null; $hint.textContent = SNOW ? `X switch machine · B blade / bucket · C ${camMode === 'cab' ? 'chase' : 'cab'} view · T time · G show unplowed` : `X excavator · B tools · C ${camMode === 'cab' ? 'chase' : 'cab'} view · G show the ordered gravel · H send the vehicle off`; }
+    if (code === 'KeyC') { camMode = camMode === 'chase' ? 'cab' : 'chase'; lookYaw = lookPitch = 0; camYaw = null; }
     if (code === 'KeyB' && active === 'salt') { saltTruck.on = !saltTruck.on; toast(saltTruck.on ? 'Spreader on' : 'Spreader off', 1100); }
     if (code === 'KeyB' && active === 'blower') { blower.on = !blower.on; toast(blower.on ? 'Blower on' : 'Blower off', 1100); }
     if (code === 'KeyB' && active === 'loader' && !SNOW) toolAction();
     else if (code === 'KeyB' && active === 'loader') {
       if (loader.load > 0.05) { toast('Empty the bucket first', 1400); return; }
       loader.tool = loader.tool === 'plow' ? 'bucket' : loader.tool === 'bucket' ? 'blower' : 'plow';
-      toast(loader.tool === 'plow' ? 'Plow blade on' : loader.tool === 'bucket' ? 'Bucket on' : 'Snow blower on. J / L swing the chute', 1600);
+      toast(loader.tool === 'plow' ? 'Plow blade' : loader.tool === 'bucket' ? 'Bucket' : 'Snow blower', 1200);
       document.getElementById('machineTxt').textContent = 'Wheel loader' + (loader.tool === 'plow' ? ' · plow' : loader.tool === 'blower' ? ' · snow blower' : '');
     }
     if (code === 'KeyX' && SNOW) {
       active = active === 'loader' ? 'salt' : active === 'salt' ? 'blower' : 'loader'; camYaw = null; lookYaw = lookPitch = 0;
       prevEdge.set(0, -0.57, 1.2).applyMatrix4(loader.bucket.matrixWorld);
       document.getElementById('machineTxt').textContent = active === 'salt' ? 'Salt spreader' : active === 'blower' ? 'Snow blower' : 'Wheel loader' + (loader.tool === 'plow' ? ' · plow' : '');
-      toast(active === 'salt' ? 'Salt spreader. B turns the spreader on/off, J / L fan width' : active === 'blower' ? 'Snow blower for the sidewalks. B on/off, J / L swing the chute' : 'Wheel loader', 2400);
-      $hint.textContent = active === 'salt' ? 'X snow blower · B spreader on/off · J / L fan width · C cab view · T time' : active === 'blower' ? 'X loader · B blower on/off · J / L chute · C cab view · T time' : 'X salt truck · B blade / bucket / blower · C cab view · T time · G show unplowed';
+      toast(active === 'salt' ? 'Salt spreader' : active === 'blower' ? 'Sidewalk snow blower' : 'Wheel loader', 1200);
       return;
     }
     if (code === 'KeyX') {
@@ -5263,7 +6215,7 @@ function boot(SCN, bootData) {
       if (!V || V.state !== 'parked') toast('Nobody is waiting yet', 1600);
       else { V.sendOff = true; horn(0.25); }
     }
-    if (code === 'KeyM') { muted = !muted; toast(muted ? 'Sound off' : 'Sound on', 1000); }
+    if (code === 'KeyM') { muted = !muted; SET.sound = muted ? 'off' : 'on'; saveSettings(SET); toast(muted ? 'Sound off' : 'Sound on', 1000); }
     if (code === 'KeyN') {
       const now = performance.now();
       if (now - lastN < 1800) { newSite(); lastN = 0; }
@@ -5274,11 +6226,46 @@ function boot(SCN, bootData) {
   addEventListener('keyup', e => keys.delete(e.code));
   addEventListener('blur', () => keys.clear());
   for (const b of document.querySelectorAll('#touch button')) {
-    const k = b.dataset.k, tap = k === 'KeyC' || k === 'KeyG' || k === 'KeyX' || k === 'KeyB' || k === 'KeyT' || k === 'KeyP' || k === 'Gear';
+    const k = b.dataset.k, tap = ['KeyC', 'KeyG', 'KeyX', 'KeyB', 'KeyT', 'KeyP', 'KeyH', 'KeyM', 'Gear'].includes(k);
     b.addEventListener('pointerdown', e => { e.preventDefault(); b.classList.add('on'); press(k); if (!tap) keys.add(k); try { b.setPointerCapture(e.pointerId); } catch (_) {} });
     const up = () => { b.classList.remove('on'); keys.delete(k); };
     b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up); b.addEventListener('lostpointercapture', up);
     b.addEventListener('contextmenu', e => e.preventDefault());
+  }
+  // ---- virtual joysticks (touch screens) ----
+  // Left stick drives: up / down is throttle and reverse, left / right steers, all proportional. Right stick
+  // works the hydraulics: up / down raises and lowers the boom, left / right curls and dumps the bucket
+  // (angles the plow, swings a blower chute, widens the salt fan). On the excavator a DIG toggle turns the
+  // left stick into the second joystick of a real machine: left / right swings, up / down reaches the stick out and in.
+  const stick = { L: { x: 0, y: 0 }, R: { x: 0, y: 0 } };
+  let digMode = false;
+  for (const [id, S] of [['stickL', stick.L], ['stickR', stick.R]]) {
+    const el = document.getElementById(id); if (!el) continue;
+    const knob = el.querySelector('i');
+    let pid = null;
+    const move = e => {
+      const r = el.getBoundingClientRect(), R = r.width * 0.36;
+      let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+      const l = Math.hypot(dx, dy); if (l > R) { dx *= R / l; dy *= R / l; }
+      knob.style.transform = `translate(calc(-50% + ${dx.toFixed(1)}px), calc(-50% + ${dy.toFixed(1)}px))`;
+      const dzs = v => Math.abs(v) < 0.12 ? 0 : (v - Math.sign(v) * 0.12) / 0.88; // a little dead zone round the centre
+      S.x = dzs(dx / R); S.y = dzs(dy / R);
+    };
+    const end = e => { if (e.pointerId !== pid) return; pid = null; S.x = S.y = 0; knob.style.transform = ''; el.classList.remove('on'); };
+    el.addEventListener('pointerdown', e => { e.preventDefault(); if (pid !== null) return; pid = e.pointerId; initAudio(); el.classList.add('on'); try { el.setPointerCapture(pid); } catch (_) {} move(e); });
+    el.addEventListener('pointermove', e => { if (e.pointerId === pid) move(e); });
+    el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end); el.addEventListener('lostpointercapture', end);
+    el.addEventListener('contextmenu', e => e.preventDefault());
+  }
+  const $stickMode = document.getElementById('stickMode'), $stickLL = document.querySelector('#stickL span'), $stickRL = document.querySelector('#stickR span');
+  if ($stickMode) $stickMode.addEventListener('pointerdown', e => { e.preventDefault(); digMode = !digMode; $stickMode.classList.toggle('on', digMode); toast(digMode ? 'Left stick: swing and stick' : 'Left stick: drive', 1200); });
+  // what each stick does right now, under its ring
+  function stickLabels() {
+    if (!$stickLL) return;
+    const exc0 = active === 'exc';
+    if ($stickMode) $stickMode.hidden = !exc0;
+    $stickLL.textContent = exc0 && digMode ? 'Swing · stick' : exc0 ? 'Tracks' : 'Drive';
+    $stickRL.textContent = active === 'salt' ? 'Fan width' : active === 'blower' ? 'Chute' : active === 'loader' && loader.tool === 'plow' ? 'Boom · angle' : active === 'loader' && loader.tool === 'blower' ? 'Boom · chute' : active === 'loader' && loader.tool === 'forks' ? 'Boom · tilt' : 'Boom · bucket';
   }
   const K = c => keys.has(c) ? 1 : 0;
   const input = () => {
@@ -5289,6 +6276,13 @@ function boot(SCN, bootData) {
     };
     const g = padInput();
     if (g) for (const f in g) k[f] = Math.max(k[f], g[f]);
+    const L = stick.L, R = stick.R, dig = digMode && active === 'exc';
+    const t = {
+      fwd: dig ? 0 : Math.max(0, -L.y), back: dig ? 0 : Math.max(0, L.y), left: dig ? 0 : Math.max(0, -L.x), right: dig ? 0 : Math.max(0, L.x),
+      swingL: dig ? Math.max(0, -L.x) : 0, swingR: dig ? Math.max(0, L.x) : 0, stickOut: dig ? Math.max(0, -L.y) : 0, stickIn: dig ? Math.max(0, L.y) : 0,
+      up: Math.max(0, -R.y), down: Math.max(0, R.y), curl: Math.max(0, -R.x), dump: Math.max(0, R.x),
+    };
+    for (const f in t) k[f] = Math.max(k[f], t[f]);
     return k;
   };
 
@@ -5300,7 +6294,7 @@ function boot(SCN, bootData) {
   const gamepad = () => { const ps = navigator.getGamepads ? [...navigator.getGamepads()] : []; return ps.find(p => p && p.connected && p.mapping === 'standard') || ps.find(p => p && p.connected) || null; };
   addEventListener('gamepadconnected', e => {
     padSeen = true; initAudio();
-    toast(`Controller connected (Farming Simulator layout). RT/LT drive · left stick steer · right stick camera · hold LB + right stick: arm and bucket (excavator RB: stick and swing) · A ${SNOW ? 'blade / spreader' : 'attach / detach tool'} · Y switch machine · right stick click camera · ${SNOW ? 'X unplowed view' : 'X send off'} · d-pad gear`, 7500);
+    toast('Controller connected', 1600);
   });
   let padT = 0;
   function padInput() {
@@ -5414,17 +6408,18 @@ function boot(SCN, bootData) {
     }
     updateTracks(loader.spots);
     if (SNOW && saltTruck) updateTracks(saltTruck.spots, 4, 0.3); else updateTracks(exc.spots, 4, 0.31);
-    if (SNOW) { updateSalt(dt); updateTrain(dt); updateTraffic(dt); updateWindows(dt); updateClock(); }
+    if (SNOW) { updateSalt(dt); updateTrain(dt); updateTraffic(dt); updateWindows(dt); updateClock(); if (VILLAGE) { updateVillage(dt); updateVillageClock(); } }
     else { updateCrusher(dt); updateDay(dt); updateWeather(dt); }
     updateParticles(dt);
     updateHopper(dt);
     updateTrench(dt);
     if (SNOW) {
       // the city is big: only let snow settle around the machine
-      const P = M(), ci = Math.round((P.x + HALF) / CS), cj = Math.round((P.z + HALF) / CS), r = 45;
+      // (about 27 m round it; 18 m on a phone, where the grid is coarser too)
+      const P = M(), ci = Math.round((P.x + HALF) / CS), cj = Math.round((P.z + HALF) / CS), r = Math.round((MOBILE ? 18 : 27) / CS);
       const a = [clamp(ci - r, 2, N - 2), clamp(ci + r, 2, N - 2), clamp(cj - r, 2, N - 2), clamp(cj + r, 2, N - 2)];
       relaxOnce(true, ...a); relaxOnce(true, ...a);
-    } else { const P = M(), a = relaxBox(P.x, P.z, 64); relaxOnce(true, ...a); relaxOnce(true, ...a); }
+    } else { const P = M(), a = relaxBox(P.x, P.z, Math.round((MOBILE ? 12 : 16) / CS)); relaxOnce(true, ...a); relaxOnce(true, ...a); }
     updateTruck(dt);
     updateSmoke(dt, thr);
     const P = M(), boomNow = active === 'loader' ? loader.a : active === 'salt' || active === 'blower' ? boomPrev : exc.bA;
@@ -5432,10 +6427,17 @@ function boot(SCN, bootData) {
     const truckMode = active === 'salt' || active === 'blower'; // no hydraulics to strain
     updAudio(dt, { thr, boom: truckMode ? 0 : boom, boomPress: !truckMode && (inp.up || inp.down) ? 1 : 0, hyd: !truckMode && hydOn && !blocked ? 1 : 0, stall: !truckMode && hydPress && (!hydOn || blocked) ? 1 : 0, reverse: P.v < -0.05 || (inp.back && !inp.fwd && P.v <= 0.05), dir });
   }
+  // ?fps puts a frame-rate readout in the corner (handy for checking a phone)
+  const $fps = new URLSearchParams(location.search).has('fps') ? Object.assign(document.createElement('div'), { className: 'fps' }) : null;
+  if ($fps) screen.querySelector('.hud').appendChild($fps);
+  let fpsN = 0, fpsT = 0, simMs = 0, drawMs = 0;
   function loop(ts) {
-    const dt = Math.min(0.05, last ? (ts - last) / 1000 : 0.016); last = ts; time += dt;
+    const raw = last ? (ts - last) / 1000 : 0, dt = Math.min(0.05, raw || 0.016); last = ts; time += dt;
+    if ($fps) { fpsN++; fpsT += raw; if (fpsT >= 0.5) { $fps.textContent = `${Math.round(fpsN / fpsT)} fps · sim ${(simMs / fpsN).toFixed(1)} ms · draw ${(drawMs / fpsN).toFixed(1)} ms · ${MOBILE ? 'mobile' : 'desktop'} · ${quality} · grid ${N}`; fpsN = 0; fpsT = 0; simMs = drawMs = 0; } }
+    const t0 = performance.now();
     tick(dt);
     updateTerrain();
+    const t1 = performance.now();
     if (tuftDirty) { tufts.instanceMatrix.needsUpdate = true; tuftDirty = false; }
     swayUniform.value = time;
     updateSnowfall(time);
@@ -5444,24 +6446,61 @@ function boot(SCN, bootData) {
     updateInterior(dt);
     if (composer) composer.render(); else renderer.render(scene, camera);
     renderMirrors();
+    const t2 = performance.now(); simMs += t1 - t0; drawMs += t2 - t1;
     placeTag();
     updateMaps();
     if (++frame % 8 === 0) hud();
     if (frame % 20 === 0) refreshTracks();
+    if (time - lastSaveT > 45) autosave();
     requestAnimationFrame(loop);
   }
 
   // ---------------- hot reload state ----------------
   const enc = a => { const u = new Uint8Array(a.buffer, a.byteOffset, a.byteLength); let s = ''; for (let i = 0; i < u.length; i += 8192) s += String.fromCharCode.apply(null, u.subarray(i, i + 8192)); return btoa(s); };
   const dec = s => Uint8Array.from(atob(s), ch => ch.charCodeAt(0));
-  window.claude?.hot?.snapshot?.(() => ({
-    v: 2, scn: SCN, riverVol, timeIdx, h: enc(h), orig: enc(orig), dist: enc(dist), kind: enc(kind), nz: enc(nz), moved, celebrated,
-    ...(SNOW ? {} : { mat: enc(mat), hMin: enc(hMin), pit: { ...pit }, lmix: Array.from(loader.mix), emix: Array.from(exc.mix), crusher: { load: crusher.load, mix: Array.from(crusher.mix) }, wx: { kind: weather.kind, cloud: weather.cloud, rain: weather.rain, snow: weather.snow, wet: weather.wet } }),
-    loader: { x: loader.x, z: loader.z, y: loader.y, yaw: loader.yaw, tF: loader.tF, tR: loader.tR, phi: loader.phi, a: loader.a, b: loader.b, load: loader.load },
+  // everything but the big grids: machines, counters, the job's own progress
+  const stateCore = () => ({
+    scn: SCN, riverVol, timeIdx, moved, celebrated, gears: { ...gearOf },
+    ...(SNOW ? {} : { pit: { ...pit, dayStats: pit.dayStats && { ...pit.dayStats } }, lmix: Array.from(loader.mix), emix: Array.from(exc.mix), crusher: { load: crusher.load, mix: Array.from(crusher.mix) }, wx: { kind: weather.kind, cloud: weather.cloud, rain: weather.rain, snow: weather.snow, wet: weather.wet } }),
+    loader: { x: loader.x, z: loader.z, y: loader.y, yaw: loader.yaw, tF: loader.tF, tR: loader.tR, phi: loader.phi, a: loader.a, b: loader.b, load: loader.load, ...(SNOW ? { tool: loader.tool, plowAng: loader.plowAng } : {}) },
     truck: { load: truck.load, loads: truck.loads }, hopper: { load: hopper.load }, trench: trench.state,
     salt: saltTruck ? { x: saltTruck.x, z: saltTruck.z, yaw: saltTruck.yaw, tank: saltTruck.tank, on: saltTruck.on, width: saltTruck.width } : null,
+    blower: blower ? { x: blower.x, z: blower.z, yaw: blower.yaw, on: blower.on, chuteA: blower.chuteA } : null,
     exc: { x: exc.x, z: exc.z, y: exc.y, yaw: exc.yaw, sw: exc.sw, bA: exc.bA, sR: exc.sR, bR: exc.bR, load: exc.load },
+    village: VILLAGE ? { told: vill.drives.map(d => d.told), plog: vill.plog, rinkDone: vill.rinkDone, pondToast: vill.pondToast } : null,
+  });
+  window.claude?.hot?.snapshot?.(() => ({
+    ...stateCore(), v: 2, h: enc(h), orig: enc(orig), dist: enc(dist), kind: enc(kind), nz: enc(nz),
+    ...(SNOW ? {} : { mat: enc(mat), hMin: enc(hMin) }),
   }));
+  // A saved game: the grids as typed arrays (IndexedDB stores them as they are). dist and nz only need
+  // 256 levels, so they go in as bytes. N says which grid it belongs to.
+  const toBytes = a => { const o = new Uint8Array(a.length); for (let k = 0; k < a.length; k++) o[k] = Math.round(clamp(a[k], 0, 1) * 255); return o; };
+  const fromBytes = a => { const o = new Float32Array(a.length); for (let k = 0; k < a.length; k++) o[k] = a[k] / 255; return o; };
+  function makeSave() {
+    return { ...stateCore(), v: 3, N, savedAt: Date.now(), h: h.slice(), orig: orig.slice(), dist: toBytes(dist), kind: kind.slice(), nz: toBytes(nz), ...(SNOW ? {} : { mat: mat.slice(), hMin: hMin.slice() }) };
+  }
+  // the line under the map's card on the start screen
+  function saveSummary() {
+    if (!SNOW) return `Day ${pit.day} · ${pit.earned.toLocaleString('sv-SE')} kr`;
+    const g = streetsCleared(); return `${g < 10 ? g.toFixed(1) : Math.round(g)}% cleared`;
+  }
+  // Autosave: every 45 s of play, when the page is hidden or closed, and on the way back to the menu. Only on
+  // this device; skipped while nothing has happened since the last save.
+  let lastSaveMoved = -1, lastSaveT = 0, saving = null, saveFailed = false;
+  function autosave(force) {
+    if (saving || saveFailed) return saving || Promise.resolve();
+    const P = M(), sig = moved + P.x + P.z + loader.x + loader.z + truck.loads + (SNOW ? 0 : pit.earned + pit.clock);
+    if (!force && sig === lastSaveMoved) return Promise.resolve();
+    lastSaveMoved = sig; lastSaveT = time;
+    const data = makeSave();
+    saving = SaveStore.put(SCN, data, { savedAt: data.savedAt, summary: saveSummary(), N })
+      .catch(e => { saveFailed = true; console.warn('Saving failed; this browser may not allow it', e); })
+      .finally(() => { saving = null; });
+    return saving;
+  }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) autosave(true); });
+  addEventListener('pagehide', () => autosave(true));
 
   // ---------------- imported vehicle models (assets/models/*.glb, see docs/MODELS.md) ----------------
   // A model's named parts are attached to the game's own joints (so every existing animation, collision and
@@ -5711,7 +6750,7 @@ function boot(SCN, bootData) {
       console.groupEnd();
       summary.push(`${names[key]}${r.warn.length ? ` (${r.warn.length} warning${r.warn.length > 1 ? 's' : ''})` : ''}`);
     }
-    if (summary.length) setTimeout(() => toast(`Models loaded: ${summary.join(', ')}. Details in the browser console`, 4200), 900);
+    if (summary.length) console.info(`Models loaded: ${summary.join(', ')}`);
   }
   // reference mode (?reference): the code-built vehicles at rest, with every joint named as the model files
   // need it, exported as .glb to model on top of in Blender (assets/reference/)
@@ -5742,7 +6781,16 @@ function boot(SCN, bootData) {
 
   function start(data) {
     let restored = false;
-    if (data && data.v === 2 && data.h) {
+    if (SAVE) data = SAVE;
+    if (data && data.v === 3 && data.h && data.N === N) {
+      // a saved game from the start screen
+      try {
+        h = data.h; orig = data.orig; dist = fromBytes(data.dist); kind = data.kind; nz = fromBytes(data.nz);
+        if (!SNOW) { mat = data.mat; hMin = data.hMin; Object.assign(pit, data.pit || {}); }
+        restored = h.length === NV && orig.length === NV; moved = data.moved || 0; celebrated = !!data.celebrated;
+        if (restored && SNOW) { buildSnowGround(); hMin = gnd.slice(); riverVol = data.riverVol || 0; }
+      } catch (e) { console.warn('Saved game could not be read; starting fresh', e); restored = false; }
+    } else if (data && data.v === 2 && data.h) {
       try {
         h = new Float32Array(dec(data.h).buffer); orig = new Float32Array(dec(data.orig).buffer); dist = new Float32Array(dec(data.dist).buffer);
         kind = dec(data.kind); nz = new Float32Array(dec(data.nz).buffer);
@@ -5754,27 +6802,28 @@ function boot(SCN, bootData) {
     }
     if (!restored) gen();
     buildTerrain();
-    if (SNOW) { buildRoadMarkings(); buildCity(); buildShops(); buildCars(); buildStreetlights(); buildRail(); buildStreetTrees(); buildTraffic(); buildBackdrop(); buildColgateClock(); buildSnowfall(); } else { buildTufts(); buildMeadow(); buildTrees(); buildRocks(); buildPit(); }
+    if (SNOW) { buildRoadMarkings(); buildCity(); buildShops(); buildCars(); buildStreetlights(); buildRail(); buildStreetTrees(); buildTraffic(); if (!VILLAGE) { buildBackdrop(); buildColgateClock(); } else buildSnowPoles(); buildSnowfall(); } else { buildTufts(); buildMeadow(); buildTrees(); buildRocks(); buildPit(); }
     buildHopper(); buildTrench(); buildLoader(); buildTruck(); buildExcavator();
     if (SNOW) { buildSaltTruck(); buildBlower(); }
     else { loader.mix = new Float32Array(MATS.length); exc.mix = new Float32Array(MATS.length); }
     applyModels();
     if (SNOW) buildLoaderBlower(); // after the models: a custom loader model hides whatever hangs on the code-built arm
     if (!restored) Object.assign(loader, { x: LOADER_HOME.x, z: LOADER_HOME.z, yaw: LOADER_HOME.yaw, tF: LOADER_HOME.yaw, tR: LOADER_HOME.yaw, a: LOADER_HOME.a });
-    if (SNOW && !restored) setTimeout(() => toast('Blade is down. W to plow, J / L to angle it', 3600), 400);
     if (!SNOW) {
       $('gradeLbl').textContent = 'Order'; $('loadsLbl').textContent = 'Trucks served'; $('trenchLbl').textContent = 'In the truck'; $('movedLbl').textContent = 'Earned';
-      $('hint').textContent = 'X excavator · B tools · C cab view · G show the ordered gravel · H send the vehicle off';
-      setTimeout(() => toast('The gate opens at 07:00. Each customer waits at the pile it wants: find it (green ring on the map, P) and load it. Nobody is in a hurry', 5200), 4200);
     }
     if (SNOW) {
-      document.getElementById('intro').innerHTML = 'Snow day in <b>Paulus Hook, Jersey City</b>. <b>Plow the streets</b> around Liberty Towers: angle the blade with J and L to roll the snow off to the curb, or swap to the bucket with B and dump it in the Hudson. B swaps the plow for the bucket or a big snow blower (J / L swing its chute). X switches to the salt spreader and the sidewalk snow blower. The lane markings and crossings come back as you clear down to the pavement, and the traffic stops at the lights. The street layout and buildings come from OpenStreetMap.';
       $('gradeLbl').textContent = 'Streets cleared'; $('loadsLbl').textContent = 'Into the Hudson'; $('movedLbl').textContent = 'Off the streets';
       $('trenchLbl').textContent = 'Into the Hudson'; $('machineTxt').textContent = 'Wheel loader · plow';
       $('loadsLbl').textContent = 'Truckloads hauled';
-      $('hint').textContent = 'X salt truck · B blade / bucket / blower · C cab view · T time · G show unplowed';
     }
-    document.getElementById('changeJob').addEventListener('click', () => location.reload());
+    if (VILLAGE) {
+      $('gradeLbl').textContent = 'Streets cleared'; $('trenchLbl').textContent = 'Driveways open'; $('movedLbl').textContent = 'Ice rink'; $('loadsLbl').textContent = 'Truckloads hauled';
+      $ptag.textContent = 'Kvarnby kyrka';
+    }
+    // Menu: save, then back to the start screen
+    document.getElementById('changeJob').addEventListener('click', () => { toast('Saving…', 3000); autosave(true).finally(() => location.reload()); });
+    { const ts = document.getElementById('touchSend'), tb = document.querySelector('#touch [data-k="KeyB"]'); if (ts) ts.hidden = SNOW; if (tb) tb.textContent = SNOW ? 'BLADE' : 'TOOL'; }
     if (data && data.timeIdx !== undefined) timeIdx = data.timeIdx;
     applyTime(timeIdx);
     if (restored) {
@@ -5786,6 +6835,15 @@ function boot(SCN, bootData) {
       if (data.exc) Object.assign(exc, data.exc);
       if (data.salt && saltTruck) Object.assign(saltTruck, data.salt);
       if (data.trench && data.trench !== 'dig') { trench.state = data.trench === 'laying' ? 'backfill' : data.trench; trench.g.position.copy(trench.to); }
+      if (data.blower && blower) Object.assign(blower, data.blower);
+      if (data.gears) Object.assign(gearOf, data.gears);
+      if (SNOW && data.loader && data.loader.tool) $('machineTxt').textContent = 'Wheel loader' + (loader.tool === 'plow' ? ' · plow' : loader.tool === 'blower' ? ' · snow blower' : '');
+      if (VILLAGE && data.village) {
+        const V = data.village; (V.told || []).forEach((t, i) => { if (vill.drives[i]) vill.drives[i].told = !!t; });
+        vill.plog = V.plog || 0; vill.rinkDone = !!V.rinkDone; vill.pondToast = !!V.pondToast;
+      }
+      if (data.v === 3) setTimeout(() => toast(`Welcome back · ${saveSummary()}`, 2600), 600);
+      lastSaveMoved = -1;
     }
     if (!SNOW) {
       tagHost = $tag.parentNode;
@@ -5793,7 +6851,7 @@ function boot(SCN, bootData) {
       $pitClock = document.getElementById('pitClock'); $pitDay = row.firstChild;
       setupPitTools(); applyTime(timeIdx = 1);
     }
-    scene.traverse(o => { if (o.isInstancedMesh) o.frustumCulled = false; });
+    scene.traverse(o => { if (o.isInstancedMesh && !o.userData.cull) o.frustumCulled = false; });
     loader.y = heightAt(loader.x, loader.z);
     buildComposer();
     updateLoader({ fwd: 0, back: 0, left: 0, right: 0, up: 0, down: 0, curl: 0, dump: 0 }, 0.016);
@@ -5816,41 +6874,131 @@ function loadModels() {
   if (location.protocol === 'file:') { console.info('Models: page opened as a file, so assets/models/ is not read. Serve the folder to use them (python3 -m http.server).'); return Promise.resolve(); }
   if (!THREE.GLTFLoader) return Promise.resolve();
   const gl = new THREE.GLTFLoader();
-  if (THREE.DRACOLoader) { const d = new THREE.DRACOLoader(); d.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/libs/draco/gltf/'); gl.setDRACOLoader(d); }
+  if (THREE.DRACOLoader) { const d = new THREE.DRACOLoader(); d.setDecoderPath('vendor/three/examples/jsm/libs/draco/gltf/'); gl.setDRACOLoader(d); }
   return Promise.all(MODEL_FILES.map(n => {
     const url = `assets/models/${n}.glb`;
     return fetch(url, { method: 'HEAD' }).then(r => r.ok ? gl.loadAsync(url).then(g => { window.__models[n] = g; }) : null)
       .catch(e => console.warn(`Models: ${url} could not be loaded`, e));
   }));
 }
-// pick a job, or resume straight into the one that was running before a live update
+// ---- settings, stored on this device (localStorage) ----
+const SETTINGS_KEY = 'backlot.settings';
+const SETTINGS_DEFAULT = { quality: 'auto', perf: 'auto', sound: 'on', time: '1' };
+function loadSettings() {
+  let st = {};
+  try { st = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') || {}; } catch (_) {}
+  // carry over the graphics choice made with O before there were settings
+  try { const q = localStorage.getItem('backlot.quality'); if (q && !st.quality) st.quality = q; } catch (_) {}
+  return Object.assign({}, SETTINGS_DEFAULT, st);
+}
+function saveSettings(st) { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(st)); } catch (_) {} }
+
+// ---- saved games: one per map, kept in this browser's IndexedDB (never sent anywhere) ----
+// Two stores: 'meta' holds a few fields for the start screen, 'saves' the whole state (the snow or dirt grid
+// as typed arrays, a few MB). Without IndexedDB (some private modes) the game simply doesn't save.
+const SaveStore = (() => {
+  let dbp = null;
+  const open = () => dbp || (dbp = new Promise((res, rej) => {
+    if (!window.indexedDB) return rej(new Error('no IndexedDB'));
+    const rq = indexedDB.open('backlot-loader', 1);
+    rq.onupgradeneeded = () => { const db = rq.result; db.createObjectStore('saves'); db.createObjectStore('meta'); };
+    rq.onsuccess = () => res(rq.result); rq.onerror = () => rej(rq.error);
+  }));
+  const tx = (stores, mode, fn) => open().then(db => new Promise((res, rej) => {
+    const t = db.transaction(stores, mode); let out; t.oncomplete = () => res(out); t.onerror = t.onabort = () => rej(t.error);
+    out = fn(t);
+  }));
+  const req = r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  return {
+    available: () => open().then(() => true, () => false),
+    // ask the browser to keep this storage rather than clear it when space runs low (where it supports that)
+    put: (scn, data, meta) => (navigator.storage && navigator.storage.persist ? navigator.storage.persist().catch(() => false) : Promise.resolve()).then(() => tx(['saves', 'meta'], 'readwrite', t => { t.objectStore('saves').put(data, scn); t.objectStore('meta').put(meta, scn); })),
+    get: scn => open().then(db => req(db.transaction('saves').objectStore('saves').get(scn))),
+    metas: () => open().then(db => new Promise((res, rej) => {
+      const out = {}, c = db.transaction('meta').objectStore('meta').openCursor();
+      c.onsuccess = () => { const cur = c.result; if (cur) { out[cur.key] = cur.value; cur.continue(); } else res(out); }; c.onerror = () => rej(c.error);
+    })),
+    del: scn => tx(['saves', 'meta'], 'readwrite', t => { t.objectStore('saves').delete(scn); t.objectStore('meta').delete(scn); }),
+    clear: () => tx(['saves', 'meta'], 'readwrite', t => { t.objectStore('saves').clear(); t.objectStore('meta').clear(); }),
+  };
+})();
+window.SaveStore = SaveStore;
+
+// ---- the start screen: pick a map, Continue its saved game or start a new one, settings and controls ----
+const MAP_NAMES = { dirt: 'Gravel pit', snow: 'Paulus Hook', village: 'Kvarnby' };
+const ago = t => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 60 * 24 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`; };
 function showMenu() {
-  const menu = document.getElementById('menu');
-  menu.hidden = false;
-  // a controller can pick a job too: left / right to choose, A to start
-  const cards = [...menu.querySelectorAll('[data-scn]')];
-  let sel = -1, prev = [];
+  const $ = id => document.getElementById(id);
+  const menu = $('menu'), splash = $('splash'), cards = [...menu.querySelectorAll('#mapCards [data-scn]')];
+  const settings = loadSettings();
+  let metas = {}, sel = null, confirmNew = false, started = false, canSave = true;
+  menu.hidden = false; document.body.classList.add('in-menu');
+  const lastScn = () => { let best = null; for (const [k, m] of Object.entries(metas)) if (!best || m.savedAt > metas[best].savedAt) best = k; return best; };
+  function render() {
+    for (const c of cards) {
+      const m = metas[c.dataset.scn]; c.setAttribute('aria-checked', c.dataset.scn === sel ? 'true' : 'false');
+      c.querySelector('.saved').textContent = m ? `Saved ${ago(m.savedAt)}${m.summary ? ' · ' + m.summary : ''}` : '';
+    }
+    const m = metas[sel];
+    $('continueBtn').hidden = !m; $('continueBtn').textContent = m ? `Continue · ${MAP_NAMES[sel]}` : 'Continue';
+    $('newBtn').textContent = confirmNew ? 'Tap again to start over' : 'New game';
+    $('newBtn').classList.toggle('primary', !m || confirmNew);
+    $('saveNote').textContent = canSave ? 'Progress saves automatically on this device. Nothing leaves it.' : 'This browser can\'t keep saved games (private browsing?), so progress won\'t be saved.';
+  }
+  const pick = scn => { sel = scn; confirmNew = false; render(); };
+  for (const c of cards) c.addEventListener('click', () => pick(c.dataset.scn));
+  function go(scn, cont) {
+    if (started) return; started = true;
+    clearInterval(padPoll);
+    const ld = $('loading'); ld.hidden = false;
+    ld.textContent = cont ? 'Loading your game…' : scn === 'snow' ? 'Plowing in the city…' : scn === 'village' ? 'Snowing on Kvarnby…' : 'Opening the pit…';
+    const saved = cont ? SaveStore.get(scn).catch(() => null) : SaveStore.del(scn).catch(() => {}).then(() => null);
+    Promise.all([saved, loadModels()]).then(([save]) => {
+      menu.hidden = true; document.body.classList.remove('in-menu');
+      setTimeout(() => boot(scn, {}, { settings, save: save || null }), 30);
+    });
+  }
+  $('continueBtn').addEventListener('click', () => sel && metas[sel] && go(sel, true));
+  $('newBtn').addEventListener('click', () => { if (!sel) return; if (metas[sel] && !confirmNew) { confirmNew = true; render(); return; } go(sel, false); });
+  // settings: each row is a set of toggle buttons
+  const panels = { settings: $('settingsPanel'), help: $('helpPanel') };
+  const openPanel = k => { splash.hidden = !!k; for (const [n, el] of Object.entries(panels)) el.hidden = n !== k; const f = k ? panels[k].querySelector('[data-close], .opt button') : $('newBtn'); f && f.focus({ preventScroll: true }); if (k) panels[k].scrollTop = 0; menu.scrollTop = 0; };
+  $('settingsBtn').addEventListener('click', () => openPanel('settings'));
+  $('helpBtn').addEventListener('click', () => openPanel('help'));
+  for (const b of menu.querySelectorAll('[data-close]')) b.addEventListener('click', () => openPanel(null));
+  const showOpts = () => { for (const row of menu.querySelectorAll('.opt')) for (const b of row.querySelectorAll('button')) b.setAttribute('aria-pressed', String(settings[row.dataset.set]) === b.dataset.v ? 'true' : 'false'); };
+  for (const row of menu.querySelectorAll('.opt')) for (const b of row.querySelectorAll('button')) b.addEventListener('click', () => { settings[row.dataset.set] = b.dataset.v; saveSettings(settings); try { localStorage.removeItem('backlot.quality'); } catch (_) {} showOpts(); });
+  showOpts();
+  let clearArm = false;
+  $('clearSaves').addEventListener('click', () => {
+    if (!clearArm) { clearArm = true; $('clearSaves').textContent = 'Tap again to delete'; return; }
+    SaveStore.clear().catch(() => {}).then(() => { metas = {}; clearArm = false; $('clearSaves').textContent = 'Deleted'; render(); });
+  });
+  // a controller works the menu too: d-pad / left stick moves between buttons, A presses, B goes back
+  const focusables = () => [...menu.querySelectorAll('button')].filter(b => b.offsetParent !== null);
+  let prev = [];
   const padPoll = setInterval(() => {
     const p = navigator.getGamepads ? [...navigator.getGamepads()].find(q => q && q.connected) : null;
     if (!p) return;
-    const b = i => !!(p.buttons[i] && p.buttons[i].pressed), x = p.axes[0] || 0;
-    const left = b(14) || x < -0.6, right = b(15) || x > 0.6, a = b(0);
-    if ((left && !prev[0]) || (right && !prev[1]) || sel < 0) { sel = sel < 0 ? 0 : clampI(sel + (right ? 1 : -1), 0, cards.length - 1); cards[sel].focus(); }
-    if (a && !prev[2] && sel >= 0) cards[sel].click();
-    prev = [left, right, a];
+    const b = i => !!(p.buttons[i] && p.buttons[i].pressed), x = p.axes[0] || 0, y = p.axes[1] || 0;
+    const now = [b(14) || x < -0.6, b(15) || x > 0.6, b(12) || y < -0.6, b(13) || y > 0.6, b(0), b(1)];
+    const list = focusables(), at = list.indexOf(document.activeElement);
+    const step = d => { const n = list[Math.max(0, Math.min(list.length - 1, (at < 0 ? 0 : at + d)))]; if (n) n.focus(); };
+    if (now[0] && !prev[0]) step(-1); if (now[1] && !prev[1]) step(1); if (now[2] && !prev[2]) step(-2); if (now[3] && !prev[3]) step(2);
+    if (now[4] && !prev[4] && document.activeElement && document.activeElement.closest('#menu')) document.activeElement.click();
+    if (now[5] && !prev[5]) openPanel(null);
+    prev = now;
   }, 50);
-  const clampI = (v, a, b) => Math.max(a, Math.min(b, v));
-  for (const b of cards) b.addEventListener('click', () => {
-    clearInterval(padPoll);
-    menu.hidden = true;
-    const ld = document.getElementById('loading'); ld.hidden = false;
-    ld.textContent = b.dataset.scn === 'snow' ? 'Plowing in the city…' : 'Opening the pit…';
-    loadModels().then(() => setTimeout(() => boot(b.dataset.scn, {}), 30));
+  render();
+  SaveStore.available().then(ok => { canSave = ok; return ok ? SaveStore.metas() : {}; }).catch(() => ({})).then(m => {
+    metas = m || {}; sel = lastScn() || sel || 'village'; render();
+    ($('continueBtn').hidden ? $('newBtn') : $('continueBtn')).focus({ preventScroll: true });
   });
 }
 function entry(data) {
   if (!window.THREE) { const ld = document.getElementById('loading'); ld.hidden = false; ld.textContent = 'Could not load the 3D engine. Reload to try again.'; return; }
-  if (data && data.scn) loadModels().then(() => boot(data.scn, data)); else showMenu();
+  // a live update during development drops straight back into the job that was running
+  if (data && data.scn) loadModels().then(() => boot(data.scn, data, { settings: loadSettings() })); else showMenu();
 }
 // three.js loads as an ES module (below), which runs after this script; it calls this once THREE is ready
 window.__startGame = () => { window.claude?.hot?.ready ? window.claude.hot.ready(entry) : entry(window.claude?.hot?.data ?? {}); };
