@@ -1,0 +1,54 @@
+# Xcode project for the iOS app, generated with XcodeGen (brew install xcodegen; xcodegen generate).
+# The app is a full-screen WKWebView that runs the very same index.html as the web version; the build
+# copies the web game into the app (copy-web.sh), so every change to the game lands in both.
+name: BacklotLoader
+options:
+  bundleIdPrefix: com.example
+  deploymentTarget:
+    iOS: "15.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.0"
+    TARGETED_DEVICE_FAMILY: "1,2"
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+    DEVELOPMENT_TEAM: ""   # your Apple developer team ID, or pick it under Signing & Capabilities
+targets:
+  BacklotLoader:
+    type: application
+    platform: iOS
+    sources:
+      - path: BacklotLoader
+    info:
+      path: BacklotLoader/Info.plist
+      properties:
+        CFBundleDisplayName: Backlot Loader
+        LSRequiresIPhoneOS: true
+        UILaunchScreen: {}
+        UIApplicationSupportsIndirectInputEvents: true
+        UIRequiresFullScreen: true
+        UIStatusBarHidden: true
+        UIViewControllerBasedStatusBarAppearance: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationLandscapeRight
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationLandscapeRight
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+        GCSupportsControllerUserInteraction: true
+        GCSupportedGameControllers:
+          - ProfileName: ExtendedGamepad
+        ITSAppUsesNonExemptEncryption: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.backlotloader
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    postBuildScripts:
+      - name: Copy the web game into the app
+        script: '"${SRCROOT}/copy-web.sh"'
+        basedOnDependencyAnalysis: false
