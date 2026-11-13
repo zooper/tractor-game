@@ -151,6 +151,16 @@ document.addEventListener('touchmove', e => { if (e.touches.length > 1 || (e.tar
   .endday { position: absolute; left: 50%; top: 62px; transform: translateX(-50%); pointer-events: auto; font-family: "Barlow Condensed", sans-serif; font-weight: 700; font-size: 16px; letter-spacing: .06em;
     text-transform: uppercase; color: #241a08; background: var(--accent); border: 0; border-radius: 4px; padding: 7px 16px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.4); }
   @media (pointer: coarse) and (max-width: 640px) { .endday { top: 44px; } }
+  /* the gravel pit's post-it of waiting customers */
+  .postit { position: absolute; left: 14px; top: 44px; width: 230px; padding: 8px 10px 9px; background: #f6e58d; color: #3a3320; text-shadow: none; font-family: "Barlow", sans-serif;
+    font-size: 13px; line-height: 1.3; letter-spacing: 0; text-transform: none; transform: rotate(-1.2deg); box-shadow: 2px 3px 8px rgba(0,0,0,.35); border-radius: 1px 1px 6px 1px; }
+  .postit b { display: block; font-family: "Barlow Condensed", sans-serif; font-size: 15px; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 3px; }
+  .postit div { display: grid; grid-template-columns: 1fr auto; gap: 0 8px; padding: 3px 0; border-top: 1px dashed rgba(58,51,32,.3); }
+  .postit span { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .postit em { font-style: normal; grid-column: 1; font-size: 12px; opacity: .85; }
+  .postit i { font-style: normal; grid-column: 2; grid-row: 1 / span 2; align-self: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .postit .long i { color: #a3260f; }
+  @media (pointer: coarse) { .postit { top: 178px; width: 190px; font-size: 12px; } }
+  @media (pointer: coarse) and (max-height: 460px) { .postit { top: 78px; left: 124px; } }
   /* end of a snow shift */
   .summary { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: auto; background: rgba(20,18,14,.94); color: #fff; text-shadow: none; padding: 18px 24px;
     border-radius: 6px; min-width: 280px; font-size: 15px; line-height: 1.6; letter-spacing: .03em; z-index: 4; }
@@ -1235,7 +1245,7 @@ function boot(SCN, bootData, opts = {}) {
         if (V.state === 'arriving' && V.seg >= V.path.length - 2) { const [tx, tz] = V.path[V.path.length - 1]; V.v = Math.min(V.v, Math.max(0.8, Math.hypot(tx - V.x, tz - V.z) * 0.45)); }
         const rem = driveRoute(V, dt);
         if (V.state === 'arriving' && rem < 0.05) {
-          const p = orderPile(O); V.x = p.sx; V.z = p.sz; V.yaw = p.yaw; V.v = 0; V.state = 'parked';
+          const p = orderPile(O); V.x = p.sx; V.z = p.sz; V.yaw = p.yaw; V.v = 0; V.state = 'parked'; if (V.waitFrom === undefined) V.waitFrom = pit.clock;
           toast(`${O.cust} is waiting ${p.item ? 'at the stone and bag yard' : `at the ${MATS[O.m].short} pile`}`, 2600); horn(0.3);
         } else if (V.state === 'leaving' && rem < 0.1) { freeBody(V); V.tag.remove(); fleet.splice(fleet.indexOf(V), 1); continue; }
       } else if (V.state === 'parked') {
@@ -1387,14 +1397,13 @@ function boot(SCN, bootData, opts = {}) {
     if (Math.abs(dy) > 0.45) { toast('Line the loader up straight behind the tool', 1600); return; }
     couple(best); toast(`${tools[best].name} on`, 1400);
   }
-  // what the loader is lifting, and how hard that is: slower near the limit, not at all past it
+  // what the loader is lifting, and how hard that is: nothing is too heavy, but past about 2.5 t the boom
+  // rises more slowly and the loader drives more slowly, down to a crawl with a brim-full big bucket of wet
+  // gravel or a big boulder on the forks
   const loaderTonnes = () => (loader.mix ? tonnesOf(loader.mix) : 0) + (loader.held ? loader.held.w : 0);
-  let lastHeavyToast = -99;
-  function liftFactor() {
-    const t = loaderTonnes();
-    if (t > LIFT_MAX) { if (time - lastHeavyToast > 4) { lastHeavyToast = time; toast(`Too heavy to lift: ${t.toFixed(1)} t (the loader manages ${LIFT_MAX} t). Tip some out`, 2600); } return 0; }
-    return 1 - 0.55 * clamp((t - 2.8) / (LIFT_MAX - 2.8), 0, 1);
-  }
+  const heavyOf = () => clamp((loaderTonnes() - 2.5) / (LIFT_MAX + 2 - 2.5), 0, 1);
+  function liftFactor() { return 1 - 0.75 * heavyOf(); }
+  const driveFactor = () => SNOW ? 1 : 1 - 0.5 * heavyOf();
   // pallet forks: slide under a boulder or bag and lift to pick it up; lower it onto a truck bed or the ground
   function forkWork(dt, prevA) {
     const L = loader, g = L.bucket; g.updateMatrixWorld(true);
@@ -1426,7 +1435,7 @@ function boot(SCN, bootData, opts = {}) {
         if (d < it.r + 0.35 && fp.y < base + it.half * 0.9 && d < bd) { bd = d; best = it; }
       }
       if (best) {
-        if (best.w > LIFT_MAX) { if (time - lastHeavyToast > 4) { lastHeavyToast = time; toast(`That boulder weighs about ${best.w.toFixed(1)} t: too heavy for the forks`, 2400); } L.a = prevA; setArm(); return; }
+        // anything goes on the forks; a heavy boulder just makes for slow going
         g.attach(best.mesh); best.state = 'held'; L.held = best; thump(0.08);
       }
     }
@@ -1450,10 +1459,21 @@ function boot(SCN, bootData, opts = {}) {
     return false;
   }
   function updateCrusher(dt) { for (const pl of PLANTS) updatePlant(pl, dt); }
+  // The feed hopper is a square funnel (1.1 m at the bottom, 2.4 m at the top, 1.8 m deep, as a 4-sided cylinder
+  // turned 45°), so the material in it is the same shape cut off at the fill level, a little inside the walls,
+  // with a low heap where the bucket tipped it. Rebuilt only when the level moves a step.
+  function hopperFill(mesh, f) {
+    const level = Math.round(clamp(f, 0, 1) * 24); if (level === mesh.userData.level) return;
+    mesh.userData.level = level;
+    const t = Math.max(level, 1) / 24, H = 1.72 * t, rB = 1.0, rT = lerp(1.0, 2.28, t);
+    const body = new T.CylinderGeometry(rT, rB, H, 4, 1); body.rotateY(Math.PI / 4); body.translate(0, H / 2, 0);
+    const heap = new T.ConeGeometry(rT * 0.72, 0.18 + 0.3 * t, 4, 1); heap.rotateY(Math.PI / 4); heap.translate(0, H + (0.18 + 0.3 * t) / 2 - 0.02, 0);
+    const old = mesh.geometry; mesh.geometry = mergeAll([put(body), put(heap)]); mesh.geometry.computeVertexNormals(); old.dispose();
+  }
   function updatePlant(crusher, dt) {
     const run = crusher.load > 0.001;
     for (const w of crusher.wheels) w.rotation.x += (run ? 7 : 0) * dt;
-    if (crusher.fill) { crusher.fill.visible = run; crusher.fill.scale.y = Math.max(0.01, crusher.load / crusher.cap); crusher.fill.material.color.copy(mixColor(crusher.mix)); }
+    if (crusher.fill) { crusher.fill.visible = run; hopperFill(crusher.fill, crusher.load / crusher.cap); crusher.fill.material.color.copy(mixColor(crusher.mix)); }
     if (!run) return;
     const rate = Math.min(crusher.load, crusher.rate * dt);
     drawMix(crusher, rate); crusher.load -= rate;
@@ -1693,7 +1713,7 @@ function boot(SCN, bootData, opts = {}) {
       const X = pl.x, Z = pl.z, y0 = at(X, Z), g = new T.Group(); g.position.set(X, y0, Z); scene.add(g);
       for (const [lx, lz] of [[-1.4, -4.4], [1.4, -4.4], [-1.4, -2.2], [1.4, -2.2]]) { box(0.25, 1.6, 0.25, steel, lx, 0.8, lz, g); pitPosts.push({ x: X + lx, z: Z + lz, r: 0.25 }); }
       const hop = new T.Mesh(new T.CylinderGeometry(2.4, 1.1, 1.8, 4, 1, true), std({ color: pl.paint, roughness: 0.5, side: T.DoubleSide })); hop.rotation.y = Math.PI / 4; hop.position.set(0, 2.3, -3.3); hop.castShadow = true; g.add(hop);
-      const hf = new T.Mesh(new T.BoxGeometry(2.6, 1, 2.6), mats.dirt.clone()); hf.geometry.translate(0, 0.5, 0); hf.position.set(0, 1.5, -3.3); hf.visible = false; g.add(hf);
+      const hf = new T.Mesh(new T.BufferGeometry(), mats.dirt.clone()); hf.position.set(0, 1.42, -3.3); hf.visible = false; hf.userData.level = -1; g.add(hf);
       pl.hop = { x: X, z: Z - 3.3, top: y0 + 3.2, bottom: y0 + 1.4, half: 1.6 }; pl.fill = hf;
       box(3.2, 2.4, 3.0, yel, 0, 1.7, 0, g);                                 // crusher body
       box(3.4, 0.4, 3.2, yelD, 0, 3.05, 0, g);
@@ -5359,7 +5379,7 @@ function boot(SCN, bootData, opts = {}) {
   function updateLoader(inp, dt) {
     const L = loader, l = HALF_WB;
     const thr = inp.fwd - inp.back;
-    const top = gearTop('loader'), maxF = top * (1 - L.load * 0.8 / 5.5), maxR = Math.min(3.2, top);
+    const top = gearTop('loader') * driveFactor(), maxF = top * (1 - L.load * 0.8 / 5.5), maxR = Math.min(3.2, top);
     if (thr) L.v += thr * 4.2 * dt; else L.v *= Math.max(0, 1 - dt * 3);
     if (thr && Math.sign(thr) !== Math.sign(L.v) && Math.abs(L.v) > 0.1) L.v += thr * 5 * dt;
     L.v = capSpeed(L.v, -maxR, maxF, dt);
@@ -5853,6 +5873,24 @@ function boot(SCN, bootData, opts = {}) {
     if (L === loader && L.tool === 'forks') { $fillTxt.textContent = L.held ? `${L.held.kind === 'bag' ? 'big bag' : 'boulder'} · ${L.held.w.toFixed(1)} t` : 'empty'; $fillBar.style.width = L.held ? '100%' : '0%'; }
     if (L === loader && L.tool === 'none') { $fillTxt.textContent = 'line up with a tool, B'; $fillBar.style.width = '0%'; }
     $moved.textContent = `${pit.earned.toLocaleString('sv-SE')} kr`;
+    postit();
+  }
+  // A post-it on the screen listing the customers of the day who are on their way or waiting, with what they
+  // ordered, how far along the load is and how long they have stood there (in game minutes).
+  let $postit = null;
+  function postit() {
+    if (!$postit) { $postit = document.createElement('div'); $postit.className = 'postit'; screen.querySelector('.hud').appendChild($postit); }
+    const list = fleet.filter(V => V.state !== 'leaving');
+    $postit.hidden = !list.length || bigMapOpen;
+    if ($postit.hidden) return;
+    const esc = t => String(t).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+    $postit.innerHTML = '<b>Waiting</b>' + list.map(V => {
+      const O = V.order, here = V.state === 'parked' || V.state === 'tipping';
+      const mins = here && V.waitFrom !== undefined ? Math.max(0, Math.floor(pit.clock - V.waitFrom)) : null;
+      const got = here ? (O.item ? `${vCount(V)}/${O.count}` : `${vTonnes(V).toFixed(1)}/${O.t.toFixed(1)} t`) : '';
+      const when = V.state === 'arriving' ? 'on the way' : V.state === 'tipping' ? 'tipping out' : mins < 60 ? `${mins} min` : `${Math.floor(mins / 60)} h ${mins % 60} min`;
+      return `<div class="${mins >= 45 ? 'long' : ''}"><span>${esc(O.cust)}</span><em>${esc(orderShort(O))}${got ? ' · ' + got : ''}</em><i>${when}</i></div>`;
+    }).join('');
   }
   function placeTag() {
     const r = screen.getBoundingClientRect();
