@@ -154,6 +154,8 @@ document.addEventListener('touchmove', e => { if (e.touches.length > 1 || (e.tar
     border-radius: 6px; min-width: 280px; font-size: 15px; line-height: 1.6; letter-spacing: .03em; z-index: 4; }
   .summary h3 { margin: 0 0 8px; font-size: 21px; letter-spacing: .05em; }
   .summary .row { display: flex; justify-content: space-between; gap: 24px; }
+  .summary .stock { display: grid; grid-template-columns: 1fr auto 1fr auto; gap: 0 14px; margin: 8px 0; padding: 6px 0; border-top: 1px solid rgba(255,255,255,.15); border-bottom: 1px solid rgba(255,255,255,.15); font-size: 14px; }
+  .summary button.alt { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.5); margin-top: 8px; }
   .summary button { margin-top: 14px; width: 100%; padding: 9px; font: inherit; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; background: var(--accent); color: #241a08; border: 0; border-radius: 4px; cursor: pointer; } /* nothing of the HUD (sticks, Change job) over the job menu */
   .menu { overflow-y: auto; justify-content: safe center; background: radial-gradient(ellipse at 50% 25%, #3b4b5e, #16181b 75%); z-index: 6; }
   .stick i { position: absolute; left: 50%; top: 50%; width: 44%; aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%); background: rgba(255,255,255,.62); box-shadow: 0 2px 6px rgba(0,0,0,.45); }
@@ -189,7 +191,7 @@ document.addEventListener('touchmove', e => { if (e.touches.length > 1 || (e.tar
         <h2 class="title">Backlot Loader</h2>
         <p class="sub">Earthmoving and snow plowing</p>
         <div class="cards" id="mapCards" role="radiogroup" aria-label="Map">
-          <button class="card" data-scn="dirt" role="radio"><b>Gravel pit</b><span>Björkåsens grustag. Load each customer's truck with the right gravel and the right weight.</span><em class="saved"></em></button>
+          <button class="card" data-scn="dirt" role="radio"><b>Gravel pit</b><span>Björkåsens grustag. Serve the customers, or shut the gate for a day and dig, crush and stock up.</span><em class="saved"></em></button>
           <button class="card snow" data-scn="snow" role="radio"><b>Paulus Hook</b><span>Snow day in Jersey City. Plow the real streets around Liberty Towers.</span><em class="saved"></em></button>
           <button class="card snow" data-scn="village" role="radio"><b>Kvarnby</b><span>Snow day in a Swedish village. Plow the lanes, not the driveways.</span><em class="saved"></em></button>
         </div>
@@ -208,10 +210,11 @@ document.addEventListener('touchmove', e => { if (e.touches.length > 1 || (e.tar
         <div class="opt" data-set="quality"><span>Graphics</span><button data-v="auto">Auto</button><button data-v="high">High</button><button data-v="low">Low</button></div>
         <div class="opt" data-set="perf"><span>Performance mode</span><button data-v="auto">Auto</button><button data-v="on">Lighter</button><button data-v="off">Full</button></div>
         <div class="opt" data-set="sound"><span>Sound</span><button data-v="on">On</button><button data-v="off">Off</button></div>
+        <div class="opt" data-set="pace"><span>Day and shift length</span><button data-v="short">Short</button><button data-v="normal">Normal</button><button data-v="long">Long</button></div>
         <div class="opt" data-set="mode"><span>Snow maps</span><button data-v="shift">Shifts</button><button data-v="free">Free plow</button></div>
         <div class="opt" data-set="time"><span>Free plow starts at</span><button data-v="0">Day</button><button data-v="1">Dusk</button><button data-v="2">Night</button></div>
         <div class="opt" data-set="tips"><span>Tips for new players</span><button data-v="on">On</button><button data-v="off">Off</button><button data-act="tipsAgain">Show again</button></div>
-        <p class="note">Shifts: snow keeps falling from 22:00 to 06:00 and you're paid for keeping the main streets open. Free plow: no new snow, no clock. Performance mode uses a coarser snow grid, fewer trees and lights; Auto turns it on for phones and tablets. Both apply when a map starts.</p>
+        <p class="note">Day and shift length: a pit day or a snow shift takes about 9, 18 or 36 real minutes. Shifts: snow keeps falling from 22:00 to 06:00 and you're paid for keeping the main streets open. Free plow: no new snow, no clock. Performance mode uses a coarser snow grid, fewer trees and lights; Auto turns it on for phones and tablets. Both apply when a map starts.</p>
         <div class="actions small"><button id="clearSaves" type="button">Delete saves and progress</button><button class="primary" data-close type="button">Done</button></div>
       </div>
       <div class="panel" id="garagePanel" hidden>
@@ -235,6 +238,7 @@ document.addEventListener('touchmove', e => { if (e.touches.length > 1 || (e.tar
           <div><kbd>C</kbd> cab view · <kbd>Z</kbd><kbd>V</kbd> look left / right</div>
           <div><kbd>P</kbd> map · <kbd>G</kbd> unplowed snow / ordered gravel</div>
           <div><kbd>H</kbd> send the truck off · end the day once the yard is empty (gravel pit)</div>
+          <div class="wide">Gravel pit: dig naturgrus at the pit face with the excavator and tip it into the crusher (bärlager, makadam 8–16) or the screen (sand, stenmjöl, makadam 16–32)</div>
           <div><kbd>T</kbd> time of day · <kbd>M</kbd> sound · <kbd>O</kbd> graphics</div>
           <div><kbd>N</kbd><kbd>N</kbd> start the map over</div>
           <div>Mouse: drag to orbit, scroll to zoom</div>
@@ -968,21 +972,30 @@ function boot(SCN, bootData, opts = {}) {
     { n: 'Mixed', short: 'Mixed', rho: 1.7, price: 0, grain: 0.14, col: [0.5, 0.42, 0.34] },
   ];
   // where each pile is, where its truck parks (sx, sz) and which way the truck faces there (hd, 0 = south)
-  // bärlager and makadam 8–16 come off the crusher's conveyors (plant: true); the yard in the north-east
-  // keeps boulders and big bags for the forks (item: true)
+  // Every product but naturgrus comes off a plant's conveyor (plant: which one): bärlager and makadam 8–16
+  // off the crusher in the south, sand, stenmjöl and makadam 16–32 off the screening plant in the west.
+  // Naturgrus is the pit face itself, dug and heaped by the face. The yard in the north-east keeps boulders
+  // and big bags for the forks (item: true).
   const PIT_PILES = [
-    { m: 1, x: -40, z: 32, sx: -27, sz: 22, hd: 0, where: 'south-west' }, { m: 2, x: -40, z: -16, sx: -26, sz: -8, hd: 180, where: 'west' },
-    { m: 3, x: 23, z: 52, sx: 23, sz: 39, hd: -90, where: 'at the crusher, east conveyor', plant: true, h: 3.0, s: 2.9 },
-    { m: 4, x: -7, z: 50, sx: -7, sz: 38, hd: 90, where: 'at the crusher, west conveyor', plant: true, h: 3.0, s: 2.9 },
-    { m: 5, x: 44, z: 10, sx: 30, sz: 16, hd: 0, where: 'east' }, { m: 6, x: -22, z: -42, sx: -14, sz: -30, hd: -90, where: 'by the pit face' },
-    { item: true, x: 40, z: -22, sx: 26, sz: -12, hd: 180, where: 'in the stone and bag yard, north-east' },
+    { m: 1, x: -42, z: 25, sx: -29, sz: 25, hd: 0, where: 'at the screen, south conveyor', plant: 'screen', h: 2.2, s: 2.4 },
+    { m: 2, x: -40, z: -10, sx: -27, sz: -10, hd: 0, where: 'at the screen, north conveyor', plant: 'screen', h: 2.2, s: 2.4 },
+    { m: 3, x: 23, z: 52, sx: 23, sz: 39, hd: -90, where: 'at the crusher, east conveyor', plant: 'crusher', h: 2.2, s: 2.4 },
+    { m: 4, x: -7, z: 50, sx: -7, sz: 38, hd: 90, where: 'at the crusher, west conveyor', plant: 'crusher', h: 2.2, s: 2.4 },
+    { m: 5, x: -35, z: 8, sx: -22, sz: 8, hd: 0, where: 'at the screen, east conveyor', plant: 'screen', h: 2.2, s: 2.4 },
+    { m: 6, x: -22, z: -42, sx: -14, sz: -30, hd: -90, where: 'by the pit face' },
+    { item: true, x: 40, z: -22, sx: 26, sz: -12, hd: 180, where: 'north-east' },
   ];
   const PIT_HUB = [2, 14], PIT_GATE = { x: 40, z: 52 }, PIT_ENTRY = [[40, 175], [40, 52], [40, 40]];
   for (const p of PIT_PILES) { const a = p.hd * Math.PI / 180; p.yaw = a; p.ux = Math.sin(a); p.uz = Math.cos(a); }
   const PILE_H = 3.8, PILE_S = 3.4;
-  // the crushing and screening plant on the south side of the floor, with the two piles its conveyors build,
+  // the two plants, each fed naturgrus (or whatever is tipped in) and splitting it between its products,
   // and a rain pond in the south-west corner
-  const PLANT = { x: 8, z: 50 }, PLANT_PILES = PIT_PILES.filter(p => p.plant), RACK = { x: 10, z: -36 };
+  const PLANTS = [
+    { id: 'crusher', name: 'Crusher', x: 8, z: 50, out: { 3: 0.55, 4: 0.45 }, paint: 0xd9a520, rate: 0.32 },
+    { id: 'screen', name: 'Screen', x: -51, z: 8, out: { 1: 0.4, 2: 0.25, 5: 0.35 }, paint: 0x3f7a4a, rate: 0.3 },
+  ];
+  for (const pl of PLANTS) Object.assign(pl, { load: 0, mix: new Float32Array(MATS.length), cap: 7, heads: [], hop: null, fill: null, wheels: [], told: false });
+  const PLANT = PLANTS[0], RACK = { x: 10, z: -36 };
   const POND = { x: -46, z: 52, rx: 9, rz: 6, level: -0.12 };
   const wob = (v, s) => 2.5 * Math.sin(v * 0.13 + s) + 1.2 * Math.sin(v * 0.37 + 1 + s);
   const bankEdge = x => -50 + wob(x, 0); // toe of the north pit face
@@ -1067,9 +1080,10 @@ function boot(SCN, bootData, opts = {}) {
     tipper: { lo: 7, hi: 13, fill: 1, step: 0.5, what: 'tipper' }, big: { lo: 12, hi: 17, fill: 1, step: 0.5, what: 'four-axle tipper' } };
   const CAB_COLORS = [0xa9472f, 0xe6e3da, 0x2f5b8f, 0x3f6b3a, 0xd9a520, 0x2a2c2f, 0xc2581f];
   const pit = { earned: 0, served: 0, refused: 0, lastCust: -1 };
-  function stockByMat() {
+  // what is in the yard, by material; noFace leaves out the pit face itself (naturgrus still in the ground)
+  function stockByMat(noFace) {
     const s = new Float32Array(MATS.length);
-    for (let k = 0; k < NV; k++) { const d = h[k] - hMin[k]; if (d > 0.02) s[mat[k]] += d * A; }
+    for (let k = 0; k < NV; k++) { const d = h[k] - hMin[k]; if (d > 0.02 && !(noFace && mat[k] === 6 && orig[k] - hMin[k] > 1)) s[mat[k]] += d * A; }
     return s;
   }
   // ---- orders: so many tonnes of one gravel, or a few boulders or big bags ----
@@ -1415,82 +1429,104 @@ function boot(SCN, bootData, opts = {}) {
     }
   }
 
-  // ---- the crusher: naturgrus (or anything) in the feed hopper comes out as bärlager and makadam 8–16 ----
-  const crusher = { load: 0, mix: new Float32Array(MATS.length), cap: 7, heads: [], hop: null, fill: null, wheels: [], told: false };
+  // ---- the plants: naturgrus (or anything) in a feed hopper comes out split between the plant's products ----
+  const crusher = PLANTS[0];
+  const PLANT_TOLD = { crusher: 'Crusher running: bärlager off the east conveyor, makadam 8–16 off the west', screen: 'Screen running: sand south, stenmjöl north, makadam 16–32 east' };
   function crusherCatch(P) {
-    const H = crusher.hop; if (!H) return false;
-    if (Math.abs(P.x - H.x) > H.half || Math.abs(P.z - H.z) > H.half || P.y > H.top + 0.3) return false;
-    const surf = H.bottom + 0.1 + crusher.load / crusher.cap * (H.top - H.bottom - 0.3);
-    if (P.y > surf) return false;
-    if (crusher.load < crusher.cap) {
-      crusher.load += P.vol; if (P.m !== undefined) crusher.mix[P.m] += P.vol;
-      if (!crusher.told) { crusher.told = true; toast('Crusher running: what goes in comes out as bärlager (east) and makadam 8–16 (west)', 4200); }
-    } else depositAt(H.x + (Math.random() - 0.5) * 4, H.z - H.half - 0.8, P.vol, undefined, P.m);
-    return true;
+    for (const pl of PLANTS) {
+      const H = pl.hop; if (!H) continue;
+      if (Math.abs(P.x - H.x) > H.half || Math.abs(P.z - H.z) > H.half || P.y > H.top + 0.3) continue;
+      const surf = H.bottom + 0.1 + pl.load / pl.cap * (H.top - H.bottom - 0.3);
+      if (P.y > surf) continue;
+      if (pl.load < pl.cap) {
+        pl.load += P.vol; if (P.m !== undefined) pl.mix[P.m] += P.vol;
+        if (!pl.told) { pl.told = true; toast(PLANT_TOLD[pl.id], 4200); }
+      } else depositAt(H.x + (Math.random() - 0.5) * 4, H.z - H.half - 0.8, P.vol, undefined, P.m);
+      return true;
+    }
+    return false;
   }
-  function updateCrusher(dt) {
+  function updateCrusher(dt) { for (const pl of PLANTS) updatePlant(pl, dt); }
+  function updatePlant(crusher, dt) {
     const run = crusher.load > 0.001;
     for (const w of crusher.wheels) w.rotation.x += (run ? 7 : 0) * dt;
     if (crusher.fill) { crusher.fill.visible = run; crusher.fill.scale.y = Math.max(0.01, crusher.load / crusher.cap); crusher.fill.material.color.copy(mixColor(crusher.mix)); }
     if (!run) return;
-    const rate = Math.min(crusher.load, 0.32 * dt);
+    const rate = Math.min(crusher.load, crusher.rate * dt);
     drawMix(crusher, rate); crusher.load -= rate;
+    if (pit.dayStats) pit.dayStats.made = (pit.dayStats.made || 0) + rate;
     for (const hd of crusher.heads) {
-      const v = rate * (hd.m === 3 ? 0.55 : 0.45), n = Math.max(1, Math.round(v / 0.005));
+      const v = rate * (crusher.out[hd.m] || 0), n = Math.max(1, Math.round(v / 0.005));
       for (let q = 0; q < n && parts.length < MAXP; q++) parts.push({ x: hd.x + (Math.random() - 0.5) * 0.4, y: hd.y, z: hd.z + (Math.random() - 0.5) * 0.4, vx: hd.dx * 1.2 + (Math.random() - 0.5) * 0.4, vy: 0, vz: hd.dz * 1.2 + (Math.random() - 0.5) * 0.4, vol: v / n, r: Math.random() * 6, m: hd.m, quiet: true });
       relaxOnce(true, ...relaxBox(hd.x, hd.z, 36));
     }
   }
 
   // ---- the working day: 07:00 to 16:00, a morning rush, and a summary at closing ----
-  const DAY_RATE = 1; // game minutes per real second
+  const DAY_RATE = PACE[SET.pace] || 0.5; // game minutes per real second, from the pace setting
+  const GAP_K = Math.sqrt(1 / DAY_RATE); // a slower day spaces the customers out a little more in real time
   const newDayStats = () => ({ served: 0, tonnes: 0, items: 0, refused: 0, gaveUp: 0, tips: 0, earned: 0, err: 0, nAcc: 0, spills: 0 });
-  Object.assign(pit, { day: 1, clock: 7 * 60, dayStats: newDayStats(), spawnT: 3, summaryShown: false, manualLight: false, gaveUp: 0 });
+  Object.assign(pit, { day: 1, clock: 7 * 60, dayStats: newDayStats(), spawnT: 3, summaryShown: false, manualLight: false, gaveUp: 0, choose: true, closed: false });
   const clockText = () => { const c = Math.floor(pit.clock); return `${String(Math.floor(c / 60) % 24).padStart(2, '0')}:${String(c % 60).padStart(2, '0')}`; };
   function updateDay(dt) {
+    if (pit.choose) { if (!document.getElementById('dayChoice')) showDayChoice(); return; } // the morning: open or not?
     pit.clock += dt * DAY_RATE;
     if (!pit.manualLight) {
       const c = pit.clock, idx = c < 8 * 60 ? 1 : c < 15 * 60 + 15 ? 0 : c < 17 * 60 + 30 ? 1 : 2;
       if (idx !== timeIdx) { timeIdx = idx; applyTime(idx); }
     }
-    const c = pit.clock, open = c < 15 * 60 + 30;
+    const c = pit.clock, open = !pit.closed && c < 15 * 60 + 30;
     if (open) {
       pit.spawnT -= dt;
       if (pit.spawnT <= 0) {
-        const gap = c < 8.5 * 60 ? 16 + Math.random() * 12 : c < 14 * 60 ? 32 + Math.random() * 26 : 26 + Math.random() * 18;
+        const gap = (c < 8.5 * 60 ? 16 + Math.random() * 12 : c < 14 * 60 ? 32 + Math.random() * 26 : 26 + Math.random() * 18) * GAP_K;
         pit.spawnT = fleet.length < 3 && spawnVehicle() ? gap : 6;
       }
-    } else if (!pit.closedToast) { pit.closedToast = true; toast('15:30: the gate is closed to new customers. Finish the ones in the yard', 3600); }
+    } else if (!pit.closedToast && !pit.closed) { pit.closedToast = true; toast('15:30: the gate is closed to new customers. Finish the ones in the yard', 3600); }
     // After the last customer has gone the evening is the player's: tidy the yard, scrape the haul roads,
     // feed the crusher. The day ends with End day (or H), or by itself at 22:00.
-    const evening = !open && !fleet.length && c >= 16 * 60 && !pit.summaryShown;
-    if (evening && !pit.eveningToast) { pit.eveningToast = true; toast('The yard is empty. The evening is yours: tidy up, run the crusher, then End day', 4200); }
+    const evening = !open && !fleet.length && (pit.closed || c >= 16 * 60) && !pit.summaryShown;
+    if (evening && !pit.eveningToast && !pit.closed) { pit.eveningToast = true; toast('The yard is empty. The evening is yours: tidy up, run the crusher, then End day', 4200); }
     if ($endDay) $endDay.hidden = !evening;
     if (evening && c >= 22 * 60) showSummary();
   }
   let $endDay = null;
+  // Each morning: open the gate for customers, or keep it shut and spend the day digging, crushing and stocking up.
+  function showDayChoice() {
+    const box0 = document.createElement('div'); box0.className = 'summary'; box0.id = 'dayChoice';
+    const st = stockByMat(true), low = [1, 2, 3, 4, 5, 6].filter(m => st[m] * rhoOf(m) < 40).map(m => MATS[m].short);
+    box0.innerHTML = `<h3>Day ${pit.day} · ${clockText()}</h3><div>${low.length ? `Running low: ${low.join(', ')}.` : 'Every pile has stock.'}</div>`;
+    const go = closed => { box0.remove(); Object.assign(pit, { choose: false, closed }); pit.dayStats.closed = closed;
+      toast(closed ? 'Production day: the gate stays shut. Dig naturgrus at the face, feed the crusher and the screen, End day when you are done' : `Day ${pit.day}. The gate is open`, closed ? 5200 : 2400); };
+    const a = document.createElement('button'); a.type = 'button'; a.id = 'nextDayBtn'; a.textContent = 'Open for customers'; a.addEventListener('click', () => go(false));
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'alt'; b.textContent = 'Production day (gate shut)'; b.addEventListener('click', () => go(true));
+    box0.append(a, b); (tagHost || screen.querySelector('.hud')).appendChild(box0);
+  }
   function showSummary() {
     pit.summaryShown = true; if ($endDay) $endDay.hidden = true;
     const D = pit.dayStats, acc = D.nAcc ? `${(100 - D.err / D.nAcc * 100).toFixed(1)}%` : '—';
-    const box0 = document.createElement('div');
-    box0.style.cssText = 'pointer-events:auto;z-index:4;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(20,18,14,.92);color:#fff;padding:20px 26px;border-radius:6px;min-width:280px;font-size:15px;line-height:1.55;letter-spacing:.03em;text-shadow:none;z-index:5;pointer-events:auto';
-    const row = (a, b) => `<div style="display:flex;justify-content:space-between;gap:24px"><span>${a}</span><b>${b}</b></div>`;
-    box0.innerHTML = `<div style="font-size:20px;font-weight:700;margin-bottom:8px">Day ${pit.day} · Björkåsens grustag</div>`
-      + row('Customers served', D.served) + row('Gravel sold', `${D.tonnes.toFixed(1)} t`) + row('Boulders and bags', D.items)
-      + row('Load accuracy', acc) + row('Loads refused', D.refused) + row('Tips', `${D.tips.toLocaleString('sv-SE')} kr`)
-      + row('Earned today', `${D.earned.toLocaleString('sv-SE')} kr`) + row('Earned in all', `${pit.earned.toLocaleString('sv-SE')} kr`);
+    const box0 = document.createElement('div'); box0.className = 'summary';
+    const row = (a, b) => `<div class="row"><span>${a}</span><b>${b}</b></div>`;
     // the pit keeps most of the takings for wages and diesel; the profit goes to the account for the garage
     const profit = Math.round(D.earned * 0.3);
-    if (pit.paidDay !== pit.day) { pit.paidDay = pit.day; addMoney(profit); autosave(true); }
-    box0.innerHTML += row('Profit to your account', kr(profit)) + row('Account', kr(PROF.wallet));
-    const btn = document.createElement('button'); btn.type = 'button'; btn.id = 'nextDayBtn'; btn.textContent = 'Next day (A)';
-    btn.style.cssText = 'margin-top:14px;width:100%;padding:8px;font:inherit;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:#d8b55c;border:0;border-radius:4px;cursor:pointer';
+    if (pit.paidDay !== pit.day) { pit.paidDay = pit.day; addMoney(profit); }
+    const st = stockByMat(true);
+    box0.innerHTML = `<h3>${D.closed ? 'Production day' : 'Day'} ${pit.day} · Björkåsens grustag</h3>`
+      + (D.closed ? '' : row('Customers served', D.served) + row('Gravel sold', `${D.tonnes.toFixed(1)} t`) + row('Boulders and bags', D.items)
+        + row('Load accuracy', acc) + row('Loads refused', D.refused) + row('Tips', kr(D.tips)) + row('Earned today', kr(D.earned)) + row('Profit to your account', kr(profit)))
+      + row('Through the plants', `${(D.made || 0).toFixed(1)} m³`) + row('Boulders out of the face', D.boulders || 0)
+      + '<div class="stock">' + [1, 2, 3, 4, 5, 6].map(m => `<span>${MATS[m].short}</span><b>${Math.round(st[m] * rhoOf(m))} t</b>`).join('') + '</div>'
+      + row('Account', kr(PROF.wallet));
+    const btn = document.createElement('button'); btn.type = 'button'; btn.id = 'nextDayBtn'; btn.textContent = 'Next day';
     btn.addEventListener('click', () => { box0.remove(); nextDay(); });
     box0.appendChild(btn); (tagHost || document.body).appendChild(box0);
+    autosave(true);
   }
   function nextDay() {
-    Object.assign(pit, { day: pit.day + 1, clock: 7 * 60, dayStats: newDayStats(), spawnT: 2, summaryShown: false, manualLight: false, closedToast: false, eveningToast: false });
-    toast(`Day ${pit.day}. The gate is open`, 2400);
+    Object.assign(pit, { day: pit.day + 1, clock: 7 * 60, dayStats: newDayStats(), spawnT: 2, summaryShown: false, manualLight: false, closedToast: false, eveningToast: false, choose: true, closed: false });
+    // overnight the bag supplier tops the yard back up to six big bags of sand
+    const Y = yardPile(), bags = pitItems.filter(i => i.kind === 'bag').length;
+    for (let k = bags; k < 6; k++) addBag(Y.x - 3.5 + (k % 3) * 1.5, Y.z + 3.2 + Math.floor(k / 3) * 1.5);
   }
 
   // ---- weather: clear, cloud, rain and snow showers drifting through the day ----
@@ -1648,22 +1684,23 @@ function boot(SCN, bootData, opts = {}) {
   function buildPitExtras(steel, conc) {
     const yel = std({ color: 0xd9a520, roughness: 0.5 }), yelD = std({ color: 0xa87d16, roughness: 0.55 }), belt = std({ color: 0x1c1c1c, roughness: 0.8 });
     const at = (x, z) => heightAt(x, z);
-    // crushing and screening plant: feed hopper, jaw crusher, screen deck and two stacking conveyors
-    {
-      const X = PLANT.x, Z = PLANT.z, y0 = at(X, Z), g = new T.Group(); g.position.set(X, y0, Z); scene.add(g);
+    // the plants: feed hopper, crusher (or screen) body, screen deck and a stacking conveyor out to each product's pile
+    for (const pl of PLANTS) {
+      const yel = std({ color: pl.paint, roughness: 0.5 }), yelD = std({ color: new T.Color(pl.paint).multiplyScalar(0.75), roughness: 0.55 });
+      const X = pl.x, Z = pl.z, y0 = at(X, Z), g = new T.Group(); g.position.set(X, y0, Z); scene.add(g);
       for (const [lx, lz] of [[-1.4, -4.4], [1.4, -4.4], [-1.4, -2.2], [1.4, -2.2]]) { box(0.25, 1.6, 0.25, steel, lx, 0.8, lz, g); pitPosts.push({ x: X + lx, z: Z + lz, r: 0.25 }); }
-      const hop = new T.Mesh(new T.CylinderGeometry(2.4, 1.1, 1.8, 4, 1, true), std({ color: 0xd9a520, roughness: 0.5, side: T.DoubleSide })); hop.rotation.y = Math.PI / 4; hop.position.set(0, 2.3, -3.3); hop.castShadow = true; g.add(hop);
+      const hop = new T.Mesh(new T.CylinderGeometry(2.4, 1.1, 1.8, 4, 1, true), std({ color: pl.paint, roughness: 0.5, side: T.DoubleSide })); hop.rotation.y = Math.PI / 4; hop.position.set(0, 2.3, -3.3); hop.castShadow = true; g.add(hop);
       const hf = new T.Mesh(new T.BoxGeometry(2.6, 1, 2.6), mats.dirt.clone()); hf.geometry.translate(0, 0.5, 0); hf.position.set(0, 1.5, -3.3); hf.visible = false; g.add(hf);
-      crusher.hop = { x: X, z: Z - 3.3, top: y0 + 3.2, bottom: y0 + 1.4, half: 1.6 }; crusher.fill = hf;
+      pl.hop = { x: X, z: Z - 3.3, top: y0 + 3.2, bottom: y0 + 1.4, half: 1.6 }; pl.fill = hf;
       box(3.2, 2.4, 3.0, yel, 0, 1.7, 0, g);                                 // crusher body
       box(3.4, 0.4, 3.2, yelD, 0, 3.05, 0, g);
-      for (const sx of [-1, 1]) { const fw = cyl(1.0, 0.25, std({ color: 0x3b3f43, roughness: 0.5, metalness: 0.5, flatShading: true }), g, 'x', 8); fw.position.set(sx * 1.75, 2.0, 0.4); crusher.wheels.push(fw); }
+      for (const sx of [-1, 1]) { const fw = cyl(1.0, 0.25, std({ color: 0x3b3f43, roughness: 0.5, metalness: 0.5, flatShading: true }), g, 'x', 8); fw.position.set(sx * 1.75, 2.0, 0.4); pl.wheels.push(fw); }
       const scr = box(2.6, 0.5, 4.2, yel, 0, 2.2, 3.6, g); scr.rotation.x = -0.25;   // screen deck
       for (const [lx, lz] of [[-1.1, 2.2], [1.1, 2.2], [-1.1, 5.2], [1.1, 5.2]]) box(0.2, 1.6, 0.2, steel, lx, 0.8, lz, g);
       box(2.2, 0.2, 2.2, belt, 0, 0.35, 0, g);
       pitBoxes.push({ x: X, z: Z + 1.6, yaw: 0, hw: 2.2, hl: 4.2 });
       // conveyors out to the two piles: a belt on a lattice boom, with an A-frame leg near the head
-      for (const p of PLANT_PILES) {
+      for (const p of PIT_PILES.filter(q => q.plant === pl.id)) {
         const sx = X + Math.sign(p.x - X) * 1.6, sz = Z + 2, ex = p.x, ez = p.z, len = Math.hypot(ex - sx, ez - sz), hy = 5.0;
         const c = new T.Group(); c.position.set(sx, y0 + 0.8, sz); c.rotation.y = Math.atan2(ex - sx, ez - sz); scene.add(c);
         const pitch = Math.atan2(hy - 0.8, len), bl = Math.hypot(len, hy - 0.8);
@@ -1675,7 +1712,7 @@ function boot(SCN, bootData, opts = {}) {
         const lx = sx + Math.sin(c.rotation.y) * lz, lzz = sz + Math.cos(c.rotation.y) * lz;
         pitPosts.push({ x: lx, z: lzz, r: 1.0 });
         c.updateMatrixWorld(true); const hp = new T.Vector3(0, 0.3, bl).applyMatrix4(boom.matrixWorld);
-        crusher.heads.push({ x: hp.x, y: hp.y, z: hp.z, m: p.m, dx: Math.sin(c.rotation.y), dz: Math.cos(c.rotation.y) });
+        pl.heads.push({ x: hp.x, y: hp.y, z: hp.z, m: p.m, dx: Math.sin(c.rotation.y), dz: Math.cos(c.rotation.y) });
       }
     }
     // the rain pond in the south-west corner, with reeds round it
@@ -1709,7 +1746,7 @@ function boot(SCN, bootData, opts = {}) {
     // boulders picked out of the gravel, birches and scrub at the edges of the floor
     const roads = pitRoads(), clearOf = (x, z, rr) => roads.every(sg => distSeg(x, z, sg[0], sg[1], sg[2], sg[3]) > rr + 4)
       && PIT_PILES.every(p => Math.hypot(x - p.x, z - p.z) > 10 && Math.hypot(x - p.sx, z - p.sz) > 8) && Math.hypot(x - RACK.x, z - RACK.z) > 10
-      && Math.hypot(x - PLANT.x, z - PLANT.z) > 9 && Math.hypot((x - POND.x) / POND.rx, (z - POND.z) / POND.rz) > 1.25 && Math.hypot(x - LOADER_HOME.x, z - LOADER_HOME.z) > 6 && Math.hypot(x - EXC_HOME.x, z - EXC_HOME.z) > 6;
+      && PLANTS.every(pl => Math.hypot(x - pl.x, z - pl.z) > 9) && Math.hypot((x - POND.x) / POND.rx, (z - POND.z) / POND.rz) > 1.25 && Math.hypot(x - LOADER_HOME.x, z - LOADER_HOME.z) > 6 && Math.hypot(x - EXC_HOME.x, z - EXC_HOME.z) > 6;
     {
       let placed = 0;
       for (let t = 0; t < 400 && placed < 30; t++) {
@@ -3937,6 +3974,18 @@ function boot(SCN, bootData, opts = {}) {
   // Teeth-first plunges only take a first bite. Dirt the bucket can't take is shoved out of its way,
   // and driving its back or bottom down into the ground is refused.
   let lastFullToast = -9;
+  // Now and then the face gives up a boulder too big for the bucket: it rolls out in front of the excavator,
+  // for the forks to take to the stone yard and sell.
+  let faceDug = 0, faceNext = 4 + Math.random() * 5;
+  function faceBoulders() {
+    if (SNOW || faceDug < faceNext) return;
+    faceDug = 0; faceNext = 4 + Math.random() * 6;
+    const a = exc.yaw + exc.sw, d = 4.2, x = exc.x + Math.sin(a) * d, z = exc.z + Math.cos(a) * d;
+    if (itemHit(x, z, 1.2) || Math.abs(x) > HALF - 4 || Math.abs(z) > HALF - 4) return;
+    addBoulder(x, z, 0.5 + Math.random() * 0.45);
+    pit.dayStats.boulders = (pit.dayStats.boulders || 0) + 1;
+    if (!pit.boulderTold) { pit.boulderTold = true; toast('A boulder out of the face. Fork it over to the stone yard to sell', 3600); } else toast('Another boulder', 1200);
+  }
   function excDig(dt, hydMoved, dCurl, dStick) {
     const E = exc, mw = E.bucketG.matrixWorld;
     _m.set(0, -1, 0).transformDirection(mw);
@@ -3992,6 +4041,7 @@ function boot(SCN, bootData, opts = {}) {
       if (cutting && E.load < EXC_CAP) {
         const take = Math.min(amt, (EXC_CAP - E.load) / A);
         h[k] -= take; E.load += take * A; if (E.mix) E.mix[mat[k]] += take * A; sfx.scoop += take * A; amt -= take; disturb(k);
+        if (!SNOW && mat[k] === 6 && orig[k] - hMin[k] > 0.8) faceDug += take * A; // digging into the pit face itself
       }
       if (amt > 0.01 && moving) {
         h[k] -= amt; disturb(k);
@@ -5615,7 +5665,9 @@ function boot(SCN, bootData, opts = {}) {
   // 06:00 that, the truckloads and any plogvallar decide the pay, which goes to the shared account. Free plow
   // (a setting) turns all this off: no new snow, no clock.
   const SHIFT_ON = SNOW && SET.mode !== 'free';
-  const SHIFT_LEN = 480, SHIFT_RATE = 0.5, SNOW_RATE = 0.00016;  // game minutes; game minutes per real second; metres of snow a second at intensity 1
+  // game minutes; game minutes per real second (the pace setting); metres of snow a real second at intensity 1,
+  // scaled with the pace so a shift brings the same snow however long it takes
+  const SHIFT_LEN = 480, SHIFT_RATE = PACE[SET.pace] || 0.5, SNOW_RATE = 0.00016 * SHIFT_RATE / 0.5;
   const PRIORITY = VILLAGE ? ['Storgatan', 'Kyrkvägen', 'Stationsvägen'] : ['Hudson Street', 'Grand Street', 'Montgomery Street', 'Greene Street', 'Christopher Columbus Drive'];
   const shift = { n: 1, clock: 0, intensity: 0.7, target: 0.9, wxT: 50, pri: 0, all: 0, samples: 0, sampleT: 0, plog0: 0, loads0: 0, added: 0, done: false, paid: false, manualLight: false, toldStart: false };
   let priCells = null, rowT = null, sweepJ = 0, $shiftRow = null, $priRow = null, priNow = 0;
@@ -5709,7 +5761,8 @@ function boot(SCN, bootData, opts = {}) {
       done: b => Math.abs(loader.a - b.a) > 0.3 },
     { id: 'shift', when: () => SHIFT_ON, text: { all: 'Snow keeps falling until 06:00. Keep the main streets open: ' + PRIORITY.slice(0, 3).join(', ') }, done: b => time - b.t > 8 },
     { id: 'plogvall', when: () => VILLAGE, text: { all: 'Mind the driveways: a windrow across one gets the family complaining' }, done: b => time - b.t > 7 },
-    { id: 'customer', when: () => !SNOW, text: { all: 'Each customer waits at the pile they want: look for the green ring on the map' }, done: b => time - b.t > 8 },
+    { id: 'customer', when: () => !SNOW && !pit.choose, text: { all: 'Each customer waits at the pile they want: look for the green ring on the map' }, done: b => time - b.t > 8 },
+    { id: 'stock', when: () => !SNOW && !pit.choose, text: { all: 'To restock: dig naturgrus at the pit face with the excavator and tip it into the crusher (south) or the screen (west)' }, done: b => time - b.t > 9 },
     { id: 'look', text: { key: 'Drag the picture to look around, scroll to zoom', touch: 'Drag the picture to look around, pinch to zoom', pad: 'Right stick looks around' },
       done: b => Math.abs(camOff - b.camOff) + Math.abs(camPitch - b.camPitch) > 0.4 || Math.abs(camDist - b.camDist) > 3 || camMode !== 'chase' },
     { id: 'map', text: { key: 'P opens the map', touch: 'MAP opens the map', pad: 'View opens the map' }, done: () => bigMapOpen },
@@ -5932,6 +5985,9 @@ function boot(SCN, bootData, opts = {}) {
     const [px, py] = toMap(OSM.rail.station[0], OSM.rail.station[1], size); ctx.fillStyle = '#b3262b'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(px, py, 2.4 * s, 0, 6.3); ctx.fill(); ctx.stroke();
   }
   // draw the whole map into a square of `size` pixels (the minimap then crops/zooms it)
+  // what is in each pile, for the map's labels (counted every few seconds; it walks the whole grid)
+  let stockCache = null, stockT = -99;
+  const mapStock = () => { if (!stockCache || time - stockT > 3) { stockCache = stockByMat(true); stockT = time; } return stockCache; };
   function drawMapScene(ctx, size, big) {
     ctx.imageSmoothingEnabled = true;
     ctx.drawImage(mapBase, 0, 0, size, size);
@@ -6012,8 +6068,8 @@ function boot(SCN, bootData, opts = {}) {
       for (const V of fleet) drawMarker(ctx, V.x, V.z, V.yaw, size, V.order.item ? '#cfd8e0' : '#dedbd2', s * (V.order.v === 'car' ? 0.75 : 1), 'long');
       if (big) {
         const fs = Math.max(12, size / 52);
-        for (const p of PIT_PILES) { if (p.item) { label('Stenblock · Storsäck', p.x, p.z + 7, fs, '#fff4dc', 700); continue; } label(MATS[p.m].n, p.x, p.z + 5.2, fs, '#fff4dc', 700); label(`${MATS[p.m].price} kr/t`, p.x, p.z + 7.2, fs * 0.8, '#f0dcb0', 500); }
-        label('Tool rack', RACK.x, RACK.z - 4.5, fs, '#ffd76a', 700); label('Crusher', PLANT.x, PLANT.z + 7, fs, '#ffd76a', 700);
+        for (const p of PIT_PILES) { if (p.item) { label('Stenblock · Storsäck', p.x, p.z + 7, fs, '#fff4dc', 700); continue; } label(MATS[p.m].n, p.x, p.z + 5.2, fs, '#fff4dc', 700); label(`${MATS[p.m].price} kr/t · ${Math.round(mapStock()[p.m] * rhoOf(p.m))} t in stock`, p.x, p.z + 7.2, fs * 0.8, '#f0dcb0', 500); }
+        label('Tool rack', RACK.x, RACK.z - 4.5, fs, '#ffd76a', 700); for (const pl of PLANTS) label(pl.name, pl.x, pl.z + 7, fs, '#ffd76a', 700);
         for (const V of fleet) if (V.state === 'parked') label(`${V.order.cust} · ${orderShort(V.order)}`, V.x, V.z + 3.6, fs * 0.85, '#ffffff', 700);
         label('Pit face', 10, -55, fs, '#f3e3c0', 700);
         label('Weighbridge', PIT_GATE.x - 7, PIT_GATE.z, fs, '#ffe08a', 700);
@@ -6510,7 +6566,9 @@ function boot(SCN, bootData, opts = {}) {
       const down = on(i);
       if (down && !padPrev[i]) {
         const next = document.getElementById('nextDayBtn');
+        const alt = document.querySelector('#dayChoice .alt');
         if (i === 0 && next) next.click();
+        else if (i === 1 && alt) alt.click(); // B: a production day
         else if (i === 1 && bigMapOpen) toggleBigMap(false);
         else if (i === 10) horn(0.5);
         else if (ACT[i]) press(ACT[i]);
@@ -6554,7 +6612,7 @@ function boot(SCN, bootData, opts = {}) {
     clearTracks();
     loader.y = heightAt(loader.x, loader.z);
     Object.assign(truck, { load: 0, loads: 0, state: 'parked', x: TRUCK_PARK.x, z: TRUCK_PARK.z, yaw: TRUCK_PARK.yaw, v: 0, path: null });
-    if (!SNOW) { loader.mix.fill(0); exc.mix.fill(0); for (const V of fleet) { freeBody(V); V.tag.remove(); } fleet.length = 0; crusher.load = 0; crusher.mix.fill(0); Object.assign(pit, { earned: 0, served: 0, refused: 0, gaveUp: 0, day: 1, clock: 7 * 60, dayStats: newDayStats(), spawnT: 3, summaryShown: false, closedToast: false }); truck.state = 'away'; truck.g.visible = false; }
+    if (!SNOW) { loader.mix.fill(0); exc.mix.fill(0); for (const V of fleet) { freeBody(V); V.tag.remove(); } fleet.length = 0; for (const pl of PLANTS) { pl.load = 0; pl.mix.fill(0); } Object.assign(pit, { earned: 0, served: 0, refused: 0, gaveUp: 0, day: 1, clock: 7 * 60, dayStats: newDayStats(), spawnT: 3, summaryShown: false, choose: true, closed: false, eveningToast: false, closedToast: false }); truck.state = 'away'; truck.g.visible = false; }
     Object.assign(hopper, { load: 0, acc: 0, queue: [] });
     Object.assign(exc, { x: EXC_HOME.x, z: EXC_HOME.z, yaw: EXC_HOME.yaw, v: 0, sw: 0, bA: 0.55, sR: 1.7, bR: 1.4, load: 0 }); exc.y = heightAt(exc.x, exc.z);
     if (blower) Object.assign(blower, { x: BLOWER_HOME.x, z: BLOWER_HOME.z, yaw: BLOWER_HOME.yaw, v: 0, buf: 0 });
@@ -6605,7 +6663,7 @@ function boot(SCN, bootData, opts = {}) {
       const E = exc, prev = [E.sw, E.bA, E.sR, E.bR]; var boomPrev = E.bA;
       thr = updateExcavator(inp, dt, true);
       hydOn = (E.sw !== prev[0] || E.bA !== prev[1] || E.sR !== prev[2] || E.bR !== prev[3]) ? 1 : 0;
-      blocked = excDig(dt, hydOn, E.bR - prev[3], E.sR - prev[2]);
+      blocked = excDig(dt, hydOn, E.bR - prev[3], E.sR - prev[2]); faceBoulders();
       if (blocked) { [E.sw, E.bA, E.sR, E.bR] = prev; setExcPose(); prevTeeth.set(0, -0.05, 1.25).applyMatrix4(E.bucketG.matrixWorld); }
       updateLoader(NOINPUT, dt);
     }
@@ -6665,7 +6723,7 @@ function boot(SCN, bootData, opts = {}) {
   // everything but the big grids: machines, counters, the job's own progress
   const stateCore = () => ({
     scn: SCN, riverVol, timeIdx, moved, celebrated, gears: { ...gearOf },
-    ...(SNOW ? {} : { pit: { ...pit, dayStats: pit.dayStats && { ...pit.dayStats } }, lmix: Array.from(loader.mix), emix: Array.from(exc.mix), crusher: { load: crusher.load, mix: Array.from(crusher.mix) }, wx: { kind: weather.kind, cloud: weather.cloud, rain: weather.rain, snow: weather.snow, wet: weather.wet } }),
+    ...(SNOW ? {} : { pitLayout: 2, pit: { ...pit, dayStats: pit.dayStats && { ...pit.dayStats } }, lmix: Array.from(loader.mix), emix: Array.from(exc.mix), plants: PLANTS.map(pl => ({ load: pl.load, mix: Array.from(pl.mix) })), wx: { kind: weather.kind, cloud: weather.cloud, rain: weather.rain, snow: weather.snow, wet: weather.wet } }),
     loader: { x: loader.x, z: loader.z, y: loader.y, yaw: loader.yaw, tF: loader.tF, tR: loader.tR, phi: loader.phi, a: loader.a, b: loader.b, load: loader.load, ...(SNOW ? { tool: loader.tool, plowAng: loader.plowAng } : {}) },
     truck: { load: truck.load, loads: truck.loads }, hopper: { load: hopper.load }, trench: trench.state,
     salt: saltTruck ? { x: saltTruck.x, z: saltTruck.z, yaw: saltTruck.yaw, tank: saltTruck.tank, on: saltTruck.on, width: saltTruck.width } : null,
@@ -6991,10 +7049,11 @@ function boot(SCN, bootData, opts = {}) {
       // a saved game from the start screen
       try {
         h = data.h; orig = data.orig; dist = fromBytes(data.dist); kind = data.kind; nz = fromBytes(data.nz);
+        if (!SNOW && data.pitLayout !== 2) throw new Error('a save from before the screening plant');
         if (!SNOW) { mat = data.mat; hMin = data.hMin; Object.assign(pit, data.pit || {}); }
         restored = h.length === NV && orig.length === NV; moved = data.moved || 0; celebrated = !!data.celebrated;
         if (restored && SNOW) { buildSnowGround(); hMin = gnd.slice(); riverVol = data.riverVol || 0; }
-      } catch (e) { console.warn('Saved game could not be read; starting fresh', e); restored = false; }
+      } catch (e) { console.warn('Saved game could not be read; starting fresh', e); restored = false; if (!SNOW) setTimeout(() => toast('The pit has been rebuilt with a screening plant, so this is a fresh start', 4200), 900); }
     } else if (data && data.v === 2 && data.h) {
       try {
         h = new Float32Array(dec(data.h).buffer); orig = new Float32Array(dec(data.orig).buffer); dist = new Float32Array(dec(data.dist).buffer);
@@ -7037,7 +7096,7 @@ function boot(SCN, bootData, opts = {}) {
       Object.assign(loader, data.loader || {});
       if (data.loader && data.loader.tF === undefined) { loader.tF = loader.tR = loader.yaw; loader.phi = 0; }
       if (data.truck) { truck.load = data.truck.load || 0; truck.loads = data.truck.loads || 0; }
-      if (!SNOW) { if (data.lmix) loader.mix.set(data.lmix); if (data.emix) exc.mix.set(data.emix); if (data.crusher) { crusher.load = data.crusher.load; crusher.mix.set(data.crusher.mix); } if (data.wx) Object.assign(weather, data.wx); }
+      if (!SNOW) { if (data.lmix) loader.mix.set(data.lmix); if (data.emix) exc.mix.set(data.emix); if (data.plants) data.plants.forEach((q, i) => { if (PLANTS[i]) { PLANTS[i].load = q.load; PLANTS[i].mix.set(q.mix); } }); else if (data.crusher) { crusher.load = data.crusher.load; crusher.mix.set(data.crusher.mix); } if (data.wx) Object.assign(weather, data.wx); }
       if (data.hopper) hopper.load = data.hopper.load || 0;
       if (data.exc) Object.assign(exc, data.exc);
       if (data.salt && saltTruck) Object.assign(saltTruck, data.salt);
@@ -7093,7 +7152,9 @@ function loadModels() {
 }
 // ---- settings, stored on this device (localStorage) ----
 const SETTINGS_KEY = 'backlot.settings';
-const SETTINGS_DEFAULT = { quality: 'auto', perf: 'auto', sound: 'on', time: '1', mode: 'shift', tips: 'on' };
+const SETTINGS_DEFAULT = { quality: 'auto', perf: 'auto', sound: 'on', time: '1', mode: 'shift', tips: 'on', pace: 'normal' };
+// how fast the game clock runs: game minutes per real second (a pit day of 9 hours, a shift of 8)
+const PACE = { short: 1, normal: 0.5, long: 0.25 };
 function loadSettings() {
   let st = {};
   try { st = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') || {}; } catch (_) {}
