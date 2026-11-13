@@ -228,7 +228,7 @@ document.addEventListener('touchmove', e => { if (e.touches.length > 1 || (e.tar
       </div>
       <div class="panel" id="helpPanel" hidden>
         <h3>Controls</h3>
-        <p class="note" id="padStatus"></p>
+        <p class="note" id="padStatus" style="text-align:left;font-family:ui-monospace,monospace;font-size:12px;max-width:none"></p>
         <div class="keys">
           <div><kbd>W</kbd><kbd>S</kbd> drive</div>
           <div><kbd>A</kbd><kbd>D</kbd> steer / turn on tracks</div>
@@ -6551,7 +6551,19 @@ function boot(SCN, bootData, opts = {}) {
   // hydraulics are proportional. Buttons fire the same actions as their keys.
   let padPrev = [], padSeen = false;
   const dz = v => Math.abs(v) < 0.15 ? 0 : (v - Math.sign(v) * 0.15) / 0.85; // dead zone, rescaled
-  const gamepad = () => { const ps = navigator.getGamepads ? [...navigator.getGamepads()] : []; return ps.find(p => p && p.connected && p.mapping === 'standard') || ps.find(p => p && p.connected) || null; };
+  // A controller the browser maps to the standard layout is used as it is. Some browsers (Firefox on Linux, for
+  // one) hand an Xbox pad over raw: triggers as axes 2 and 5 running -1..1, the right stick on axes 3 and 4 and
+  // the d-pad on axes 6 and 7. That layout is translated to the standard one here.
+  const BTN = v => ({ pressed: v > 0.5, value: v });
+  function standardize(p) {
+    if (!p || p.mapping === 'standard' || p.axes.length < 6) return p;
+    const a = p.axes, b = i => p.buttons[i] ? p.buttons[i].value || (p.buttons[i].pressed ? 1 : 0) : 0, trig = v => Math.max(0, Math.min(1, (v + 1) / 2));
+    const dx = a[6] || 0, dy = a[7] || 0;
+    return { id: p.id, index: p.index, connected: p.connected, mapping: 'translated', vibrationActuator: p.vibrationActuator,
+      axes: [a[0], a[1], a[3], a[4]],
+      buttons: [b(0), b(1), b(2), b(3), b(4), b(5), trig(a[2]), trig(a[5]), b(6), b(7), b(9), b(10), dy < -0.5 ? 1 : 0, dy > 0.5 ? 1 : 0, dx < -0.5 ? 1 : 0, dx > 0.5 ? 1 : 0, b(8)].map(BTN) };
+  }
+  const gamepad = () => { let ps = []; try { ps = navigator.getGamepads ? [...navigator.getGamepads()] : []; } catch (_) {} return standardize(ps.find(p => p && p.connected && p.mapping === 'standard') || ps.find(p => p && p.connected) || null); };
   addEventListener('gamepadconnected', e => {
     padSeen = true; initAudio();
     toast('Controller connected', 1600);
@@ -7153,6 +7165,9 @@ function loadModels() {
       .catch(e => console.warn(`Models: ${url} could not be loaded`, e));
   }));
 }
+// controller connections, counted from the start (the Controls panel shows them)
+addEventListener('gamepadconnected', e => { window.__padEvents = (window.__padEvents || 0) + 1; console.info('Controller connected:', e.gamepad.id, 'mapping', e.gamepad.mapping); });
+addEventListener('gamepaddisconnected', e => console.info('Controller disconnected:', e.gamepad.id));
 // ---- settings, stored on this device (localStorage) ----
 const SETTINGS_KEY = 'backlot.settings';
 const SETTINGS_DEFAULT = { quality: 'auto', perf: 'auto', sound: 'on', time: '1', mode: 'shift', tips: 'on', pace: 'normal' };
@@ -7275,11 +7290,23 @@ function showMenu() {
   $('helpBtn').addEventListener('click', () => { padStatus(); openPanel('help'); });
   // Browsers only show controllers to secure pages (https://, or localhost); plain http:// on a network
   // address hides them, silently. Say so, and say what the browser can see.
+  // a live controller check: what the browser reports, refreshed while the Controls panel is open
   function padStatus() {
-    const ps = navigator.getGamepads ? [...navigator.getGamepads()].filter(Boolean) : [];
-    $('padStatus').textContent = !window.isSecureContext ? `Controllers can't work on this page: the browser only allows them on https:// or localhost, and this is ${location.origin}. Open the game over https (tools/serve-https.py) or from localhost.`
-      : ps.length ? `Controller: ${ps.map(p => p.id.replace(/\s*\(.*\)\s*$/, '')).join(', ')}` : 'No controller seen yet: press a button on it.';
+    const el = $('padStatus'); if (!el || $('helpPanel').hidden) return;
+    let ps = [], err = '';
+    try { ps = navigator.getGamepads ? [...navigator.getGamepads()].filter(Boolean) : []; } catch (e) { err = e.message; }
+    const lines = [];
+    if (!window.isSecureContext) lines.push(`This page isn't a secure context (${location.origin}), so the browser hides controllers. Open it over https:// or from localhost.`);
+    if (!navigator.getGamepads) lines.push('This browser has no Gamepad API.');
+    if (err) lines.push('getGamepads failed: ' + err);
+    lines.push(`Controller events seen: ${window.__padEvents || 0} · controllers listed: ${ps.length}${ps.length ? '' : ' (press a button on it with this page in front)'}`);
+    for (const p of ps) {
+      const pressed = p.buttons.map((b, i) => (b.pressed || b.value > 0.1) ? i : -1).filter(i => i >= 0);
+      lines.push(`${p.index}: ${p.id} · mapping "${p.mapping || 'none'}" · ${p.connected ? 'connected' : 'not connected'} · buttons ${p.buttons.length} pressed [${pressed.join(' ')}] · axes ${p.axes.map(a => a.toFixed(2)).join(' ')}`);
+    }
+    el.innerHTML = lines.map(l => `<span style="display:block">${l.replace(/</g, '&lt;')}</span>`).join('');
   }
+  setInterval(padStatus, 150);
 
   for (const b of menu.querySelectorAll('[data-close]')) b.addEventListener('click', () => openPanel(null));
   const showOpts = () => { for (const row of menu.querySelectorAll('.opt')) for (const b of row.querySelectorAll('button')) b.setAttribute('aria-pressed', String(settings[row.dataset.set]) === b.dataset.v ? 'true' : 'false'); };
