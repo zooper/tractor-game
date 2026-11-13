@@ -8,4 +8,5 @@
   - Only the native shell's own behaviour (scrolling, zoom, status bar, audio session, file serving) belongs in Swift. Edit `ios/project.yml`, never the generated `.xcodeproj` or `Info.plist`.
 - Saved games: `makeSave()` / `stateCore()` in `boot()` decide what is saved (IndexedDB via `SaveStore`, local to the device, no server, no import/export) and `start()` restores it. When you add state that should survive a Continue, add it to both. Settings live in localStorage (`loadSettings` / `saveSettings`), and so does progression shared by all maps (`loadProfile` / `saveProfile`: account, garage upgrades in `UPGRADES` read through `UP(id)` at boot, tips seen). Write the profile with a fresh `loadProfile()` first, never a stale copy.
 - Keep the game screen free of instructions: explanations belong on the start screen's Controls panel or in the one-at-a-time tips (`TIPS` in `boot()`, with key / touch / pad wording); in-game toasts are for short feedback.
+- Where things stand and what is next: HANDOFF.md.
 - Testing: serve the folder (`python3 -m http.server`) and open `index.html`; add `?fps` for a frame-rate readout.
