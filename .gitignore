@@ -5,3 +5,4 @@ ios/*.xcodeproj/
 ios/BacklotLoader/Info.plist
 ios/build/
 xcuserdata/
+tools/.cert/

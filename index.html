@@ -228,6 +228,7 @@ document.addEventListener('touchmove', e => { if (e.touches.length > 1 || (e.tar
       </div>
       <div class="panel" id="helpPanel" hidden>
         <h3>Controls</h3>
+        <p class="note" id="padStatus"></p>
         <div class="keys">
           <div><kbd>W</kbd><kbd>S</kbd> drive</div>
           <div><kbd>A</kbd><kbd>D</kbd> steer / turn on tracks</div>
@@ -7235,6 +7236,7 @@ function showMenu() {
     $('newBtn').textContent = confirmNew ? 'Tap again to start over' : 'New game';
     $('newBtn').classList.toggle('primary', !m || confirmNew);
     $('saveNote').textContent = document.body.classList.contains('pad-nav') ? 'Controller: d-pad or left stick to move, A to choose, B to go back' : canSave ? 'Progress saves automatically on this device. Nothing leaves it.' : 'This browser can\'t keep saved games (private browsing?), so progress won\'t be saved.';
+    if (!window.isSecureContext) $('saveNote').textContent += ' Controllers need https:// or localhost: see Controls.';
   }
   const pick = scn => { sel = scn; confirmNew = false; render(); };
   for (const c of cards) { c.addEventListener('click', () => pick(c.dataset.scn)); c.addEventListener('focus', () => { if (document.body.classList.contains('pad-nav')) pick(c.dataset.scn); }); }
@@ -7270,7 +7272,15 @@ function showMenu() {
   $('garageBtn').addEventListener('click', () => { renderGarage(); openPanel('garage'); });
   const openPanel = k => { splash.hidden = !!k; for (const [n, el] of Object.entries(panels)) el.hidden = n !== k; const f = k ? panels[k].querySelector('[data-close], .opt button') : $('newBtn'); f && f.focus({ preventScroll: true }); if (k) panels[k].scrollTop = 0; menu.scrollTop = 0; };
   $('settingsBtn').addEventListener('click', () => openPanel('settings'));
-  $('helpBtn').addEventListener('click', () => openPanel('help'));
+  $('helpBtn').addEventListener('click', () => { padStatus(); openPanel('help'); });
+  // Browsers only show controllers to secure pages (https://, or localhost); plain http:// on a network
+  // address hides them, silently. Say so, and say what the browser can see.
+  function padStatus() {
+    const ps = navigator.getGamepads ? [...navigator.getGamepads()].filter(Boolean) : [];
+    $('padStatus').textContent = !window.isSecureContext ? `Controllers can't work on this page: the browser only allows them on https:// or localhost, and this is ${location.origin}. Open the game over https (tools/serve-https.py) or from localhost.`
+      : ps.length ? `Controller: ${ps.map(p => p.id.replace(/\s*\(.*\)\s*$/, '')).join(', ')}` : 'No controller seen yet: press a button on it.';
+  }
+
   for (const b of menu.querySelectorAll('[data-close]')) b.addEventListener('click', () => openPanel(null));
   const showOpts = () => { for (const row of menu.querySelectorAll('.opt')) for (const b of row.querySelectorAll('button')) b.setAttribute('aria-pressed', String(settings[row.dataset.set]) === b.dataset.v ? 'true' : 'false'); };
   for (const row of menu.querySelectorAll('.opt')) for (const b of row.querySelectorAll('button')) b.addEventListener('click', () => {

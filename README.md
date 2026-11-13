@@ -52,6 +52,8 @@ Phones and tablets also get a lighter **mobile performance mode**: a coarser sno
 
 ## Xbox controller
 
+Browsers only give controllers to secure pages: `https://`, or `http://localhost`. On a plain `http://` network address (say `http://192.168.0.21:8000` from another computer) the controller is silently ignored; the start screen and its Controls panel say so. Serve it with `python3 tools/serve-https.py` (a self-signed certificate is made on first run; accept the browser's warning once) and open `https://<machine>:8443`, or reach it as localhost through an SSH tunnel (`ssh -L 8000:<server address>:8000 <machine>`, then `http://localhost:8000`).
+
 Plug in or pair an Xbox (or any standard) controller and press a button; Chrome, Edge and Firefox pick it up. The layout follows Farming Simulator's controller defaults. Sticks and triggers are analog.
 
 | Control | Wheel loader / salt truck | Excavator |
