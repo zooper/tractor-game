@@ -170,8 +170,7 @@ document.addEventListener('touchmove', e => { if (e.touches.length > 1 || (e.tar
   .postit b { display: block; font-family: "Barlow Condensed", sans-serif; font-size: 15px; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 3px; }
   .postit div { display: grid; grid-template-columns: 1fr auto; gap: 0 8px; padding: 3px 0; border-top: 1px dashed rgba(58,51,32,.3); }
   .postit span { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .postit em { font-style: normal; grid-column: 1; font-size: 12px; opacity: .85; }
-  .postit i { font-style: normal; grid-column: 2; grid-row: 1 / span 2; align-self: center; font-weight: 600; font-variant-numeric: tabular-nums; }
-  .postit .long i { color: #a3260f; }
+  .postit i { font-style: normal; grid-column: 2; grid-row: 1 / span 2; align-self: center; font-size: 12px; opacity: .75; }
   @media (pointer: coarse) { .postit { top: 178px; width: 190px; font-size: 12px; } }
   @media (pointer: coarse) and (max-height: 460px) { .postit { top: 78px; left: 124px; } }
   /* end of a snow shift */
@@ -5906,21 +5905,20 @@ function boot(SCN, bootData, opts = {}) {
       return `<div class="${cls}"><span>${MATS[m].short}</span><i><u style="width:${Math.min(100, t / FULL * 100).toFixed(0)}%"></u></i><em>${t} t</em><small>${STOCK_FROM[m]}</small></div>`;
     }).join('');
   }
-  // A post-it on the screen listing the customers of the day who are on their way or waiting, with what they
-  // ordered, how far along the load is and how long they have stood there (in game minutes).
+  // A post-it on the screen listing the customers of the day in the order they reached their pile (those still
+  // on their way at the bottom), with what they ordered and how far along the load is.
   let $postit = null;
   function postit() {
     if (!$postit) { $postit = document.createElement('div'); $postit.className = 'postit'; screen.querySelector('.hud').appendChild($postit); }
-    const list = fleet.filter(V => V.state !== 'leaving');
+    const list = fleet.filter(V => V.state !== 'leaving').sort((a, b) => (a.waitFrom ?? 1e9) - (b.waitFrom ?? 1e9));
     $postit.hidden = !list.length || bigMapOpen;
     if ($postit.hidden) return;
     const esc = t => String(t).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
     $postit.innerHTML = '<b>Waiting</b>' + list.map(V => {
       const O = V.order, here = V.state === 'parked' || V.state === 'tipping';
-      const mins = here && V.waitFrom !== undefined ? Math.max(0, Math.floor(pit.clock - V.waitFrom)) : null;
       const got = here ? (O.item ? `${vCount(V)}/${O.count}` : `${vTonnes(V).toFixed(1)}/${O.t.toFixed(1)} t`) : '';
-      const when = V.state === 'arriving' ? 'on the way' : V.state === 'tipping' ? 'tipping out' : mins < 60 ? `${mins} min` : `${Math.floor(mins / 60)} h ${mins % 60} min`;
-      return `<div class="${mins >= 45 ? 'long' : ''}"><span>${esc(O.cust)}</span><em>${esc(orderShort(O))}${got ? ' · ' + got : ''}</em><i>${when}</i></div>`;
+      const note = V.state === 'arriving' ? 'on the way' : V.state === 'tipping' ? 'tipping out' : '';
+      return `<div><span>${esc(O.cust)}</span><em>${esc(orderShort(O))}${got ? ' · ' + got : ''}</em><i>${note}</i></div>`;
     }).join('');
   }
   function placeTag() {
